@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Font Face - Iquost */
+@font-face {
+  font-family: 'Iquost';
+  src: url('/font/iquost.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    /* Minimalist Design Tokens from JSON spec */
+    --bg: 0 0% 100%;
+    --surface: 0 0% 100%;
+    --ink: 217 91% 13%;
+    --muted: 215 14% 42%;
+    --line: 220 13% 91%;
+    --blue-100: 214 100% 92%;
+    --blue-600: 221 83% 53%;
+    --blue-700: 221 83% 45%;
+
+    /* Map to shadcn system */
+    --background: var(--bg);
+    --foreground: var(--ink);
+    --card: var(--surface);
+    --card-foreground: var(--ink);
+    --popover: var(--surface);
+    --popover-foreground: var(--ink);
+    --primary: var(--blue-600);
+    --primary-foreground: var(--bg);
+    --secondary: var(--blue-100);
+    --secondary-foreground: var(--ink);
+    --muted: var(--line);
+    --muted-foreground: var(--muted);
+    --accent: var(--blue-100);
+    --accent-foreground: var(--blue-600);
+    --destructive: 0 84% 60%;
+    --destructive-foreground: var(--bg);
+    --border: var(--line);
+    --input: var(--line);
+    --ring: var(--blue-600);
+    --radius: 1rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+  }
+  .theme {
+    --animate-grid: grid 15s linear infinite;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: 'cv11', 'cv02', 'cv03', 'cv04';
+  }
+
+  h1 { @apply text-5xl font-bold leading-tight; }
+  h2 { @apply text-4xl font-bold leading-tight; }
+  h3 { @apply text-3xl font-semibold leading-tight; }
+  h4 { @apply text-xl font-semibold leading-tight; }
+  h5 { @apply text-lg font-medium leading-tight; }
+  h6 { @apply text-base font-medium leading-tight; }
+}
+
+@layer components {
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2;
+  }
+
+  .card-shadow {
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent;
+  }
+
+  .minimal-card {
+    @apply bg-white border border-gray-200 rounded-xl card-shadow;
+  }
+
+  .ghost-button {
+    @apply text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors;
+  }
+}
+
+@theme inline {
+  @keyframes grid {
+    0% {
+      transform: translateY(-50%);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes retro-grid {
+    0% {
+      transform: translateY(-100%);
+    }
+    100% {
+      transform: translateY(0%);
+    }
+  }
+
+  @keyframes grid-move {
+    0% {
+      transform: translateY(-100px);
+    }
+    100% {
+      transform: translateY(0px);
+    }
+  }
+
+  @keyframes grid-slide {
+    0% {
+      transform: translate3d(0, -60px, 0);
+    }
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes retro-grid-running {
+    0% {
+      transform: translate3d(0, 0, 0);
+    }
+    100% {
+      transform: translate3d(0, 60px, 0);
+    }
+  }
+
+  @keyframes shiny-text {
+    0% {
+      background-position: -400% 0;
+    }
+    40% {
+      background-position: 400% 0;
+    }
+    100% {
+      background-position: 400% 0;
+    }
+  }
+}
+
+.animate-grid {
+  animation: grid-slide 10s linear infinite;
+}
+
+.animate-shiny-text {
+  animation: shiny-text 4s ease-in-out infinite;
+}
+
+/* Tambahan untuk retro grid yang lebih smooth */
+.retro-grid-animated {
+  animation: retro-grid 20s linear infinite;
+}
+
+.animate-retro-grid-running {
+  animation: retro-grid-running 8s linear infinite;
+}

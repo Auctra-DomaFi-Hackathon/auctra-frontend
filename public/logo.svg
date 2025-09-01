@@ -1,0 +1,16 @@
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#2F6DF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E4FD1;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Logo icon - Abstract domain/auction symbol -->
+  <rect x="4" y="8" width="24" height="24" rx="6" fill="url(#logoGradient)" opacity="0.1"/>
+  <rect x="6" y="10" width="20" height="20" rx="4" fill="url(#logoGradient)" opacity="0.2"/>
+  <rect x="8" y="12" width="16" height="16" rx="3" fill="url(#logoGradient)"/>
+  
+  <!-- Auctra text -->
+  <text x="36" y="26" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="url(#logoGradient)">Auctra</text>
+</svg>

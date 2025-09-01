@@ -1,0 +1,7 @@
+export { domainsService } from './domains'
+export { auctionsService } from './auctions'
+export { bidsService } from './bids'
+export { userService } from './user'
+export { notificationsService } from './notifications'
+export { transfersService } from './transfers'
+export { orderbookService } from './orderbook'
