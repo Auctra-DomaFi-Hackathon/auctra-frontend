@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { auctionsService, domainsService, bidsService } from '@/lib/services'
+import { useAuctionQuery, useConvertAuctionData } from '@/hooks/useAuctionQuery'
 import type { Auction, Domain, Bid } from '@/types'
 
 function getCurrentDutchPrice(auction: Auction): number {
@@ -24,13 +24,13 @@ function getAuctionStatus(auction: Auction) {
 }
 
 export function useAuctionData(auctionId: string) {
-  const [auction, setAuction] = useState<Auction | null>(null)
-  const [domain, setDomain] = useState<Domain | null>(null)
-  const [bids, setBids] = useState<Bid[]>([])
+  // Use blockchain data instead of API
+  const auctionQuery = useAuctionQuery(auctionId)
+  const { auction, domain, bids, loading, error } = useConvertAuctionData(auctionQuery)
+  
+  // Mock data for related auctions and other UI state
   const [relatedAuctions, setRelatedAuctions] = useState<Auction[]>([])
   const [allDomains, setAllDomains] = useState<Domain[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [alerts, setAlerts] = useState({
     outbid: false,
     fiveMinutes: false,
@@ -40,37 +40,13 @@ export function useAuctionData(auctionId: string) {
   const [watchers, setWatchers] = useState(0)
 
   useEffect(() => {
-    const loadAuctionData = async () => {
-      try {
-        setLoading(true)
-        const [auctionData, allAuctionsData, allDomainsData] = await Promise.all([
-          auctionsService.getById(auctionId),
-          auctionsService.getAll(),
-          domainsService.getAll(),
-        ])
-
-        const domainData = allDomainsData.find(d => d.id === auctionData.domainId) || null
-        const bidsData = await bidsService.getByAuctionId(auctionId)
-
-        const related = allAuctionsData
-          .filter(a => a.id !== auctionId && a.status === 'active')
-          .slice(0, 3)
-
-        setAuction(auctionData)
-        setDomain(domainData)
-        setBids(bidsData)
-        setRelatedAuctions(related)
-        setAllDomains(allDomainsData)
-        setWatchers(Math.floor(Math.random() * 50) + 10) // mock watchers
-      } catch (err) {
-        setError((err as Error).message)
-      } finally {
-        setLoading(false)
-      }
+    if (auction && !loading) {
+      // Mock related auctions and watchers
+      setRelatedAuctions([]) // Empty for now - you can implement this later
+      setAllDomains([domain].filter(Boolean) as Domain[])
+      setWatchers(Math.floor(Math.random() * 50) + 10)
     }
-
-    if (auctionId) loadAuctionData()
-  }, [auctionId])
+  }, [auction, domain, loading])
 
   const handlePlaceBid = async () => {
     if (!auction || !bidAmount) return

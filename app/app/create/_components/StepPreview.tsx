@@ -15,12 +15,22 @@ export default function StepPreview({
   busy,
   handleSubmit,
   setCurrentStep,
+  wallet,
+  isApproving,
+  auctionStep,
+  currentApproval,
+  isApproved,
 }: {
   formData: any
   back: () => void
   busy: boolean
   handleSubmit: () => Promise<void> | void
   setCurrentStep: (s: any) => void
+  wallet?: any
+  isApproving?: boolean
+  auctionStep?: string
+  currentApproval?: boolean
+  isApproved?: boolean
 }) {
   return (
     <div className="space-y-6">
@@ -35,6 +45,9 @@ export default function StepPreview({
               <div className="space-y-2 text-sm">
                 <KV k="Domain" v={formData.domain || '-'} />
                 <KV k="Type" v={cap(formData.auctionType)} />
+                {formData.auctionType === 'english' && (
+                  <KV k="Min Increment" v={`${formData.minIncrement ?? 0}%`} />
+                )}
                 {formData.auctionType === 'dutch' && (
                   <>
                     <KV k="Start Price" v={money(formData.startPrice)} />
@@ -113,12 +126,124 @@ export default function StepPreview({
         </CardContent>
       </Card>
 
+      {/* Wallet Status */}
+      {wallet && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Wallet Status:</span>
+                <span className={`text-sm ${wallet.isConnected ? 'text-green-600' : 'text-red-600'}`}>
+                  {wallet.isConnected ? 'Connected' : 'Not Connected'}
+                </span>
+              </div>
+              {wallet.isConnected && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Network:</span>
+                  <span className={`text-sm ${wallet.isOnDomaTestnet ? 'text-green-600' : 'text-orange-600'}`}>
+                    {wallet.isOnDomaTestnet ? 'Doma Testnet' : 'Wrong Network'}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Domain Approval:</span>
+                <span className={`text-sm ${
+                  currentApproval || isApproved 
+                    ? 'text-green-600' 
+                    : isApproving 
+                      ? 'text-blue-600' 
+                      : 'text-orange-600'
+                }`}>
+                  {currentApproval || isApproved 
+                    ? 'Approved' 
+                    : isApproving 
+                      ? 'Approving...' 
+                      : 'Needs Approval'
+                  }
+                </span>
+              </div>
+              {auctionStep && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Auction Creation Progress:</span>
+                    {busy && (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                        <span className="text-xs text-blue-600">Please confirm transactions in wallet</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 text-xs">
+                    <div className={`px-2 py-1 rounded text-center ${
+                      auctionStep === 'list' ? 'bg-blue-100 text-blue-800 animate-pulse' :
+                      ['criteria', 'strategy', 'start', 'completed'].includes(auctionStep) ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-500'
+                    }`}>
+                      {auctionStep === 'list' ? '⏳ List' : 
+                       ['criteria', 'strategy', 'start', 'completed'].includes(auctionStep) ? '✅ List' : 
+                       'List'}
+                    </div>
+                    <div className={`px-2 py-1 rounded text-center ${
+                      auctionStep === 'criteria' ? 'bg-blue-100 text-blue-800 animate-pulse' :
+                      ['strategy', 'start', 'completed'].includes(auctionStep) ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-500'
+                    }`}>
+                      {auctionStep === 'criteria' ? '⏳ Criteria' :
+                       ['strategy', 'start', 'completed'].includes(auctionStep) ? '✅ Criteria' :
+                       'Criteria'}
+                    </div>
+                    <div className={`px-2 py-1 rounded text-center ${
+                      auctionStep === 'strategy' ? 'bg-blue-100 text-blue-800 animate-pulse' :
+                      ['start', 'completed'].includes(auctionStep) ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-500'
+                    }`}>
+                      {auctionStep === 'strategy' ? '⏳ Strategy' :
+                       ['start', 'completed'].includes(auctionStep) ? '✅ Strategy' :
+                       'Strategy'}
+                    </div>
+                    <div className={`px-2 py-1 rounded text-center ${
+                      auctionStep === 'start' ? 'bg-blue-100 text-blue-800 animate-pulse' :
+                      auctionStep === 'completed' ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-500'
+                    }`}>
+                      {auctionStep === 'start' ? '⏳ Go Live' :
+                       auctionStep === 'completed' ? '✅ Go Live' :
+                       'Go Live'}
+                    </div>
+                  </div>
+                  {busy && (
+                    <div className="text-center">
+                      <p className="text-xs text-orange-600 font-medium">
+                        ⚠️ Please don't refresh or leave this page while transactions are processing
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex justify-between">
         <Button variant="outline" onClick={back}>
           Back
         </Button>
         <Button onClick={handleSubmit} disabled={busy} className="bg-blue-600 hover:bg-blue-700">
-          {busy ? 'Creating…' : 'Create Auction'}
+          {isApproving 
+            ? 'Approving Domain...' 
+            : auctionStep && auctionStep === 'list'
+              ? 'Listing Domain'
+            : auctionStep === 'criteria'
+              ? 'Setting Criteria... (Please confirm in wallet)'
+            : auctionStep === 'strategy'
+              ? 'Choosing Strategy... (Please confirm in wallet)'
+            : auctionStep === 'start'
+              ? 'Going Live... (Please confirm in wallet)'
+            : busy 
+              ? 'Processing...' 
+              : 'Create Auction'
+          }
         </Button>
       </div>
     </div>

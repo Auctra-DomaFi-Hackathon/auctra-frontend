@@ -27,7 +27,7 @@ export default function AuctionHero({
             <Badge variant="outline">.{domain.tld}</Badge>
             <div className="flex items-center space-x-1">
               <Eye className="w-4 h-4 text-gray-500" />
-              <span className="text-sm text-gray-600">{watchers} watching</span>
+              {/* <span className="text-sm text-gray-600">{watchers} watching</span> */}
             </div>
           </div>
 

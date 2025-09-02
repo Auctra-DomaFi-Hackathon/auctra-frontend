@@ -28,6 +28,18 @@ export default function StepConfig({
         <CardTitle>Auction Configuration</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {formData.auctionType === 'english' && (
+          <Field
+            id="min-increment"
+            label="Minimum Bid Increment (%)"
+            type="number"
+            value={String(formData.minIncrement ?? '')}
+            onChange={(e) => setField('minIncrement', toNum(e.target.value))}
+            error={errors.minIncrement}
+            hint="Minimum percentage increase required for each new bid."
+          />
+        )}
+
         {formData.auctionType === 'dutch' && (
           <>
             <TwoCols>

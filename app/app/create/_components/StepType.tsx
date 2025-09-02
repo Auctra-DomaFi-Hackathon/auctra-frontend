@@ -31,6 +31,13 @@ export default function StepType({
           className="space-y-4"
         >
           <OptionBlock
+            id="english"
+            value="english"
+            title="English Auction"
+            desc="Traditional auction where bidders compete with increasingly higher bids."
+            selected={formData.auctionType === 'english'}
+          />
+          <OptionBlock
             id="dutch"
             value="dutch"
             title="Dutch Auction"

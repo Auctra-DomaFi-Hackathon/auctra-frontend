@@ -8,6 +8,7 @@ import StepConfig from './_components/StepConfig'
 import StepReserve from './_components/StepReserve'
 import StepPreview from './_components/StepPreview'
 import LoadingState from './_components/LoadingState'
+import AuctionSuccessModal from './_components/AuctionSuccessModal'
 import { useCreateAuctionForm } from './_components/hooks/useCreateAuctionForm'
 
 export default function CreateAuctionPage() {
@@ -49,6 +50,9 @@ export default function CreateAuctionPage() {
           <StepPreview {...form.previewStepProps} />
         </TabsContent>
       </Tabs>
+      
+      {/* Success Modal */}
+      <AuctionSuccessModal {...form.successModalProps} />
     </div>
   )
 }
