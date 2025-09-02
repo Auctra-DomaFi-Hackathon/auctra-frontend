@@ -142,18 +142,18 @@ export function useCreateAuctionForm() {
       const duration = Math.floor((endTime - startTime) / 1000)
 
       const auctionParams = {
-        tokenId: BigInt(formData.tokenId),
+        tokenId: BigInt(formData.tokenId!),
         reservePrice: formData.reservePrice.toString(),
         duration,
         auctionType: formData.auctionType,
-        startPrice: formData.startPrice?.toString(),
-        endPrice: formData.endPrice?.toString(),
+        startPrice: formData.startPrice && formData.startPrice > 0 ? formData.startPrice.toString() : formData.reservePrice.toString(),
+        endPrice: formData.endPrice && formData.endPrice > 0 ? formData.endPrice.toString() : '0.1',
         incrementBps: formData.minIncrement ? Math.floor(formData.minIncrement * 100) : 500,
         antiSnipingEnabled: true,
         isLinear: true,
-        commitDuration: formData.commitWindow,
-        revealDuration: formData.revealWindow,
-        minimumDeposit: formData.minBid?.toString() || '0.01',
+        commitDuration: formData.commitWindow && formData.commitWindow > 0 ? formData.commitWindow : 3600,
+        revealDuration: formData.revealWindow && formData.revealWindow > 0 ? formData.revealWindow : 1800,
+        minimumDeposit: formData.minBid && formData.minBid > 0 ? formData.minBid.toString() : '0.01',
         isWhitelisted: false,
         whitelist: []
       }
@@ -309,18 +309,18 @@ export function useCreateAuctionForm() {
 
       // Create auction parameters
       const auctionParams = {
-        tokenId: BigInt(formData.tokenId),
+        tokenId: BigInt(formData.tokenId!),
         reservePrice: formData.reservePrice.toString(),
         duration,
         auctionType: formData.auctionType,
-        startPrice: formData.startPrice?.toString(),
-        endPrice: formData.endPrice?.toString(),
+        startPrice: formData.startPrice && formData.startPrice > 0 ? formData.startPrice.toString() : formData.reservePrice.toString(),
+        endPrice: formData.endPrice && formData.endPrice > 0 ? formData.endPrice.toString() : '0.1',
         incrementBps: formData.minIncrement ? Math.floor(formData.minIncrement * 100) : 500,
         antiSnipingEnabled: true,
         isLinear: true,
-        commitDuration: formData.commitWindow,
-        revealDuration: formData.revealWindow,
-        minimumDeposit: formData.minBid?.toString() || '0.01',
+        commitDuration: formData.commitWindow && formData.commitWindow > 0 ? formData.commitWindow : 3600,
+        revealDuration: formData.revealWindow && formData.revealWindow > 0 ? formData.revealWindow : 1800,
+        minimumDeposit: formData.minBid && formData.minBid > 0 ? formData.minBid.toString() : '0.01',
         isWhitelisted: false,
         whitelist: []
       }

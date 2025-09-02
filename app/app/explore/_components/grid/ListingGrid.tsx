@@ -4,6 +4,7 @@ import type { Listing, NFTMetadata } from '@/lib/graphql/types'
 import { formatEther } from 'ethers'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { getStrategyName } from '@/lib/utils/strategy'
 
 interface ListingWithMetadata extends Listing {
   metadata?: NFTMetadata
@@ -65,6 +66,16 @@ export default function ListingGrid({
               <span className="font-bold text-lg text-blue-600">
                 {formatPrice(listing.reservePrice)}
               </span>
+            </div>
+
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700">Strategy:</span>
+              <Badge 
+                variant={listing.strategy ? "default" : "outline"} 
+                className={listing.strategy ? "bg-purple-100 text-purple-700" : "text-gray-500"}
+              >
+                {getStrategyName(listing.strategy)}
+              </Badge>
             </div>
             
             {listing.metadata?.description && (
