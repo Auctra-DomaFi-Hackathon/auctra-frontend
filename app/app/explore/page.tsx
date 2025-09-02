@@ -15,6 +15,9 @@ const FilterSidebar = dynamic(() => import('./_components/sidebar/FilterSidebar'
 const AuctionGrid = dynamic(() => import('./_components/grid/AuctionGrid'), {
   loading: () => <LoadingGrid count={4} />
 })
+const ListingGrid = dynamic(() => import('./_components/grid/ListingGrid'), {
+  loading: () => <LoadingGrid count={4} />
+})
 
 export default function ExplorePage() {
   const {
@@ -29,6 +32,8 @@ export default function ExplorePage() {
     sortBy, setSortBy,
     byStatus, counts,
     domainById,
+    listings,
+    listingsError,
   } = useExploreData()
 
   if (loading) {
@@ -80,6 +85,22 @@ export default function ExplorePage() {
                 </Suspense>
               </TabsContent>
             ))}
+            <TabsContent value="listings">
+              <Suspense fallback={<LoadingGrid count={4} />}>
+                {listingsError ? (
+                  <div className="text-center py-12 bg-red-50 rounded-xl">
+                    <p className="text-red-600">
+                      Failed to load listings: {listingsError.message}
+                    </p>
+                  </div>
+                ) : (
+                  <ListingGrid
+                    listings={listings || []}
+                    emptyLabel="No active listings found."
+                  />
+                )}
+              </Suspense>
+            </TabsContent>
           </Tabs>
         </main>
       </div>

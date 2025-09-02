@@ -5,8 +5,9 @@ import { auctionsService, domainsService } from '@/lib/services'
 import { getCurrentDutchPrice } from '@/lib/utils/auction'
 import type { Auction, Domain } from '@/types'
 import { useDebounce } from './useDebounce'
+import { useActiveListings } from '@/lib/graphql/hooks'
 
-export type StatusTab = 'expiring' | 'ongoing' | 'liquidation'
+export type StatusTab = 'expiring' | 'ongoing' | 'liquidation' | 'listings'
 type SortKey = 'ending-soon' | 'newest' | 'price-low' | 'price-high'
 
 export function useExploreData() {
@@ -23,6 +24,9 @@ export function useExploreData() {
   const [priceMax, setPriceMax] = useState('')
   const [sortBy, setSortBy] = useState<SortKey>('ending-soon')
   const [tab, setTab] = useState<StatusTab>('ongoing')
+
+  // Fetch active listings from GraphQL
+  const { listings, loading: listingsLoading, error: listingsError } = useActiveListings(50)
 
   // load data progressively
   useEffect(() => {
@@ -128,6 +132,7 @@ export function useExploreData() {
     expiring: byStatus.expiring.length,
     ongoing: byStatus.ongoing.length,
     liquidation: byStatus.liquidation.length,
+    listings: listings?.length || 0,
   }
 
   // togglers
@@ -140,7 +145,7 @@ export function useExploreData() {
   }
 
   return {
-    loading,
+    loading: loading || listingsLoading,
     tab, setTab,
     searchQuery, setSearchQuery,
     tlds, auctionTypes,
@@ -151,5 +156,7 @@ export function useExploreData() {
     sortBy, setSortBy,
     byStatus, counts,
     domainById,
+    listings,
+    listingsError,
   }
 }
