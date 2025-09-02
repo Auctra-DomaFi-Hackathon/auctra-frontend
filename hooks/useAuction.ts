@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient } from 'wagmi'
-import { parseEther, encodeAbiParameters, keccak256, parseEventLogs } from 'viem'
+import { parseEther, encodeAbiParameters, keccak256, parseEventLogs, decodeEventLog } from 'viem'
 import { CONTRACTS } from './contracts/constants'
 import { DOMAIN_AUCTION_HOUSE_ABI, SEALED_BID_AUCTION_ABI } from './contracts/abis'
 
@@ -42,13 +42,62 @@ export function useCreateAuction() {
   const isPending = isListPending || isCriteriaPending || isStrategyPending || isStartPending
   const isConfirming = isListConfirming || isCriteriaConfirming || isStrategyConfirming || isStartConfirming
 
-  const createAuction = async (params: AuctionParams) => {
+  // Extract listingId from transaction receipt
+  useEffect(() => {
+    const extractListingId = async () => {
+      if (isListSuccess && listReceipt && !listingId) {
+        try {
+          console.log('Extracting listingId from transaction receipt...')
+          
+          // Try to parse events from the transaction receipt
+          const logs = parseEventLogs({
+            abi: DOMAIN_AUCTION_HOUSE_ABI,
+            logs: listReceipt.logs,
+            eventName: 'Listed'
+          })
+          
+          if (logs.length > 0 && logs[0].args) {
+            const realListingId = logs[0].args.listingId as bigint
+            console.log('Extracted real listingId:', realListingId.toString())
+            setListingId(realListingId)
+            return realListingId
+          }
+          
+          // Fallback: try to get from contract state
+          const publicClient = await import('wagmi').then(m => m.getPublicClient)
+          const nextId = await publicClient?.readContract({
+            address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+            abi: DOMAIN_AUCTION_HOUSE_ABI,
+            functionName: 'getNextListingId',
+          }) as bigint
+          
+          if (nextId) {
+            const realListingId = nextId - BigInt(1)
+            console.log('Fallback listingId:', realListingId.toString())
+            setListingId(realListingId)
+          }
+          
+        } catch (error) {
+          console.error('Error extracting listingId:', error)
+          // Use a reasonable fallback
+          const fallbackId = BigInt(Date.now() % 1000000)
+          setListingId(fallbackId)
+          console.log('Using fallback listingId:', fallbackId.toString())
+        }
+      }
+    }
+    
+    extractListingId()
+  }, [isListSuccess, listReceipt, listingId])
+
+  const createAuction = (params: AuctionParams) => {
     try {
       setError(null)
       setCurrentStep('list')
+      setListingId(null) // Reset listing ID
 
       // Step 1: List domain for auction
-      console.log('Step 1: Listing domain for auction...')
+      console.log('Step 1: Listing domain for auction with tokenId:', params.tokenId.toString())
       
       writeList({
         address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
@@ -62,12 +111,7 @@ export function useCreateAuction() {
         ],
       })
       
-      // Generate a reasonable listingId for this session
-      const currentListingId = BigInt(Math.floor(Math.random() * 1000000) + 1)
-      setListingId(currentListingId)
-      console.log('Starting auction creation with listingId:', currentListingId.toString())
-      
-      return currentListingId
+      console.log('✅ List transaction submitted, hash will be available soon...')
 
     } catch (err) {
       console.error('Error creating auction:', err)

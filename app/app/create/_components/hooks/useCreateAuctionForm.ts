@@ -131,6 +131,43 @@ export function useCreateAuctionForm() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isApproved, busy, formData.tokenId, isApproving, isApprovalConfirming])
+  
+  // Continue with remaining steps once we have the real listingId
+  useEffect(() => {
+    if (listingId && busy && isListSuccess && auctionStep === 'list') {
+      console.log('Real listingId obtained:', listingId.toString(), 'executing remaining steps...')
+      
+      const startTime = new Date(formData.startTime).getTime()
+      const endTime = new Date(formData.endTime).getTime()
+      const duration = Math.floor((endTime - startTime) / 1000)
+
+      const auctionParams = {
+        tokenId: BigInt(formData.tokenId),
+        reservePrice: formData.reservePrice.toString(),
+        duration,
+        auctionType: formData.auctionType,
+        startPrice: formData.startPrice?.toString(),
+        endPrice: formData.endPrice?.toString(),
+        incrementBps: formData.minIncrement ? Math.floor(formData.minIncrement * 100) : 500,
+        antiSnipingEnabled: true,
+        isLinear: true,
+        commitDuration: formData.commitWindow,
+        revealDuration: formData.revealWindow,
+        minimumDeposit: formData.minBid?.toString() || '0.01',
+        isWhitelisted: false,
+        whitelist: []
+      }
+      
+      const timer = setTimeout(() => {
+        if (busy && listingId) {
+          executeAllAuctionSteps(auctionParams, listingId)
+        }
+      }, 2000) // Small delay to ensure transaction is fully processed
+      
+      return () => clearTimeout(timer)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listingId, busy, isListSuccess, auctionStep])
 
   // Combine blockchain domains with GraphQL domains
   const myDomains = useMemo((): Domain[] => {
@@ -290,15 +327,10 @@ export function useCreateAuctionForm() {
 
       console.log('Creating auction with params:', auctionParams)
       
-      // Start with listing and get the listing ID
-      const newListingId = await createAuction(auctionParams)
+      // Start with listing - this will trigger listingId extraction via useEffect
+      await createAuction(auctionParams)
       
-      if (newListingId) {
-        console.log('List successful! Now executing remaining steps...')
-        
-        // Execute all remaining steps with the correct listing ID
-        await executeAllAuctionSteps(auctionParams, newListingId)
-      }
+      console.log('List transaction submitted, waiting for confirmation and listingId extraction...')
       
     } catch (e) {
       console.error('Failed to continue auction creation:', e)

@@ -214,7 +214,7 @@ export default function StepPreview({
                   {busy && (
                     <div className="text-center">
                       <p className="text-xs text-orange-600 font-medium">
-                        ⚠️ Please don't refresh or leave this page while transactions are processing
+                        ⚠️ Please dont refresh or leave this page while transactions are processing
                       </p>
                     </div>
                   )}
