@@ -105,7 +105,7 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
             </TableHeader>
             <TableBody>
               {rows === undefined ? (
-                <SkeletonRows cols={9} />
+                <SkeletonRows cols={9} message="Loading domain data..." />
               ) : aSort.sorted.length === 0 ? (
                 <EmptyRow message="No auctions yet" colSpan={9} />
               ) : (

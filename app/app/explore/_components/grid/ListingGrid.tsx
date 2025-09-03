@@ -39,14 +39,22 @@ export default function ListingGrid({
 
   const formatPrice = (priceWei: string) => {
     try {
-      const ethValue = parseFloat(formatEther(priceWei));
-      // Show more decimal places for small amounts
-      if (ethValue === 0) {
-        // For very small amounts, show up to 18 decimal places
-        const fullEthValue = formatEther(priceWei);
+      // Get the full ETH value without parseFloat to avoid precision loss
+      const fullEthValue = formatEther(priceWei);
+      const ethNumber = parseFloat(fullEthValue);
+      
+      // If the original Wei value is non-zero but parseFloat gives 0, use full precision
+      if (ethNumber === 0 && priceWei !== '0') {
         return `${fullEthValue} ETH`;
       }
-      return `${ethValue.toLocaleString()} ETH`;
+      
+      // For very small values (less than 0.001), show more precision
+      if (ethNumber > 0 && ethNumber < 0.001) {
+        return `${parseFloat(fullEthValue).toFixed(6)} ETH`;
+      }
+      
+      // For normal values, use standard formatting
+      return `${ethNumber.toLocaleString()} ETH`;
     } catch {
       return `${priceWei} wei`;
     }

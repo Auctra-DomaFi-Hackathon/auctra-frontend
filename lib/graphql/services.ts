@@ -35,6 +35,8 @@ export const graphqlService = {
 
       const NETWORK_LABELS: Record<string, string> = {
         "eip155:97476": "Doma Testnet",
+        "eip155:33111": "Doma Testnet",
+        "eip155:157": "Doma Testnet"
       };
 
       const items = (data?.names?.items ?? []).map((n: any) => {

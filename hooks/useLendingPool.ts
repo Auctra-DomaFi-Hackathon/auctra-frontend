@@ -43,49 +43,49 @@ export function useLendingPool() {
   })
 
   // Pool data
-  const { data: totalAssets } = useReadContract({
+  const { data: totalAssets, isLoading: isLoadingTotalAssets } = useReadContract({
     address: CONTRACTS.DomainLendingPool as `0x${string}`,
     abi: DOMAIN_LENDING_POOL_ABI,
     functionName: 'totalAssets',
   })
 
-  const { data: totalDebt } = useReadContract({
+  const { data: totalDebt, isLoading: isLoadingTotalDebt } = useReadContract({
     address: CONTRACTS.DomainLendingPool as `0x${string}`,
     abi: DOMAIN_LENDING_POOL_ABI,
     functionName: 'totalDebt',
   })
 
-  const { data: exchangeRate } = useReadContract({
+  const { data: exchangeRate, isLoading: isLoadingExchangeRate } = useReadContract({
     address: CONTRACTS.DomainLendingPool as `0x${string}`,
     abi: DOMAIN_LENDING_POOL_ABI,
     functionName: 'exchangeRate',
   })
 
-  const { data: currentRateBps } = useReadContract({
+  const { data: currentRateBps, isLoading: isLoadingCurrentRate } = useReadContract({
     address: CONTRACTS.DomainLendingPool as `0x${string}`,
     abi: DOMAIN_LENDING_POOL_ABI,
     functionName: 'currentRateBps',
   })
 
-  const { data: utilization1e18 } = useReadContract({
+  const { data: utilization1e18, isLoading: isLoadingUtilization } = useReadContract({
     address: CONTRACTS.DomainLendingPool as `0x${string}`,
     abi: DOMAIN_LENDING_POOL_ABI,
     functionName: 'utilization1e18',
   })
 
-  const { data: ltvBps } = useReadContract({
+  const { data: ltvBps, isLoading: isLoadingLtv } = useReadContract({
     address: CONTRACTS.DomainLendingPool as `0x${string}`,
     abi: DOMAIN_LENDING_POOL_ABI,
     functionName: 'ltvBps',
   })
 
-  const { data: liqThresholdBps } = useReadContract({
+  const { data: liqThresholdBps, isLoading: isLoadingLiqThreshold } = useReadContract({
     address: CONTRACTS.DomainLendingPool as `0x${string}`,
     abi: DOMAIN_LENDING_POOL_ABI,
     functionName: 'liqThresholdBps',
   })
 
-  const { data: aprBps } = useReadContract({
+  const { data: aprBps, isLoading: isLoadingApr } = useReadContract({
     address: CONTRACTS.DomainLendingPool as `0x${string}`,
     abi: DOMAIN_LENDING_POOL_ABI,
     functionName: 'aprBps',
@@ -141,6 +141,10 @@ export function useLendingPool() {
     functionName: 'allowance',
     args: address ? [address, CONTRACTS.DomainLendingPool] : undefined,
   })
+
+  // Aggregate loading state for pool data
+  const isLoadingPoolData = isLoadingTotalAssets || isLoadingTotalDebt || isLoadingExchangeRate || 
+    isLoadingCurrentRate || isLoadingUtilization || isLoadingLtv || isLoadingLiqThreshold || isLoadingApr
 
   const poolData: LendingPoolData = {
     totalAssets: totalAssets || BigInt(0),
@@ -259,6 +263,9 @@ export function useLendingPool() {
     userPosition,
     usdcBalance: usdcBalance || 0n,
     usdcAllowance: usdcAllowance || 0n,
+    
+    // Loading states
+    isLoadingPoolData,
     
     // Contract interactions
     approveUSDC,

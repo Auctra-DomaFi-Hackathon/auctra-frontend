@@ -43,66 +43,8 @@ export interface DomainRow {
   tokenChain?: string; // Token chain name or network ID
 }
 
-const MOCK_AUCTIONS: AuctionRow[] = [
-  {
-    id: "a1",
-    domain: "alpha",
-    tld: ".com",
-    type: "Sealed",
-    state: "LIVE",
-    timeLeft: "01:12:05",
-    top: "-",
-    createdAt: "2025-09-01",
-  },
-  {
-    id: "a2",
-    domain: "beta",
-    tld: ".xyz",
-    type: "Dutch",
-    state: "SCHEDULED",
-    timeLeft: "Starts in 3h",
-    top: "$3,200",
-    createdAt: "2025-09-02",
-  },
-  {
-    id: "a3",
-    domain: "gamma",
-    tld: ".io",
-    type: "English",
-    state: "ENDED",
-    timeLeft: "Ended",
-    top: "$5,400",
-    createdAt: "2025-08-30",
-  },
-];
-const MOCK_BIDS: BidRow[] = [
-  {
-    id: "b1",
-    domain: "alpha.com",
-    type: "Sealed",
-    yourBid: "$2,100",
-    phaseOrRank: "Commit",
-    result: "Pending",
-  },
-  {
-    id: "b2",
-    domain: "delta.io",
-    type: "English",
-    yourBid: "$1,150",
-    phaseOrRank: "#2 of 7",
-    result: "Lost",
-    txHash: "0xabc...",
-  },
-  {
-    id: "b3",
-    domain: "beta.xyz",
-    type: "Dutch",
-    yourBid: "$3,200",
-    phaseOrRank: "-",
-    result: "Won",
-    txHash: "0xdef...",
-  },
-];
+// Mock data removed to prevent user confusion
+// Real data will be loaded from GraphQL when wallet is connected
 
 export function useDashboardData() {
   const [loading, setLoading] = React.useState(true);
@@ -156,11 +98,11 @@ export function useDashboardData() {
     setLoading(false);
   }, []);
 
-  // Only block if GraphQL is actively loading with wallet connected
-  const isLoading = address && (domainsLoading || auctionsLoading || bidsLoading);
+  // Determine global loading state
+  const isLoading = domainsLoading || auctionsLoading || bidsLoading;
 
   // Transform GraphQL auctions to AuctionRow format
-  const realAuctions = React.useMemo((): AuctionRow[] => {
+  const realAuctions = React.useMemo((): AuctionRow[] | undefined => {
     console.log("useDashboardData - processing auctions:", graphqlAuctions);
     console.log("useDashboardData - auctions loading:", auctionsLoading);
     console.log("useDashboardData - auctions error:", auctionsError);
@@ -213,17 +155,17 @@ export function useDashboardData() {
       } else {
         // Still loading
         console.log("useDashboardData - auctions still loading");
-        return [];
+        return undefined;
       }
     }
     
-    // If no wallet, show mock data for demo
-    console.log("useDashboardData - no wallet, using mock data");
-    return MOCK_AUCTIONS;
+    // If no wallet, show loading state to prompt connection
+    console.log("useDashboardData - no wallet connected, showing loading state");
+    return undefined;
   }, [graphqlAuctions, auctionsLoading, auctionsError, address]);
 
   // Transform GraphQL bids to BidRow format  
-  const realBids = React.useMemo((): BidRow[] => {
+  const realBids = React.useMemo((): BidRow[] | undefined => {
     console.log("useDashboardData - processing bids:", graphqlBids);
     console.log("useDashboardData - bids loading:", bidsLoading);
     console.log("useDashboardData - bids error:", bidsError);
@@ -256,32 +198,30 @@ export function useDashboardData() {
       } else {
         // Still loading
         console.log("useDashboardData - bids still loading");
-        return [];
+        return undefined;
       }
     }
     
-    // If no wallet, show mock data for demo
-    console.log("useDashboardData - no wallet, using mock bids");
-    return MOCK_BIDS;
+    // If no wallet, show loading state to prompt connection
+    console.log("useDashboardData - no wallet connected, showing loading state");
+    return undefined;
   }, [graphqlBids, bidsLoading, bidsError, address]);
 
-  const auctions = React.useMemo(
-    () =>
-      realAuctions.filter((r) =>
-        r.domain.toLowerCase().includes(query.toLowerCase())
-      ),
-    [query, realAuctions]
-  );
+  const auctions = React.useMemo(() => {
+    if (realAuctions === undefined) return undefined;
+    return realAuctions.filter((r) =>
+      r.domain.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [query, realAuctions]);
   
-  const bids = React.useMemo(
-    () =>
-      realBids.filter((r) =>
-        r.domain.toLowerCase().includes(query.toLowerCase())
-      ),
-    [query, realBids]
-  );
+  const bids = React.useMemo(() => {
+    if (realBids === undefined) return undefined;
+    return realBids.filter((r) =>
+      r.domain.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [query, realBids]);
   // Transform GraphQL domains to DomainRow format
-  const realDomains = React.useMemo((): DomainRow[] => {
+  const realDomains = React.useMemo((): DomainRow[] | undefined => {
     console.log("useDashboardData - transforming domains:", graphqlDomains);
     console.log("useDashboardData - wallet address:", address);
     console.log("useDashboardData - domains loading:", domainsLoading);
@@ -315,12 +255,13 @@ export function useDashboardData() {
       return [];
     }
 
-    // Show loading state
+    // Show loading state (either no wallet or still loading)
     console.log("useDashboardData - still loading or no wallet");
-    return [];
+    return undefined;
   }, [graphqlDomains, address, domainsLoading, domainsError]);
 
   const domains = React.useMemo(() => {
+    if (realDomains === undefined) return undefined;
     const filtered = realDomains.filter((r) =>
       r.domain.toLowerCase().includes(query.toLowerCase())
     );
@@ -332,13 +273,13 @@ export function useDashboardData() {
     { label: "Earnings", value: "$0", delta: 0, icon: usdcLogo },
     {
       label: "Active Auctions",
-      value: String(realAuctions.filter((a) => a.state === "LIVE").length),
+      value: realAuctions ? String(realAuctions.filter((a) => a.state === "LIVE").length) : "0",
       delta: 0,
       icon: Timer,
     },
     {
       label: "Domains",
-      value: String(realDomains.length),
+      value: realDomains ? String(realDomains.length) : "0",
       delta: 0,
       icon: Globe,
     },

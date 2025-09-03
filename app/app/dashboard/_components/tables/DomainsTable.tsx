@@ -124,7 +124,7 @@ export default function DomainsTable({ rows }: { rows: DomainRow[] }) {
             </TableHeader>
             <TableBody>
               {rows === undefined ? (
-                <SkeletonRows cols={10} />
+                <SkeletonRows cols={10} message="Loading domain data..." />
               ) : dSort.sorted.length === 0 ? (
                 <EmptyRow message={getEmptyMessage()} colSpan={10} />
               ) : (

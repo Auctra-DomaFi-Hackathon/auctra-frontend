@@ -40,9 +40,9 @@ export default function BidsTable({ rows }: { rows: BidRow[] }) {
             </TableHeader>
             <TableBody>
               {rows === undefined ? (
-                <SkeletonRows cols={6} />
+                <SkeletonRows cols={6} message="Loading bid data..." />
               ) : bSort.sorted.length === 0 ? (
-                <EmptyRow message="You haven’t placed any bids" colSpan={6} />
+                <EmptyRow message="You haven't placed any bids" colSpan={6} />
               ) : (
                 bSort.sorted.map((r) => (
                   <TableRow key={r.id} className="hover:bg-blue-50/30 transition">

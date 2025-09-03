@@ -20,11 +20,13 @@ import Image from 'next/image'
 import { useAccount } from 'wagmi'
 import { toast } from '@/hooks/use-toast'
 import { useOracleSetup } from './_hooks/useOracleSetup'
+import { useMyDomains } from '@/lib/graphql/hooks'
 import DomainSelector from '../supply-borrow/_components/domains/DomainSelector'
+import OracleSkeleton from './_components/OracleSkeleton'
 import type { EnhancedDomainItem } from '@/lib/graphql/services'
 
 export default function OraclePage() {
-  const { isConnected } = useAccount()
+  const { isConnected, address } = useAccount()
   const {
     setDomainInfo,
     isDomainInfoLoading,
@@ -34,6 +36,9 @@ export default function OraclePage() {
     isConfirmed,
     error
   } = useOracleSetup()
+  
+  // Get domains loading state for skeleton
+  const { loading: isLoadingDomains } = useMyDomains(address)
 
   const [selectedDomain, setSelectedDomain] = useState<EnhancedDomainItem | undefined>()
   const [valueUsd, setValueUsd] = useState('1000')
@@ -158,6 +163,11 @@ export default function OraclePage() {
         </Card>
       </div>
     )
+  }
+
+  // Show skeleton loading when domains are loading
+  if (isConnected && isLoadingDomains) {
+    return <OracleSkeleton />
   }
 
   return (

@@ -6,10 +6,16 @@ import { Layers, Activity } from "lucide-react";
 import Image from "next/image";
 import SupplyPanel from "./_components/panels/SupplyPanel";
 import BorrowPanel from "./_components/panels/BorrowPanel";
+import LendingPoolSkeleton from "./_components/loading/LendingPoolSkeleton";
 import { useLendingPool, formatUSDC } from "@/hooks/useLendingPool";
 
 export default function SupplyBorrowPage() {
-  const { poolData } = useLendingPool();
+  const { poolData, isLoadingPoolData } = useLendingPool();
+
+  // Show skeleton loading state while pool data is loading
+  if (isLoadingPoolData) {
+    return <LendingPoolSkeleton />;
+  }
 
   return (
     <div className="container mx-auto px-6 lg:px-12 py-10 space-y-8">
