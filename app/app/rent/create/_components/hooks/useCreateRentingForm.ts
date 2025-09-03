@@ -3,9 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useMyDomains } from "@/lib/graphql/hooks";
-import { useManageRentals } from "@/lib/rental/hooks";
-import { MOCK_ACCOUNTS } from "@/lib/rental/mockService";
-import { parseUSDCInput } from "@/lib/rental/format";
+import { useCreateRentalFlow } from "./useCreateRentalFlow";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import type { Domain } from "@/types";
@@ -42,7 +40,7 @@ export function useCreateRentingForm() {
   const [minDays, setMinDays] = useState("1");
   const [maxDays, setMaxDays] = useState("30");
 
-  const { actions } = useManageRentals();
+  const rentalFlow = useCreateRentalFlow();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -61,6 +59,43 @@ export function useCreateRentingForm() {
     }
     return []
   }, [graphqlDomains])
+
+  // Handle rental flow completion
+  useEffect(() => {
+    if (rentalFlow.isCompleted) {
+      toast({
+        title: "Success!",
+        description: `Your rental listing has been created successfully! Listing ID: ${rentalFlow.listingId}`,
+      });
+      
+      // Redirect to manage page after a short delay
+      setTimeout(() => {
+        router.push("/app/rent/manage");
+      }, 2000);
+    }
+  }, [rentalFlow.isCompleted, rentalFlow.listingId, toast, router]);
+
+  // Handle rental flow errors
+  useEffect(() => {
+    if (rentalFlow.hasError) {
+      setError(rentalFlow.error);
+      setLoading(false);
+    }
+  }, [rentalFlow.hasError, rentalFlow.error]);
+
+  // Continue flow automatically when needed
+  useEffect(() => {
+    if (rentalFlow.isInProgress && !rentalFlow.isPending && !rentalFlow.isConfirming) {
+      rentalFlow.continueFlow({
+        nftAddress,
+        tokenId,
+        pricePerDay,
+        securityDeposit,
+        minDays: parseInt(minDays),
+        maxDays: parseInt(maxDays),
+      });
+    }
+  }, [rentalFlow, nftAddress, tokenId, pricePerDay, securityDeposit, minDays, maxDays]);
 
   // Handle domain selection
   const handleDomainSelect = (domain: Domain) => {
@@ -95,17 +130,7 @@ export function useCreateRentingForm() {
     }
 
     setError(null);
-    setLoading(true);
-
-    try {
-      // Validate NFT (mock validation)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setCurrentStep("terms");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to validate NFT");
-    } finally {
-      setLoading(false);
-    }
+    setCurrentStep("terms");
   };
 
   const handleTermsNext = () => {
@@ -136,29 +161,14 @@ export function useCreateRentingForm() {
     setLoading(true);
 
     try {
-      // First deposit the NFT
-      const { listingId } = await actions.deposit(
-        nftAddress as any,
-        BigInt(tokenId)
-      );
-
-      // Then set the terms
-      await actions.setTerms(
-        listingId,
-        parseUSDCInput(pricePerDay),
-        parseUSDCInput(securityDeposit),
-        parseInt(minDays),
-        parseInt(maxDays),
-        MOCK_ACCOUNTS.usdc
-      );
-
-      toast({
-        title: "Success!",
-        description: "Your rental listing has been created successfully!",
+      await rentalFlow.startFlow({
+        nftAddress,
+        tokenId,
+        pricePerDay,
+        securityDeposit,
+        minDays: parseInt(minDays),
+        maxDays: parseInt(maxDays),
       });
-
-      // Redirect to manage page
-      router.push("/app/rent/manage");
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create listing");
@@ -182,8 +192,6 @@ export function useCreateRentingForm() {
     tokenId,
     selectedDomainId,
     domains,
-    onNftAddressChange: setNftAddress,
-    onTokenIdChange: setTokenId,
     onDomainSelect: handleDomainSelect,
     onNext: handleDomainNext,
     loading: loading || domainsLoading,
@@ -214,8 +222,15 @@ export function useCreateRentingForm() {
     maxDays,
     onBack: handleBack,
     onSubmit: handleSubmit,
-    loading,
-    error,
+    loading: loading || rentalFlow.isInProgress,
+    error: error || rentalFlow.error,
+    flowStep: rentalFlow.currentStep,
+    flowDescription: rentalFlow.getStepDescription(),
+    isPending: rentalFlow.isPending,
+    isConfirming: rentalFlow.isConfirming,
+    hash: rentalFlow.hash,
+    isCompleted: rentalFlow.isCompleted,
+    listingId: rentalFlow.listingId,
   };
 
   const stepperProps = {

@@ -4,9 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Check, Shield, Clock, DollarSign, Hash } from "lucide-react";
-import { formatUSD, shortAddress } from "@/lib/rental/format";
-import { parseUSDCInput } from "@/lib/rental/format";
+import { ArrowLeft, Check, Shield, Clock, DollarSign, Hash, Loader2, ExternalLink, CheckCircle, AlertCircle } from "lucide-react";
+import { formatUSD, shortAddress, parseUSDCInput } from "@/lib/rental/format";
 
 interface StepPreviewProps {
   nftAddress: string;
@@ -19,6 +18,13 @@ interface StepPreviewProps {
   onSubmit: () => void;
   loading?: boolean;
   error?: string;
+  flowStep?: string;
+  flowDescription?: string;
+  isPending?: boolean;
+  isConfirming?: boolean;
+  hash?: string;
+  isCompleted?: boolean;
+  listingId?: number | null;
 }
 
 export default function StepPreview({
@@ -32,6 +38,13 @@ export default function StepPreview({
   onSubmit,
   loading,
   error,
+  flowStep,
+  flowDescription,
+  isPending,
+  isConfirming,
+  hash,
+  isCompleted,
+  listingId,
 }: StepPreviewProps) {
   const priceUSDC = parseUSDCInput(pricePerDay);
   const depositUSDC = parseUSDCInput(securityDeposit);
@@ -140,14 +153,80 @@ export default function StepPreview({
             </div>
           </div>
 
+          {/* Transaction Status */}
+          {flowStep && flowStep !== 'idle' && (
+            <div className="space-y-4">
+              <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                {isCompleted ? (
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                ) : loading ? (
+                  <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-orange-600" />
+                )}
+                Transaction Status
+              </h3>
+              
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Current Step:</span>
+                  <Badge variant={isCompleted ? "default" : "secondary"} className={
+                    isCompleted ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
+                  }>
+                    {flowStep}
+                  </Badge>
+                </div>
+                
+                <div className="flex justify-between items-start">
+                  <span className="text-sm text-gray-600">Status:</span>
+                  <div className="text-right">
+                    <div className="text-sm font-medium">
+                      {flowDescription}
+                    </div>
+                    {(isPending || isConfirming) && (
+                      <div className="text-xs text-blue-600 mt-1">
+                        {isPending ? "Waiting for confirmation..." : "Confirming transaction..."}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {hash && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Transaction:</span>
+                    <a 
+                      href={`https://explorer-testnet.doma.xyz/tx/${hash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                    >
+                      View on Explorer <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                )}
+
+                {isCompleted && listingId !== null && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Listing ID:</span>
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      #{listingId}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Security Notice */}
-          <Alert className="bg-blue-50 border-blue-200">
-            <Shield className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-700">
-              <strong>Your NFT will be securely held</strong> in our smart contract vault during rentals. 
-              You maintain ownership and can unlist anytime when not actively rented.
-            </AlertDescription>
-          </Alert>
+          {!loading && !isCompleted && (
+            <Alert className="bg-blue-50 border-blue-200">
+              <Shield className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-700">
+                <strong>Your NFT will be securely held</strong> in our smart contract vault during rentals. 
+                You maintain ownership and can unlist anytime when not actively rented.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {error && (
             <Alert variant="destructive">
@@ -156,24 +235,38 @@ export default function StepPreview({
           )}
 
           <div className="flex justify-between pt-4">
-            <Button variant="outline" onClick={onBack} disabled={loading}>
+            <Button variant="outline" onClick={onBack} disabled={loading || isCompleted}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
-            <Button
-              onClick={onSubmit}
-              disabled={loading}
-              className="bg-green-600 hover:bg-green-700 min-w-32"
-            >
-              {loading ? (
-                "Creating..."
-              ) : (
-                <>
-                  <Check className="w-4 h-4 mr-2" />
-                  Create Listing
-                </>
-              )}
-            </Button>
+            
+            {isCompleted ? (
+              <Button 
+                onClick={() => window.location.href = "/app/rent/manage"}
+                className="bg-blue-600 hover:bg-blue-700 min-w-32"
+              >
+                <Check className="w-4 h-4 mr-2" />
+                View Listing
+              </Button>
+            ) : (
+              <Button
+                onClick={onSubmit}
+                disabled={loading}
+                className="bg-green-600 hover:bg-green-700 min-w-32"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {flowDescription || "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Create Listing
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

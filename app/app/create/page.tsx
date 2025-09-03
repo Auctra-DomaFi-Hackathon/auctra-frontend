@@ -52,7 +52,13 @@ export default function CreateAuctionPage() {
       </Tabs>
       
       {/* Success Modal */}
-      <AuctionSuccessModal {...form.successModalProps} />
+      <AuctionSuccessModal 
+        {...form.successModalProps} 
+        reservePrice={typeof form.successModalProps.reservePrice === 'string' 
+          ? parseFloat(form.successModalProps.reservePrice) 
+          : form.successModalProps.reservePrice
+        } 
+      />
     </div>
   )
 }

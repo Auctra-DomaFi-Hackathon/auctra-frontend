@@ -354,7 +354,7 @@ export default function SecondaryNavbar() {
                                 key={subItem.href}
                                 href={subItem.href}
                                 className={cn(
-                                  "block px-4 py-2 text-sm transition-colors duration-150 hover:bg-blue-50 hover:text-blue-600",
+                                  "rounded-md block px-3 py-2 text-sm transition-colors duration-150 hover:bg-blue-50 hover:text-blue-600",
                                   pathname === subItem.href
                                     ? "bg-blue-50 text-blue-700 font-medium"
                                     : "text-gray-600"
