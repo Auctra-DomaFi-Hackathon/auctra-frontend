@@ -61,7 +61,7 @@ export default function SecondaryNavbar() {
       label: "Lending",
       items: [
         { label: "Earn & Borrow", href: "/app/supply-borrow" },
-        { label: "Create Pool", href: "/app/pool" },
+        { label: "Oracle Setup", href: "/app/oracle" },
       ],
     },
     {
