@@ -53,7 +53,7 @@ export default function ExplorePage() {
             <FilterSidebar
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
-              tlds={tlds}
+              tlds={tlds.filter((tld): tld is string => tld !== undefined)}
               selectedTLDs={selectedTLDs}
               toggleTLD={toggleTLD}
               auctionTypes={auctionTypes}

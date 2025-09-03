@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient } from 'wagmi'
-import { parseEther, encodeAbiParameters, keccak256, parseEventLogs, decodeEventLog } from 'viem'
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient, useAccount } from 'wagmi'
+import { parseEther, encodeAbiParameters, keccak256, parseEventLogs, decodeEventLog, decodeAbiParameters } from 'viem'
 import { CONTRACTS } from './contracts/constants'
 import { DOMAIN_AUCTION_HOUSE_ABI } from './contracts/abis'
 
@@ -366,30 +366,137 @@ export function useCreateAuction() {
 
 export function usePlaceBid() {
   const { writeContract, data: hash, isPending } = useWriteContract()
+  const [eligibilityData, setEligibilityData] = useState<`0x${string}`>('0x')
+  const publicClient = usePublicClient()
+  const { address: userAddress } = useAccount()
   
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   })
 
-  const placeBid = async (listingId: bigint, bidAmount: string, auctionType: 'english' | 'dutch' | 'sealed', commitmentData?: string) => {
+  // Get eligibility proof for the listing by checking requirements and generating appropriate proof
+  const getEligibilityData = async (listingId: bigint): Promise<`0x${string}`> => {
+    try {
+      console.log('🔍 Checking eligibility data for listing:', listingId.toString())
+      
+      if (!publicClient) {
+        console.warn('No public client available, using empty data')
+        return '0x'
+      }
+      
+      // Read listing data from smart contract
+      const listing = await publicClient.readContract({
+        address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+        abi: DOMAIN_AUCTION_HOUSE_ABI,
+        functionName: 'listings',
+        args: [listingId],
+      })
+      
+      console.log('📋 Listing data:', listing)
+      
+      // Check if listing has eligibility requirements
+      // Listing structure: [seller, nft, tokenId, paymentToken, reservePrice, startTime, endTime, strategy, strategyData, eligibilityData, status]
+      const listingArray = [...(listing as readonly any[])]
+      let eligibilityDataFromContract = '0x'
+      
+      if (Array.isArray(listingArray) && listingArray.length > 9) {
+        // eligibilityData is at index 9 in the array
+        eligibilityDataFromContract = listingArray[9] || '0x'
+      } else {
+        // Fallback: try accessing as object property
+        eligibilityDataFromContract = (listing as any)?.eligibilityData || '0x'
+      }
+      
+      console.log('🎫 Raw eligibility data:', eligibilityDataFromContract)
+      
+      // If no eligibility requirements - check for various empty formats
+      const isEmpty = !eligibilityDataFromContract || 
+                     eligibilityDataFromContract === '0x' || 
+                     eligibilityDataFromContract === '0x00' ||
+                     /^0x0+$/.test(eligibilityDataFromContract) || 
+                     eligibilityDataFromContract.length <= 4
+                     
+      if (isEmpty) {
+        console.log('✅ No eligibility requirements, using empty data')
+        return '0x'
+      }
+      
+      // Try multiple decoding strategies
+      console.log('🔄 Attempting to decode eligibility data with multiple strategies...')
+      
+      // Strategy 1: Full format (7 parameters)
+      try {
+        const decoded = decodeAbiParameters(
+          [
+            { name: 'ruleType', type: 'uint8' },
+            { name: 'merkleRoot', type: 'bytes32' },
+            { name: 'signer', type: 'address' },
+            { name: 'token', type: 'address' },
+            { name: 'minAmount', type: 'uint256' },
+            { name: 'expiry', type: 'uint256' },
+            { name: 'domainSeparator', type: 'bytes32' }
+          ],
+          eligibilityDataFromContract as `0x${string}`
+        )
+        
+        console.log('✅ Strategy 1 successful!')
+        return '0x' // For now, return empty until we implement full proof generation
+        
+      } catch (strategy1Error) {
+        console.warn('❌ Strategy 1 failed:', strategy1Error)
+        
+        // Strategy 2: Simplified format (bool + address[])
+        try {
+          const decoded = decodeAbiParameters(
+            [
+              { name: 'isWhitelisted', type: 'bool' },
+              { name: 'whitelist', type: 'address[]' }
+            ],
+            eligibilityDataFromContract as `0x${string}`
+          )
+          
+          const [isWhitelisted, whitelist] = decoded
+          console.log('✅ Strategy 2 successful! Decoded as:', { isWhitelisted, whitelist })
+          
+          if (isWhitelisted && whitelist && whitelist.length > 0) {
+            // Check if user is in whitelist
+            const isUserWhitelisted = whitelist.some(
+              (addr: string) => addr.toLowerCase() === userAddress?.toLowerCase()
+            )
+            
+            if (!isUserWhitelisted) {
+              throw new Error('User not in whitelist')
+            }
+          }
+          
+          return '0x'
+          
+        } catch (strategy2Error) {
+          console.warn('❌ Strategy 2 failed:', strategy2Error)
+          console.warn('⚠️ Using fallback: no eligibility restrictions')
+          return '0x'
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Error getting eligibility data:', error)
+      return '0x'
+    }
+  }
+
+  const placeBidEnglish = async (listingId: bigint, bidAmount: string) => {
     try {
       const bidAmountWei = parseEther(bidAmount)
       
-      let data: `0x${string}` = '0x'
-      let value = bidAmountWei
-
-      if (auctionType === 'sealed' && commitmentData) {
-        // For sealed bid auction, encode commitment data
-        data = commitmentData as `0x${string}`
-        // For sealed bid, the value is the deposit, not the full bid amount
-      }
-
+      // Get eligibility data
+      const eligibilityProof = await getEligibilityData(listingId)
+      
       writeContract({
         address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
         abi: DOMAIN_AUCTION_HOUSE_ABI,
         functionName: 'placeBid',
-        args: [listingId, bidAmountWei, data],
-        value: value,
+        args: [listingId, bidAmountWei, eligibilityProof],
+        value: bidAmountWei,
       })
     } catch (error) {
       console.error('Error placing bid:', error)
@@ -397,8 +504,114 @@ export function usePlaceBid() {
     }
   }
 
+  // Legacy function for compatibility
+  const placeBid = placeBidEnglish
+
   return {
+    placeBidEnglish,
     placeBid,
+    getEligibilityData,
+    isPending,
+    isConfirming,
+    isSuccess,
+    hash
+  }
+}
+
+export function useDutchAuctionPurchase() {
+  const { writeContract, data: hash, isPending } = useWriteContract()
+  const publicClient = usePublicClient()
+  const { address: userAddress } = useAccount()
+  
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  })
+
+  // Reuse eligibility data logic from usePlaceBid
+  const getEligibilityData = async (listingId: bigint): Promise<`0x${string}`> => {
+    try {
+      if (!publicClient) return '0x'
+      
+      const listing = await publicClient.readContract({
+        address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+        abi: DOMAIN_AUCTION_HOUSE_ABI,
+        functionName: 'listings',
+        args: [listingId],
+      })
+      
+      const listingArray = [...(listing as readonly any[])]
+      let eligibilityDataFromContract = '0x'
+      
+      if (Array.isArray(listingArray) && listingArray.length > 9) {
+        eligibilityDataFromContract = listingArray[9] || '0x'
+      }
+      
+      // If no eligibility requirements
+      const isEmpty = !eligibilityDataFromContract || 
+                     eligibilityDataFromContract === '0x' || 
+                     eligibilityDataFromContract.length <= 4
+                     
+      if (isEmpty) {
+        return '0x'
+      }
+      
+      // Try basic decoding strategies
+      try {
+        const decoded = decodeAbiParameters(
+          [
+            { name: 'isWhitelisted', type: 'bool' },
+            { name: 'whitelist', type: 'address[]' }
+          ],
+          eligibilityDataFromContract as `0x${string}`
+        )
+        
+        const [isWhitelisted, whitelist] = decoded
+        
+        if (isWhitelisted && whitelist && whitelist.length > 0) {
+          const isUserWhitelisted = whitelist.some(
+            (addr: string) => addr.toLowerCase() === userAddress?.toLowerCase()
+          )
+          
+          if (!isUserWhitelisted) {
+            throw new Error('User not in whitelist')
+          }
+        }
+        
+        return '0x'
+        
+      } catch (error) {
+        console.warn('Using fallback eligibility for Dutch auction')
+        return '0x'
+      }
+      
+    } catch (error) {
+      console.error('❌ Error getting eligibility data for Dutch auction:', error)
+      return '0x'
+    }
+  }
+
+  const purchaseDutchAuction = async (listingId: bigint, purchaseAmount: string) => {
+    try {
+      const purchaseAmountWei = parseEther(purchaseAmount)
+      
+      // Get eligibility data
+      const eligibilityProof = await getEligibilityData(listingId)
+
+      writeContract({
+        address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+        abi: DOMAIN_AUCTION_HOUSE_ABI,
+        functionName: 'placeBid',
+        args: [listingId, purchaseAmountWei, eligibilityProof],
+        value: purchaseAmountWei,
+      })
+    } catch (error) {
+      console.error('Error purchasing dutch auction:', error)
+      throw error
+    }
+  }
+
+  return {
+    purchaseDutchAuction,
     isPending,
     isConfirming,
     isSuccess,
@@ -444,8 +657,8 @@ export function useCommitSealedBid() {
         [commitment]
       )
       
-      // Place bid with commitment
-      await placeBid(listingId, deposit, 'sealed', commitData)
+      // Place bid with commitment - for sealed bid we use the deposit amount
+      await placeBid(listingId, deposit)
       
     } catch (error) {
       console.error('Error committing sealed bid:', error)

@@ -53,7 +53,6 @@ export function useAuctionData(auctionId: string) {
     try {
       console.log(`Placing bid of $${bidAmount} on auction ${auctionId}`)
       setBidAmount('')
-      // Optionally re-fetch bids
     } catch (e) {
       console.error('Failed to place bid:', e)
     }

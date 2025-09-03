@@ -15,7 +15,6 @@ export default function StepReserve({
   back,
   suggestedReserve,
   handleSuggestReserve,
-  toNum,
 }: {
   formData: any
   errors: Record<string, string>
@@ -34,12 +33,16 @@ export default function StepReserve({
       <CardContent className="space-y-6">
         <Field
           id="reserve-price"
-          label="Reserve Price ($)"
+          label="Reserve Price (ETH)"
           type="number"
           value={String(formData.reservePrice)}
-          onChange={(e) => setField('reservePrice', toNum(e.target.value))}
+          onChange={(e) => setField('reservePrice', e.target.value)}
           error={errors.reservePrice}
           hint="Minimum acceptable price to sell the domain."
+          step="0.00001"
+          min="0.00001"
+          placeholder="0.0001"
+          showDomaLogo={true}
         />
 
         <div className="flex items-center gap-3">
@@ -48,7 +51,7 @@ export default function StepReserve({
           </Button>
           {suggestedReserve && (
             <Badge className="bg-blue-50 text-blue-700 border-blue-200" variant="outline">
-              Suggested: ${suggestedReserve.reserve.toLocaleString()}
+              Suggested: {suggestedReserve.reserve.toLocaleString()} ETH
             </Badge>
           )}
         </div>

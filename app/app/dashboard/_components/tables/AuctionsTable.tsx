@@ -33,15 +33,16 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
                 <SortHead onClick={() => aSort.toggle('type')} active={aSort.key==='type'} dir={aSort.dir}>Type</SortHead>
                 <SortHead onClick={() => aSort.toggle('state')} active={aSort.key==='state'} dir={aSort.dir}>State</SortHead>
                 <SortHead onClick={() => aSort.toggle('timeLeft')} active={aSort.key==='timeLeft'} dir={aSort.dir}>Time Left</SortHead>
+                <SortHead onClick={() => aSort.toggle('createdAt')} active={aSort.key==='createdAt'} dir={aSort.dir}>Date Created</SortHead>
                 <SortHead onClick={() => aSort.toggle('top')} active={aSort.key==='top'} dir={aSort.dir} className="text-right">Top Bid/Price</SortHead>
                 <th className="text-right px-4 py-2">Actions</th>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows === undefined ? (
-                <SkeletonRows cols={6} />
+                <SkeletonRows cols={7} />
               ) : aSort.sorted.length === 0 ? (
-                <EmptyRow message="No auctions yet" colSpan={6} />
+                <EmptyRow message="No auctions yet" colSpan={7} />
               ) : (
                 aSort.sorted.map((r) => (
                   <TableRow key={r.id} className="hover:bg-blue-50/30 transition">
@@ -49,6 +50,7 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
                     <TableCell>{r.type}</TableCell>
                     <TableCell><StatusChip state={r.state} /></TableCell>
                     <TableCell>{r.timeLeft}</TableCell>
+                    <TableCell className="text-sm text-gray-600">{r.createdAt}</TableCell>
                     <TableCell className="text-right">{r.top}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="outline" size="sm">View</Button>

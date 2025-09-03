@@ -76,3 +76,95 @@ export const GET_NAME_FROM_TOKEN_QUERY = gql`
     }
   }
 `;
+
+// New queries from CLAUDE.md
+// 1. My Auctions for Dashboard
+export const GET_LISTINGS_BY_SELLER_QUERY = gql`
+  query GetListingsBySeller($seller: String!) {
+    listings(
+      where: { seller: $seller }
+      orderBy: "createdAt"
+      orderDirection: "desc"
+    ) {
+      items {
+        id
+        seller
+        nft
+        tokenId
+        reservePrice
+        status
+        createdAt
+        winner
+        winningBid
+        strategy
+      }
+    }
+  }
+`;
+
+// 2. My Bids for Dashboard
+export const GET_USER_BIDS_QUERY = gql`
+  query GetUserBids($userAddress: String!, $limit: Int = 10, $orderBy: String = "timestamp", $orderDirection: String = "desc") {
+    bids(
+      where: { bidder: $userAddress }
+      orderBy: $orderBy
+      orderDirection: $orderDirection
+      limit: $limit
+    ) {
+      items {
+        id
+        listingId
+        bidder
+        amount
+        timestamp
+        blockNumber
+        transactionHash
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+      totalCount
+    }
+  }
+`;
+
+// 3. Auction History for History Page
+export const GET_USER_AUCTION_HISTORY_QUERY = gql`
+  query GetUserAuctionHistory($userAddress: String!, $limit: Int = 10, $orderBy: String = "createdAt", $orderDirection: String = "desc") {
+    listings(
+      where: { seller: $userAddress }
+      orderBy: $orderBy
+      orderDirection: $orderDirection
+      limit: $limit
+    ) {
+      items {
+        id
+        seller
+        nft
+        tokenId
+        paymentToken
+        reservePrice
+        startTime
+        endTime
+        strategy
+        strategyData
+        eligibilityData
+        status
+        winner
+        winningBid
+        createdAt
+        updatedAt
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+      totalCount
+    }
+  }
+`;

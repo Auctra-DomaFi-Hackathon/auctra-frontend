@@ -19,10 +19,10 @@ export interface AuctionFormData {
   tokenId?: string
   tokenChain?: string
   auctionType: AuctionKind
-  startPrice: number
-  endPrice?: number
-  minBid?: number
-  reservePrice: number
+  startPrice: string | number
+  endPrice?: string | number
+  minBid?: string | number
+  reservePrice: string | number
   decayInterval?: number
   minIncrement?: number
   commitWindow?: number
@@ -45,8 +45,8 @@ export function useCreateAuctionForm() {
     tokenId: '',
     tokenChain: '',
     auctionType: 'english', // Default to English auction
-    startPrice: 0,
-    reservePrice: 0,
+    startPrice: '',
+    reservePrice: '',
     startTime: '',
     endTime: '',
     autoListing: false,
@@ -146,14 +146,14 @@ export function useCreateAuctionForm() {
         reservePrice: formData.reservePrice.toString(),
         duration,
         auctionType: formData.auctionType,
-        startPrice: formData.startPrice && formData.startPrice > 0 ? formData.startPrice.toString() : formData.reservePrice.toString(),
-        endPrice: formData.endPrice && formData.endPrice > 0 ? formData.endPrice.toString() : '0.1',
+        startPrice: formData.startPrice && parseNumericValue(formData.startPrice) > 0 ? formData.startPrice.toString() : formData.reservePrice.toString(),
+        endPrice: formData.endPrice && parseNumericValue(formData.endPrice) > 0 ? formData.endPrice.toString() : '0.1',
         incrementBps: formData.minIncrement ? Math.floor(formData.minIncrement * 100) : 500,
         antiSnipingEnabled: true,
         isLinear: true,
         commitDuration: formData.commitWindow && formData.commitWindow > 0 ? formData.commitWindow : 3600,
         revealDuration: formData.revealWindow && formData.revealWindow > 0 ? formData.revealWindow : 1800,
-        minimumDeposit: formData.minBid && formData.minBid > 0 ? formData.minBid.toString() : '0.01',
+        minimumDeposit: formData.minBid && parseNumericValue(formData.minBid) > 0 ? formData.minBid.toString() : '0.01',
         isWhitelisted: false,
         whitelist: []
       }
@@ -221,7 +221,20 @@ export function useCreateAuctionForm() {
 
   const nowISO = useMemo(() => new Date().toISOString().slice(0, 16), [])
   const hasDomain = !!formData.domain?.trim()
-  const toNum = (v: string) => (v === '' || isNaN(Number(v)) ? 0 : Number(v))
+  
+  // Fix: Add toNum function that was missing
+  const toNum = (v: string): number => {
+    const num = Number(v)
+    return isNaN(num) ? 0 : num
+  }
+  
+  // Allow string input for decimal values, convert to number only when needed
+  const toNumericValue = (v: string) => v  // Keep as string during input
+  const parseNumericValue = (v: string | number): number => {
+    if (typeof v === 'number') return v
+    if (v === '' || isNaN(Number(v))) return 0
+    return Number(v)
+  }
 
   function setField<K extends keyof AuctionFormData>(key: K, value: AuctionFormData[K]) {
     setFormData((p) => ({ ...p, [key]: value }))
@@ -270,25 +283,30 @@ export function useCreateAuctionForm() {
       }
 
       if (formData.auctionType === 'english') {
-        if (!formData.minIncrement || formData.minIncrement <= 0) e.minIncrement = 'Minimum increment must be > 0.'
+        const minIncrement = parseNumericValue(formData.minIncrement || '')
+        if (!formData.minIncrement || minIncrement <= 0) e.minIncrement = 'Minimum increment must be > 0.'
       }
 
       if (formData.auctionType === 'dutch') {
-        if (!formData.startPrice || formData.startPrice <= 0) e.startPrice = 'Start price must be > 0.'
-        if (!formData.endPrice || formData.endPrice <= 0) e.endPrice = 'End price must be > 0.'
-        if ((formData.endPrice ?? 0) >= formData.startPrice) e.endPrice = 'End price should be lower than start price.'
+        const startPrice = parseNumericValue(formData.startPrice || '')
+        const endPrice = parseNumericValue(formData.endPrice || '')
+        if (!formData.startPrice || startPrice <= 0) e.startPrice = 'Start price must be > 0.'
+        if (!formData.endPrice || endPrice <= 0) e.endPrice = 'End price must be > 0.'
+        if (endPrice >= startPrice) e.endPrice = 'End price should be lower than start price.'
         if (!formData.decayInterval || formData.decayInterval <= 0) e.decayInterval = 'Decay interval must be > 0.'
       }
 
       if (formData.auctionType === 'sealed') {
-        if (!formData.minBid || formData.minBid <= 0) e.minBid = 'Minimum bid must be > 0.'
+        const minBid = parseNumericValue(formData.minBid || '')
+        if (!formData.minBid || minBid <= 0) e.minBid = 'Minimum bid must be > 0.'
         if (!formData.commitWindow || formData.commitWindow <= 0) e.commitWindow = 'Commit window must be > 0.'
         if (!formData.revealWindow || formData.revealWindow <= 0) e.revealWindow = 'Reveal window must be > 0.'
       }
     }
 
     if (step === 'reserve') {
-      if (formData.reservePrice < 0) e.reservePrice = 'Reserve price cannot be negative.'
+      const reservePrice = parseNumericValue(formData.reservePrice)
+      if (reservePrice < 0) e.reservePrice = 'Reserve price cannot be negative.'
     }
 
     setErrors(e)
@@ -313,14 +331,14 @@ export function useCreateAuctionForm() {
         reservePrice: formData.reservePrice.toString(),
         duration,
         auctionType: formData.auctionType,
-        startPrice: formData.startPrice && formData.startPrice > 0 ? formData.startPrice.toString() : formData.reservePrice.toString(),
-        endPrice: formData.endPrice && formData.endPrice > 0 ? formData.endPrice.toString() : '0.1',
+        startPrice: formData.startPrice && parseNumericValue(formData.startPrice) > 0 ? formData.startPrice.toString() : formData.reservePrice.toString(),
+        endPrice: formData.endPrice && parseNumericValue(formData.endPrice) > 0 ? formData.endPrice.toString() : '0.1',
         incrementBps: formData.minIncrement ? Math.floor(formData.minIncrement * 100) : 500,
         antiSnipingEnabled: true,
         isLinear: true,
         commitDuration: formData.commitWindow && formData.commitWindow > 0 ? formData.commitWindow : 3600,
         revealDuration: formData.revealWindow && formData.revealWindow > 0 ? formData.revealWindow : 1800,
-        minimumDeposit: formData.minBid && formData.minBid > 0 ? formData.minBid.toString() : '0.01',
+        minimumDeposit: formData.minBid && parseNumericValue(formData.minBid) > 0 ? formData.minBid.toString() : '0.01',
         isWhitelisted: false,
         whitelist: []
       }
@@ -399,8 +417,8 @@ export function useCreateAuctionForm() {
       tokenId: '',
       tokenChain: '',
       auctionType: 'english',
-      startPrice: 0,
-      reservePrice: 0,
+      startPrice: '',
+      reservePrice: '',
       startTime: '',
       endTime: '',
       autoListing: false,

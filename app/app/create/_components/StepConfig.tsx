@@ -11,7 +11,6 @@ export default function StepConfig({
   setField,
   next,
   back,
-  toNum,
   nowISO,
 }: {
   formData: any
@@ -34,7 +33,7 @@ export default function StepConfig({
             label="Minimum Bid Increment (%)"
             type="number"
             value={String(formData.minIncrement ?? '')}
-            onChange={(e) => setField('minIncrement', toNum(e.target.value))}
+            onChange={(e) => setField('minIncrement', e.target.value)}
             error={errors.minIncrement}
             hint="Minimum percentage increase required for each new bid."
           />
@@ -45,19 +44,27 @@ export default function StepConfig({
             <TwoCols>
               <Field
                 id="start-price"
-                label="Start Price ($)"
+                label="Start Price (ETH)"
                 type="number"
                 value={String(formData.startPrice ?? '')}
-                onChange={(e) => setField('startPrice', toNum(e.target.value))}
+                onChange={(e) => setField('startPrice', e.target.value)}
                 error={errors.startPrice}
+                step="0.00001"
+                min="0.00001"
+                placeholder="0.001"
+                showDomaLogo={true}
               />
               <Field
                 id="end-price"
-                label="End Price ($)"
+                label="End Price (ETH)"
                 type="number"
                 value={String(formData.endPrice ?? '')}
-                onChange={(e) => setField('endPrice', toNum(e.target.value))}
+                onChange={(e) => setField('endPrice', e.target.value)}
                 error={errors.endPrice}
+                step="0.00001"
+                min="0.00001"
+                placeholder="0.0001"
+                showDomaLogo={true}
               />
             </TwoCols>
             <Field
@@ -65,7 +72,7 @@ export default function StepConfig({
               label="Decay Interval (minutes)"
               type="number"
               value={String(formData.decayInterval ?? '')}
-              onChange={(e) => setField('decayInterval', toNum(e.target.value))}
+              onChange={(e) => setField('decayInterval', e.target.value)}
               error={errors.decayInterval}
               hint="How often the price steps down."
             />
@@ -76,11 +83,15 @@ export default function StepConfig({
           <>
             <Field
               id="min-bid"
-              label="Minimum Bid ($)"
+              label="Minimum Bid (ETH)"
               type="number"
               value={String(formData.minBid ?? '')}
-              onChange={(e) => setField('minBid', toNum(e.target.value))}
+              onChange={(e) => setField('minBid', e.target.value)}
               error={errors.minBid}
+              step="0.00001"
+              min="0.00001"
+              placeholder="0.0001"
+              showDomaLogo={true}
             />
             <TwoCols>
               <Field
@@ -88,7 +99,7 @@ export default function StepConfig({
                 label="Commit Window (hours)"
                 type="number"
                 value={String(formData.commitWindow ?? '')}
-                onChange={(e) => setField('commitWindow', toNum(e.target.value))}
+                onChange={(e) => setField('commitWindow', e.target.value)}
                 error={errors.commitWindow}
               />
               <Field
@@ -96,7 +107,7 @@ export default function StepConfig({
                 label="Reveal Window (hours)"
                 type="number"
                 value={String(formData.revealWindow ?? '')}
-                onChange={(e) => setField('revealWindow', toNum(e.target.value))}
+                onChange={(e) => setField('revealWindow', e.target.value)}
                 error={errors.revealWindow}
               />
             </TwoCols>
