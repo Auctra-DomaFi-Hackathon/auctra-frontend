@@ -845,7 +845,8 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
               <div className="flex justify-between">
                 <span className="text-gray-600">Borrowed Amount</span>
                 <span className="font-medium flex items-center gap-1">
-                  {formatUSDC(userPosition.debt.principal)}
+                  <span>{formatUSDC(userPosition.debt.principal)}</span>
+                  USDC
                   <Image
                     src="/images/LogoCoin/usd-coin-usdc-logo.png"
                     alt="USDC"
@@ -853,7 +854,6 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                     height={10}
                     className="rounded-full"
                   />
-                  USDC
                 </span>
               </div>
               <div className="flex justify-between">
@@ -869,7 +869,8 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
               <div className="flex justify-between">
                 <span className="text-gray-600">Max Borrowable</span>
                 <span className="font-medium flex items-center gap-1">
-                  {formatUSDC(userPosition.maxBorrowable)}
+                  <span>{formatUSDC(userPosition.maxBorrowable)}</span>
+                  USDC
                   <Image
                     src="/images/LogoCoin/usd-coin-usdc-logo.png"
                     alt="USDC"
@@ -877,7 +878,6 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                     height={10}
                     className="rounded-full"
                   />
-                  USDC
                 </span>
               </div>
             </div>

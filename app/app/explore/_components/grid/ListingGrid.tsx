@@ -1,68 +1,84 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import type { Listing, NFTMetadata } from '@/lib/graphql/types'
-import { formatEther } from 'ethers'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { getStrategyName } from '@/lib/utils/strategy'
-import BidDialog from '@/components/auction/BidDialog'
+import { useState } from "react";
+import type { Listing, NFTMetadata } from "@/lib/graphql/types";
+import { formatEther } from "ethers";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { getStrategyName } from "@/lib/utils/strategy";
+import BidDialog from "@/components/auction/BidDialog";
+import Image from "next/image";
 
 interface ListingWithMetadata extends Listing {
-  metadata?: NFTMetadata
+  metadata?: NFTMetadata;
 }
 
 export default function ListingGrid({
   listings,
   emptyLabel,
 }: {
-  listings: ListingWithMetadata[]
-  emptyLabel: string
+  listings: ListingWithMetadata[];
+  emptyLabel: string;
 }) {
-  const [selectedListing, setSelectedListing] = useState<ListingWithMetadata | null>(null)
-  const [isBidDialogOpen, setIsBidDialogOpen] = useState(false)
+  const [selectedListing, setSelectedListing] =
+    useState<ListingWithMetadata | null>(null);
+  const [isBidDialogOpen, setIsBidDialogOpen] = useState(false);
 
   const handlePlaceBid = (listing: ListingWithMetadata) => {
-    setSelectedListing(listing)
-    setIsBidDialogOpen(true)
-  }
+    setSelectedListing(listing);
+    setIsBidDialogOpen(true);
+  };
   if (!listings.length) {
     return (
       <div className="text-center py-12 bg-gray-50 rounded-xl">
         <p className="text-gray-600">{emptyLabel}</p>
       </div>
-    )
+    );
   }
 
   const formatPrice = (priceWei: string) => {
     try {
-      return `${parseFloat(formatEther(priceWei)).toLocaleString()} ETH`
+      const ethValue = parseFloat(formatEther(priceWei));
+      // Show more decimal places for small amounts
+      if (ethValue === 0) {
+        // For very small amounts, show up to 18 decimal places
+        const fullEthValue = formatEther(priceWei);
+        return `${fullEthValue} ETH`;
+      }
+      return `${ethValue.toLocaleString()} ETH`;
     } catch {
-      return `${priceWei} wei`
+      return `${priceWei} wei`;
     }
-  }
+  };
 
   const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
-  }
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
         {listings.map((listing) => (
-          <Card key={listing.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card
+            key={listing.id}
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+          >
             <CardHeader className="space-y-2">
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-lg">
-                    {listing.metadata?.name || `Token #${listing.tokenId.slice(-8)}`}
+                    {listing.metadata?.name ||
+                      `Token #${listing.tokenId.slice(-8)}`}
                   </h3>
                   <Badge variant="secondary" className="text-xs">
-                    {listing.metadata?.tld || '.eth'}
+                    {listing.metadata?.tld || ".eth"}
                   </Badge>
                 </div>
-                <Badge variant="outline" className="text-green-600 border-green-300">
+                <Badge
+                  variant="outline"
+                  className="text-green-600 border-green-300"
+                >
                   {listing.status}
                 </Badge>
               </div>
@@ -70,55 +86,85 @@ export default function ListingGrid({
                 Seller: {formatAddress(listing.seller)}
               </p>
             </CardHeader>
-            
+
             <CardContent className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Reserve Price:</span>
+                <span className="text-sm font-medium text-gray-700">
+                  Reserve Price:
+                </span>
                 <span className="font-bold text-lg text-blue-600">
                   {formatPrice(listing.reservePrice)}
                 </span>
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Strategy:</span>
-                <Badge 
-                  variant={listing.strategy ? "default" : "outline"} 
-                  className={listing.strategy ? "bg-purple-100 text-purple-700" : "text-gray-500"}
+                <span className="text-sm font-medium text-gray-700">
+                  Strategy:
+                </span>
+                <Badge
+                  variant={listing.strategy ? "default" : "outline"}
+                  className={
+                    listing.strategy
+                      ? "bg-purple-100 text-purple-700"
+                      : "text-gray-500"
+                  }
                 >
                   {getStrategyName(listing.strategy)}
                 </Badge>
               </div>
-              
+
               {listing.metadata?.description && (
                 <p className="text-sm text-gray-600 line-clamp-2">
                   {listing.metadata.description}
                 </p>
               )}
-              
+
               <div className="flex justify-between text-xs text-gray-500">
-                <span>Listed: {new Date(parseInt(listing.createdAt) * 1000).toLocaleDateString()}</span>
+                <span>
+                  Listed:{" "}
+                  {new Date(
+                    parseInt(listing.createdAt) * 1000
+                  ).toLocaleDateString()}
+                </span>
                 <span>Token: {listing.tokenId.slice(0, 8)}...</span>
               </div>
-              
-              {listing.paymentToken === '0x0000000000000000000000000000000000000000' ? (
-                <div className="text-xs text-gray-500">Payment: ETH</div>
-              ) : (
-                <div className="text-xs text-gray-500">
-                  Payment: {formatAddress(listing.paymentToken)}
+
+              <div className="flex justify-between items-center text-xs text-gray-500">
+                {listing.paymentToken ===
+                "0x0000000000000000000000000000000000000000" ? (
+                  <span className="font-bold text-blue-800">Payment: ETH</span>
+                ) : (
+                  <span>Payment: {formatAddress(listing.paymentToken)}</span>
+                )}
+                
+                <div className="flex items-center gap-1">
+                  <Image
+                    src="/images/logo/domaLogo.svg"
+                    alt="Doma Chain"
+                    width={50}
+                    height={20}
+                    className="rounded-sm"
+                  />
                 </div>
-              )}
+              </div>
 
               {/* Place Bid Button */}
               <div className="pt-2">
-                <Button 
+                <Button
                   onClick={() => handlePlaceBid(listing)}
-                  disabled={!listing.strategy || listing.strategy === '0x0000000000000000000000000000000000000000'}
+                  disabled={
+                    !listing.strategy ||
+                    listing.strategy ===
+                      "0x0000000000000000000000000000000000000000"
+                  }
                   className="w-full"
                   size="sm"
                 >
-                  {getStrategyName(listing.strategy) === 'Dutch Auction' ? 'Buy Now' : 
-                   getStrategyName(listing.strategy) === 'Sealed Bid Auction' ? 'Commit Bid' : 
-                   'Place Bid'}
+                  {getStrategyName(listing.strategy) === "Dutch Auction"
+                    ? "Buy Now"
+                    : getStrategyName(listing.strategy) === "Sealed Bid Auction"
+                    ? "Commit Bid"
+                    : "Place Bid"}
                 </Button>
               </div>
             </CardContent>
@@ -127,14 +173,14 @@ export default function ListingGrid({
       </div>
 
       {/* Bid Dialog */}
-      <BidDialog 
+      <BidDialog
         isOpen={isBidDialogOpen}
         onClose={() => {
-          setIsBidDialogOpen(false)
-          setSelectedListing(null)
+          setIsBidDialogOpen(false);
+          setSelectedListing(null);
         }}
         listing={selectedListing}
       />
     </>
-  )
+  );
 }

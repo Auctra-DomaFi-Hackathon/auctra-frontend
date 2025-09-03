@@ -3,7 +3,7 @@
 import React from 'react'
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
-import { TrendingUp } from 'lucide-react'
+import { TrendingUp, Timer, Globe } from 'lucide-react'
 import {ChartLineUp} from "@phosphor-icons/react";
 import { cn } from '@/lib/utils'
 import { fmtDelta } from '../hooks/useSearch'
@@ -23,17 +23,37 @@ export default function KpiGrid({
             <div className="text-sm text-gray-600">{label}</div>
             <div className="mt-1 flex items-center justify-between">
               <div className="text-2xl font-semibold text-gray-900">{value}</div>
-              {typeof icon === 'function' ? (
-                React.createElement(icon, { className: 'h-5 w-5 text-blue-600' })
-              ) : icon && (typeof icon === 'string' || icon?.src) ? (
-                <Image
-                  src={typeof icon === 'string' ? icon : icon.src}
-                  alt="icon"
-                  width={20}
-                  height={20}
-                  className="h-5 w-5 object-contain"
-                />
-              ) : null}
+              <div className="h-5 w-5 flex items-center justify-center">
+                {(() => {
+                  // Handle specific icons by label
+                  if (label === 'Active Auctions') {
+                    return <Timer className="h-5 w-5 text-blue-600" />;
+                  }
+                  if (label === 'Domains') {
+                    return <Globe className="h-5 w-5 text-blue-600" />;
+                  }
+                  
+                  // Handle function icons
+                  if (typeof icon === 'function') {
+                    return React.createElement(icon, { className: 'h-5 w-5 text-blue-600' });
+                  }
+                  
+                  // Handle image icons
+                  if (icon && (typeof icon === 'string' || icon?.src)) {
+                    return (
+                      <Image
+                        src={typeof icon === 'string' ? icon : icon.src}
+                        alt="icon"
+                        width={20}
+                        height={20}
+                        className="h-5 w-5 object-contain"
+                      />
+                    );
+                  }
+                  
+                  return null;
+                })()}
+              </div>
             </div>
             <div
               className={cn(

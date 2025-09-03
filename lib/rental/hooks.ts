@@ -230,8 +230,7 @@ export function useManageRentals(owner?: Address) {
     const rentedListings = listings.filter(item => item.rental);
     const totalDepositsLocked = listings
       .filter(item => item.rental)
-      .reduce((sum, item) => sum + item.listing.securityDeposit, 0n);
-
+      .reduce((sum, item) => sum + item.listing.securityDeposit, BigInt(0));
     return {
       totalListings: listings.length,
       activeListings: activeListings.length,

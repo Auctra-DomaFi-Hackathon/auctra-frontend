@@ -82,7 +82,7 @@ export default function StepTerms({
                   placeholder="1.50"
                   value={pricePerDay}
                   onChange={(e) => onPricePerDayChange(e.target.value)}
-                  className="mt-1"
+                  className="mt-1 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   How much you charge per day
@@ -100,7 +100,7 @@ export default function StepTerms({
                   placeholder="5.00"
                   value={securityDeposit}
                   onChange={(e) => onSecurityDepositChange(e.target.value)}
-                  className="mt-1"
+                  className="mt-1 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Refundable deposit for security
@@ -127,7 +127,7 @@ export default function StepTerms({
                   min="1"
                   value={minDays}
                   onChange={(e) => onMinDaysChange(e.target.value)}
-                  className="mt-1"
+                  className="mt-1 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Shortest rental period allowed
@@ -144,7 +144,7 @@ export default function StepTerms({
                   min="1"
                   value={maxDays}
                   onChange={(e) => onMaxDaysChange(e.target.value)}
-                  className="mt-1"
+                  className="mt-1 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Longest rental period allowed

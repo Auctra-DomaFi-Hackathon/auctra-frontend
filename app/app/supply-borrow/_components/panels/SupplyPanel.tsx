@@ -453,7 +453,7 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
         {/* Your Position */}
         {userPosition.shares > BigInt(0) && (
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium mb-2">Your Supply Position</h4>
+            <h5 className="font-medium mb-2">Your Supply Position</h5>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Supplied Amount</span>
               <span className="font-medium flex items-center gap-1">

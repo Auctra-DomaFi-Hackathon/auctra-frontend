@@ -13,6 +13,7 @@ export type AuctionState = "LIVE" | "SCHEDULED" | "ENDED";
 export interface AuctionRow {
   id: string;
   domain: string;
+  tld: string;
   type: AuctionType;
   state: AuctionState;
   timeLeft: string;
@@ -45,7 +46,8 @@ export interface DomainRow {
 const MOCK_AUCTIONS: AuctionRow[] = [
   {
     id: "a1",
-    domain: "alpha.com",
+    domain: "alpha",
+    tld: ".com",
     type: "Sealed",
     state: "LIVE",
     timeLeft: "01:12:05",
@@ -54,7 +56,8 @@ const MOCK_AUCTIONS: AuctionRow[] = [
   },
   {
     id: "a2",
-    domain: "beta.xyz",
+    domain: "beta",
+    tld: ".xyz",
     type: "Dutch",
     state: "SCHEDULED",
     timeLeft: "Starts in 3h",
@@ -63,7 +66,8 @@ const MOCK_AUCTIONS: AuctionRow[] = [
   },
   {
     id: "a3",
-    domain: "gamma.io",
+    domain: "gamma",
+    tld: ".io",
     type: "English",
     state: "ENDED",
     timeLeft: "Ended",
@@ -172,10 +176,9 @@ export function useDashboardData() {
           const winningBid = auction.winningBid ? 
             (parseFloat(auction.winningBid) / 1e18).toFixed(4) : null;
 
-          // Get proper domain name from metadata
-          const domainName = auction.metadata?.name 
-            ? `${auction.metadata.name}${auction.metadata.tld || '.doma'}`
-            : `Token #${auction.tokenId.slice(-8)}`;
+          // Get proper domain name and TLD from metadata
+          const domainName = auction.metadata?.name || `Token #${auction.tokenId.slice(-8)}`;
+          const tldValue = auction.metadata?.tld || '.doma';
 
           // Get auction type from strategy
           const auctionType = getStrategyName(auction.strategy);
@@ -191,6 +194,7 @@ export function useDashboardData() {
           return {
             id: auction.id,
             domain: domainName,
+            tld: tldValue,
             type: shortType as AuctionType,
             state: auction.status === "Listed" ? "LIVE" : 
                    auction.status === "Sold" ? "ENDED" : "SCHEDULED" as AuctionState,

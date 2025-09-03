@@ -26,9 +26,6 @@ export default function DashboardPage() {
     kpis, auctions, bids, domains, domainsError,
   } = useDashboardData()
 
-  // Show loading only for critical GraphQL data
-  if (loading) return <LoadingState label="Loading dashboard…" />
-
   return (
     <div className="container mx-auto px-6 lg:px-12 py-10">
       <PageHeader />

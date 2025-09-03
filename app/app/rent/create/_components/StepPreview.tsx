@@ -6,6 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Check, Shield, Clock, DollarSign, Hash, Loader2, ExternalLink, CheckCircle, AlertCircle } from "lucide-react";
 import { formatUSD, shortAddress, parseUSDCInput } from "@/lib/rental/format";
+import { useState, useEffect } from "react";
+import { apolloClient } from "@/lib/graphql/client";
+import { GET_NAME_FROM_TOKEN_QUERY } from "@/lib/graphql/queries";
+import type { NameFromTokenResponse, NameFromTokenVariables, NFTMetadata } from "@/lib/graphql/types";
 
 interface StepPreviewProps {
   nftAddress: string;
@@ -46,6 +50,9 @@ export default function StepPreview({
   isCompleted,
   listingId,
 }: StepPreviewProps) {
+  const [domainMetadata, setDomainMetadata] = useState<NFTMetadata | null>(null);
+  const [metadataLoading, setMetadataLoading] = useState(false);
+
   const priceUSDC = parseUSDCInput(pricePerDay);
   const depositUSDC = parseUSDCInput(securityDeposit);
   const minDaysNum = parseInt(minDays);
@@ -54,6 +61,59 @@ export default function StepPreview({
   // Calculate potential earnings
   const minEarning = priceUSDC * BigInt(minDaysNum);
   const maxEarning = priceUSDC * BigInt(maxDaysNum);
+
+  // Function to fetch NFT metadata from tokenId using Doma API
+  const fetchNFTMetadata = async (tokenId: string): Promise<NFTMetadata> => {
+    try {
+      const { data } = await apolloClient.query<NameFromTokenResponse, NameFromTokenVariables>({
+        query: GET_NAME_FROM_TOKEN_QUERY,
+        variables: { tokenId },
+        errorPolicy: 'all'
+      });
+
+      const name = data?.nameStatistics?.name;
+      if (name) {
+        // Split domain name to get SLD and TLD
+        const [sld, tld] = name.split('.');
+        return {
+          name: sld || name,
+          tld: tld ? `.${tld}` : '.eth',
+          description: `Domain: ${name}`
+        };
+      } else {
+        // Fallback if name not found
+        return {
+          name: `Domain-${tokenId.slice(-8)}`,
+          tld: '.eth',
+          description: `NFT Domain with token ID: ${tokenId}`
+        };
+      }
+    } catch (error) {
+      console.error('Failed to fetch NFT metadata from Doma API:', error);
+      return {
+        name: `Unknown-${tokenId.slice(-8)}`,
+        tld: '.eth',
+        description: `Failed to fetch domain info`
+      };
+    }
+  };
+
+  // Fetch metadata when tokenId changes
+  useEffect(() => {
+    if (tokenId) {
+      setMetadataLoading(true);
+      fetchNFTMetadata(tokenId).then((metadata) => {
+        setDomainMetadata(metadata);
+        setMetadataLoading(false);
+      });
+    }
+  }, [tokenId]);
+
+  // Format token ID for display
+  const formatTokenId = (tokenId: string) => {
+    if (!tokenId || tokenId.length <= 20) return tokenId;
+    return `${tokenId.slice(0, 10)}...${tokenId.slice(-10)}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -86,13 +146,21 @@ export default function StepPreview({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Token ID:</span>
-                <span className="text-sm font-medium">{tokenId}</span>
+                <span className="text-sm font-medium font-mono">{formatTokenId(tokenId)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Domain:</span>
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                  domain{tokenId}.com
-                </Badge>
+                {metadataLoading ? (
+                  <div className="h-6 bg-gray-200 rounded animate-pulse w-32"></div>
+                ) : domainMetadata ? (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    {domainMetadata.name}{domainMetadata.tld}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                    domain{tokenId.slice(-8)}.eth
+                  </Badge>
+                )}
               </div>
             </div>
           </div>

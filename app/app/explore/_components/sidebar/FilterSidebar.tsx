@@ -110,8 +110,8 @@ export default function FilterSidebar({
         >
           <option value="ending-soon">Ending Soon</option>
           <option value="newest">Newest</option>
-          <option value="price-low">Price ↑</option>
-          <option value="price-high">Price ↓</option>
+          <option value="price-low">Lowest Price</option>
+          <option value="price-high">Highest Price</option>
         </select>
       </div>
     </>

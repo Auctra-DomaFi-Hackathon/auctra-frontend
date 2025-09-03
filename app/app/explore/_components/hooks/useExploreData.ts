@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { auctionsService, domainsService } from '@/lib/services'
-import { getCurrentDutchPrice } from '@/lib/utils/auction'
 import type { Auction, Domain } from '@/types'
 import { useDebounce } from './useDebounce'
 import { useActiveListings } from '@/lib/graphql/hooks'
+import { formatEther } from 'ethers'
+import { getStrategyName } from '@/lib/utils/strategy'
 
 export type StatusTab = 'expiring' | 'ongoing' | 'liquidation' | 'listings'
 type SortKey = 'ending-soon' | 'newest' | 'price-low' | 'price-high'
@@ -23,7 +24,7 @@ export function useExploreData() {
   const [priceMin, setPriceMin] = useState('')
   const [priceMax, setPriceMax] = useState('')
   const [sortBy, setSortBy] = useState<SortKey>('ending-soon')
-  const [tab, setTab] = useState<StatusTab>('ongoing')
+  const [tab, setTab] = useState<StatusTab>('listings')
 
   // Fetch active listings from GraphQL
   const { listings, loading: listingsLoading, error: listingsError } = useActiveListings(50)
@@ -57,7 +58,15 @@ export function useExploreData() {
     return m
   }, [domains])
 
-  const tlds = useMemo(() => Array.from(new Set(domains.map((d) => d.tld))).sort(), [domains])
+  const tlds = useMemo(() => {
+    // Collect TLDs from both domains and listings metadata
+    const domainTlds = domains.map((d) => d.tld);
+    const listingTlds = (listings || [])
+      .map((listing) => listing.metadata?.tld)
+      .filter((tld): tld is string => Boolean(tld));
+    
+    return Array.from(new Set([...domainTlds, ...listingTlds])).sort();
+  }, [domains, listings])
   const auctionTypes = ['Dutch', 'Sealed Bid', 'English'] as const
 
   const applyStatus = (a: Auction, status: StatusTab) => {
@@ -90,10 +99,8 @@ export function useExploreData() {
         const min = priceMin ? parseFloat(priceMin) : 0
         const max = priceMax ? parseFloat(priceMax) : Number.POSITIVE_INFINITY
         out = out.filter((a) => {
-          const price =
-            a.type === 'dutch' && a.parameters.dutch
-              ? getCurrentDutchPrice(a)
-              : a.parameters.sealed?.minDepositUsd || 0
+          // For auctions, use a simple fallback price logic
+          const price = a.parameters?.sealed?.minDepositUsd || 0
           return price >= min && price <= max
         })
       }
@@ -102,10 +109,7 @@ export function useExploreData() {
 
     function applySort(list: Auction[]) {
       const copy = [...list]
-      const priceOf = (x: Auction) =>
-        x.type === 'dutch' && x.parameters.dutch
-          ? getCurrentDutchPrice(x)
-          : x.parameters.sealed?.minDepositUsd || 0
+      const priceOf = (x: Auction) => x.parameters?.sealed?.minDepositUsd || 0
 
       if (sortBy === 'ending-soon') copy.sort((a, b) => +new Date(a.endTime) - +new Date(b.endTime))
       else if (sortBy === 'newest') copy.sort((a, b) => +new Date(b.startTime) - +new Date(a.startTime))
@@ -128,11 +132,98 @@ export function useExploreData() {
     }
   }, [auctions, q, selectedTLDs, selectedTypes, priceMin, priceMax, sortBy, domainById])
 
+  // Filter listings similar to how auctions are filtered
+  const filteredListings = useMemo(() => {
+    if (!listings) return [];
+    
+    let filtered = listings;
+    
+    // Apply search query filter
+    if (q) {
+      const ql = q.toLowerCase();
+      filtered = filtered.filter((listing) => {
+        // Search in domain name from metadata
+        const domainName = listing.metadata?.name?.toLowerCase() || '';
+        return domainName.includes(ql);
+      });
+    }
+    
+    // Apply TLD filter
+    if (selectedTLDs.length) {
+      filtered = filtered.filter((listing) => {
+        const tld = listing.metadata?.tld || '';
+        return selectedTLDs.includes(tld);
+      });
+    }
+    
+    // Apply auction type filter
+    if (selectedTypes.length) {
+      filtered = filtered.filter((listing) => {
+        const strategyName = getStrategyName(listing.strategy);
+        
+        // Map strategy names to match auction type filter format
+        // selectedTypes contains lowercase versions like ['dutch', 'sealed bid', 'english']
+        // strategyName contains full names like 'Dutch Auction', 'English Auction', 'Sealed Bid Auction'
+        if (strategyName.includes('Dutch') && selectedTypes.includes('dutch')) {
+          return true;
+        } else if (strategyName.includes('English') && selectedTypes.includes('english')) {
+          return true;
+        } else if (strategyName.includes('Sealed') && selectedTypes.includes('sealed bid')) {
+          return true;
+        }
+        
+        return false;
+      });
+    }
+    
+    // Apply price filter
+    if (priceMin || priceMax) {
+      const min = priceMin ? parseFloat(priceMin) : 0;
+      const max = priceMax ? parseFloat(priceMax) : Number.POSITIVE_INFINITY;
+      filtered = filtered.filter((listing) => {
+        try {
+          const priceEth = parseFloat(formatEther(listing.reservePrice));
+          return priceEth >= min && priceEth <= max;
+        } catch {
+          return true; // Keep if price parsing fails
+        }
+      });
+    }
+    
+    // Apply sorting
+    const sortedFiltered = [...filtered];
+    if (sortBy === 'newest') {
+      sortedFiltered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (sortBy === 'price-low') {
+      sortedFiltered.sort((a, b) => {
+        try {
+          const priceA = parseFloat(formatEther(a.reservePrice));
+          const priceB = parseFloat(formatEther(b.reservePrice));
+          return priceA - priceB;
+        } catch {
+          return 0;
+        }
+      });
+    } else if (sortBy === 'price-high') {
+      sortedFiltered.sort((a, b) => {
+        try {
+          const priceA = parseFloat(formatEther(a.reservePrice));
+          const priceB = parseFloat(formatEther(b.reservePrice));
+          return priceB - priceA;
+        } catch {
+          return 0;
+        }
+      });
+    }
+    
+    return sortedFiltered;
+  }, [listings, q, selectedTLDs, selectedTypes, priceMin, priceMax, sortBy]);
+
   const counts = {
     expiring: byStatus.expiring.length,
     ongoing: byStatus.ongoing.length,
     liquidation: byStatus.liquidation.length,
-    listings: listings?.length || 0,
+    listings: filteredListings.length,
   }
 
   // togglers
@@ -156,7 +247,7 @@ export function useExploreData() {
     sortBy, setSortBy,
     byStatus, counts,
     domainById,
-    listings,
+    listings: filteredListings,
     listingsError,
   }
 }

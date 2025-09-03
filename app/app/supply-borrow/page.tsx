@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Layers, TrendingUp, Activity } from "lucide-react";
+import { Layers, Activity } from "lucide-react";
 import Image from "next/image";
 import SupplyPanel from "./_components/panels/SupplyPanel";
 import BorrowPanel from "./_components/panels/BorrowPanel";
@@ -51,7 +51,6 @@ export default function SupplyBorrowPage() {
               <div>
                 <p className="text-sm text-gray-600">Total Value Locked</p>
                 <p className="text-lg font-semibold flex items-center gap-1">
-                  ${formatUSDC(poolData.totalAssets)}
                   <Image
                     src="/images/LogoCoin/usd-coin-usdc-logo.png"
                     alt="USDC"
@@ -59,6 +58,7 @@ export default function SupplyBorrowPage() {
                     height={16}
                     className="rounded-full"
                   />
+                  {formatUSDC(poolData.totalAssets)}
                 </p>
               </div>
               <div className="h-8 w-8 bg-blue-100 p-1.5 rounded-lg flex items-center justify-center">
@@ -80,7 +80,6 @@ export default function SupplyBorrowPage() {
               <div>
                 <p className="text-sm text-gray-600">Total Borrowed</p>
                 <p className="text-lg font-semibold flex items-center gap-1">
-                  ${formatUSDC(poolData.totalDebt)}
                   <Image
                     src="/images/LogoCoin/usd-coin-usdc-logo.png"
                     alt="USDC"
@@ -88,9 +87,18 @@ export default function SupplyBorrowPage() {
                     height={16}
                     className="rounded-full"
                   />
+                  {formatUSDC(poolData.totalDebt)}
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-purple-500 bg-purple-100 p-1.5 rounded-lg" />
+              <div className="h-8 w-8 bg-blue-100 p-1.5 rounded-lg flex items-center justify-center">
+                <Image
+                  src="/images/LogoCoin/usd-coin-usdc-logo.png"
+                  alt="USDC"
+                  width={20}
+                  height={20}
+                  className="rounded-full"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
