@@ -18,7 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useAccount, useConnect, useDisconnect, useBalance, useSwitchChain } from "wagmi";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { domaTestnet } from "@/lib/config/wagmi";
 
 export default function SecondaryNavbar() {
@@ -31,10 +31,7 @@ export default function SecondaryNavbar() {
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
-  const [hoverTimeouts, setHoverTimeouts] = useState<{ [key: string]: NodeJS.Timeout }>({});
-  const [hoveredDropdown, setHoveredDropdown] = useState<number | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const dropdownOpeningRef = useRef<boolean>(false);
 
   // Get balance from Doma Testnet (only when connected and on correct chain)
   const { data: balance } = useBalance({
@@ -178,118 +175,29 @@ export default function SecondaryNavbar() {
     return [...priorityConnectors, ...otherConnectors];
   };
 
-  // Helper functions for hover delays
-  const handleDropdownEnter = (index: number) => {
-    // Prevent double execution
-    if (dropdownOpeningRef.current) return;
-    dropdownOpeningRef.current = true;
-    
-    // Clear any existing timeout for this dropdown
-    const key = `dropdown-${index}`;
-    if (hoverTimeouts[key]) {
-      clearTimeout(hoverTimeouts[key]);
-      setHoverTimeouts(prev => {
-        const newTimeouts = { ...prev };
-        delete newTimeouts[key];
-        return newTimeouts;
-      });
-    }
-    
-    // Only set if not already open to prevent duplicate triggers
-    if (openDropdownIndex !== index) {
-      setHoveredDropdown(index);
-      setOpenDropdownIndex(index);
-    }
-    
-    // Reset the flag after a short delay
-    setTimeout(() => {
-      dropdownOpeningRef.current = false;
-    }, 50);
+  // Click-based dropdown handlers
+  const handleDropdownClick = (index: number) => {
+    setOpenDropdownIndex(openDropdownIndex === index ? null : index);
   };
 
-  const handleDropdownLeave = (index: number) => {
-    const key = `dropdown-${index}`;
-    const timeoutId = setTimeout(() => {
-      setOpenDropdownIndex(prev => prev === index ? null : prev);
-    }, 200); // Increased delay
-    
-    setHoverTimeouts(prev => ({
-      ...prev,
-      [key]: timeoutId
-    }));
-  };
-
-  const handleDropdownContentEnter = (index: number) => {
-    // Clear timeout when entering dropdown content - don't set dropdown again
-    const key = `dropdown-${index}`;
-    if (hoverTimeouts[key]) {
-      clearTimeout(hoverTimeouts[key]);
-      setHoverTimeouts(prev => {
-        const newTimeouts = { ...prev };
-        delete newTimeouts[key];
-        return newTimeouts;
-      });
-    }
-    // Don't call setOpenDropdownIndex here as it's already open
-    setHoveredDropdown(index);
-  };
-
-  const handleDropdownContentLeave = (index: number) => {
-    const key = `dropdown-${index}`;
-    const timeoutId = setTimeout(() => {
-      setOpenDropdownIndex(prev => prev === index ? null : prev);
-    }, 200); // Increased delay
-    
-    setHoverTimeouts(prev => ({
-      ...prev,
-      [key]: timeoutId
-    }));
+  const handleClickOutside = () => {
+    setOpenDropdownIndex(null);
   };
 
   const handleWalletEnter = () => {
-    if (hoverTimeouts.wallet) {
-      clearTimeout(hoverTimeouts.wallet);
-      setHoverTimeouts(prev => {
-        const newTimeouts = { ...prev };
-        delete newTimeouts.wallet;
-        return newTimeouts;
-      });
-    }
     setIsDropdownOpen(true);
   };
 
   const handleWalletLeave = () => {
-    const timeoutId = setTimeout(() => {
-      setIsDropdownOpen(false);
-    }, 100); // 100ms delay
-    
-    setHoverTimeouts(prev => ({
-      ...prev,
-      wallet: timeoutId
-    }));
+    setTimeout(() => setIsDropdownOpen(false), 50);
   };
 
   const handleConnectEnter = () => {
-    if (hoverTimeouts.connect) {
-      clearTimeout(hoverTimeouts.connect);
-      setHoverTimeouts(prev => {
-        const newTimeouts = { ...prev };
-        delete newTimeouts.connect;
-        return newTimeouts;
-      });
-    }
     setIsConnectModalOpen(true);
   };
 
   const handleConnectLeave = () => {
-    const timeoutId = setTimeout(() => {
-      setIsConnectModalOpen(false);
-    }, 100); // 100ms delay
-    
-    setHoverTimeouts(prev => ({
-      ...prev,
-      connect: timeoutId
-    }));
+    setTimeout(() => setIsConnectModalOpen(false), 50);
   };
 
   // Handle connection state changes and network switching
@@ -350,18 +258,41 @@ export default function SecondaryNavbar() {
     }
   }, [isPending, isSwitchingChain, isConnecting]);
 
-  // Cleanup timeouts on unmount
+  // Handle click outside to close dropdowns
   useEffect(() => {
-    return () => {
-      Object.values(hoverTimeouts).forEach(timeoutId => {
-        clearTimeout(timeoutId);
-      });
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.dropdown-container')) {
+        setOpenDropdownIndex(null);
+      }
     };
-  }, [hoverTimeouts]);
+
+    document.addEventListener('click', handleDocumentClick);
+    return () => document.removeEventListener('click', handleDocumentClick);
+  }, []);
+
 
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-b border-gray-100 z-50">
-      <div className="container mx-auto px-6">
+    <>
+      <style jsx>{`
+        @keyframes dropdownSlideIn {
+          0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-8px) scaleY(0.9);
+          }
+          60% {
+            opacity: 0.8;
+            transform: translateX(-50%) translateY(-2px) scaleY(0.98);
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scaleY(1);
+          }
+        }
+      `}</style>
+      
+      <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-b border-gray-100 z-50">
+        <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Left Navigation */}
           <Link href="/app/explore" className="flex items-center space-x-2">
@@ -388,48 +319,54 @@ export default function SecondaryNavbar() {
                   return (
                     <div
                       key={item.label}
-                      onMouseEnter={() => handleDropdownEnter(itemIndex)}
-                      onMouseLeave={() => handleDropdownLeave(itemIndex)}
-                      className="relative"
+                      className="relative dropdown-container"
                     >
-                      <DropdownMenu open={openDropdownIndex === itemIndex}>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            className={cn(
-                              "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1",
-                              isActive
-                                ? "bg-blue-50 text-blue-700"
-                                : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                            )}
-                          >
-                            {item.label}
-                            <ChevronDown className="w-3 h-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent 
-                          align="center" 
-                          className="w-48"
-                          onMouseEnter={() => handleDropdownContentEnter(itemIndex)}
-                          onMouseLeave={() => handleDropdownContentLeave(itemIndex)}
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleDropdownClick(itemIndex)}
+                        className={cn(
+                          "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition-all duration-200 hover:bg-blue-50 hover:text-blue-600",
+                          isActive
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-gray-600",
+                          openDropdownIndex === itemIndex && "bg-blue-50 text-blue-700"
+                        )}
+                      >
+                        {item.label}
+                        <ChevronDown className={cn(
+                          "w-3 h-3 transition-transform duration-300 ease-in-out",
+                          openDropdownIndex === itemIndex && "rotate-180"
+                        )} />
+                      </Button>
+                      
+                      {/* Custom animated dropdown */}
+                      {openDropdownIndex === itemIndex && (
+                        <div 
+                          className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-[60]"
+                          style={{
+                            animation: 'dropdownSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+                            transformOrigin: 'top center'
+                          }}
                         >
-                          {item.items.map((subItem) => (
-                            <DropdownMenuItem key={subItem.href} asChild>
+                          <div className="py-1">
+                            {item.items.map((subItem) => (
                               <Link
+                                key={subItem.href}
                                 href={subItem.href}
                                 className={cn(
-                                  "w-full text-sm cursor-pointer",
+                                  "block px-4 py-2 text-sm transition-colors duration-150 hover:bg-blue-50 hover:text-blue-600",
                                   pathname === subItem.href
-                                    ? "bg-blue-50 text-blue-700"
-                                    : "text-gray-600 hover:text-blue-600"
+                                    ? "bg-blue-50 text-blue-700 font-medium"
+                                    : "text-gray-600"
                                 )}
+                                onClick={() => setOpenDropdownIndex(null)}
                               >
                                 {subItem.label}
                               </Link>
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 } else if ('href' in item && item.href) {
@@ -439,7 +376,7 @@ export default function SecondaryNavbar() {
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                        "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                         pathname === item.href
                           ? "bg-blue-50 text-blue-700"
                           : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
@@ -796,8 +733,8 @@ export default function SecondaryNavbar() {
             )}
           </div>
         </div>
-      </div>
-
-    </nav>
+        </div>
+      </nav>
+    </>
   );
 }
