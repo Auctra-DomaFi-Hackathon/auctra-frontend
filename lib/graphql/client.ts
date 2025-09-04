@@ -34,11 +34,9 @@ export const listingsApolloClient = new ApolloClient({
         fields: {
           listings: {
             keyArgs: ['where', 'orderBy', 'orderDirection'],
-            merge(existing = { items: [], pageInfo: {} }, incoming) {
-              return {
-                ...incoming,
-                items: [...(existing.items || []), ...(incoming.items || [])],
-              };
+            merge(existing, incoming) {
+              // Replace existing data instead of merging to prevent accumulation
+              return incoming;
             },
           },
         },

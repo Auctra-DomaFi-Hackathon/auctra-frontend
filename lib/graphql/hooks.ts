@@ -72,6 +72,8 @@ export function useActiveListings(limit: number = 6) {
       client: listingsApolloClient,
       variables: { limit: 100 }, // Fetch all listings initially
       errorPolicy: 'all',
+      fetchPolicy: 'cache-and-network',
+      notifyOnNetworkStatusChange: true,
       onCompleted: (data) => {
         console.log('🔍 Active listings query completed:', {
           itemsCount: data?.listings?.items?.length,

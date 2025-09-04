@@ -20,7 +20,8 @@ export function useMyAuctions(limit: number = 10) {
     },
     skip: !address,
     fetchPolicy: 'cache-and-network',
-    errorPolicy: 'all'
+    errorPolicy: 'all',
+    notifyOnNetworkStatusChange: true
   })
 
   // Function to fetch NFT metadata from tokenId using Doma API
