@@ -24,7 +24,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
     if (isRented && listing.rental) {
       const daysLeft = getDaysLeft(listing.rental.expires);
       return (
-        <Badge variant="default" className="bg-amber-100 text-amber-800 border-amber-200">
+        <Badge variant="default" className="bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">
           <Clock className="w-3 h-3 mr-1" />
           Rented ({daysLeft}d left)
         </Badge>
@@ -33,7 +33,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
     
     if (isPaused) {
       return (
-        <Badge variant="outline" className="text-gray-600 border-gray-300">
+        <Badge variant="outline" className="text-gray-600 border-gray-300 dark:text-gray-400 dark:border-gray-600">
           Paused
         </Badge>
       );
@@ -42,7 +42,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
     return (
       <Badge 
         variant="secondary" 
-        className="bg-blue-50 text-blue-700 border-blue-200"
+        className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
       >
         Available
       </Badge>
@@ -51,14 +51,14 @@ export default function ListingCard({ listing }: ListingCardProps) {
 
   const getTldBadge = () => {
     const colors = {
-      ".com": "bg-green-50 text-green-700 border-green-200",
-      ".io": "bg-purple-50 text-purple-700 border-purple-200",
-      ".xyz": "bg-orange-50 text-orange-700 border-orange-200",
-      ".org": "bg-blue-50 text-blue-700 border-blue-200",
-      ".net": "bg-indigo-50 text-indigo-700 border-indigo-200",
+      ".com": "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
+      ".io": "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800",
+      ".xyz": "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800",
+      ".org": "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
+      ".net": "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800",
     };
 
-    const colorClass = colors[listing.tld as keyof typeof colors] || "bg-gray-50 text-gray-700 border-gray-200";
+    const colorClass = colors[listing.tld as keyof typeof colors] || "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600";
 
     return (
       <Badge variant="outline" className={colorClass}>
@@ -69,17 +69,17 @@ export default function ListingCard({ listing }: ListingCardProps) {
 
   return (
     <>
-      <Card className="bg-white rounded-2xl shadow-sm border border-blue-100 hover:shadow-md transition-all duration-200 hover:bg-blue-50/30">
+      <Card className="bg-white rounded-2xl shadow-sm border border-blue-100 hover:shadow-md transition-all duration-200 hover:bg-blue-50/30 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700/50">
         <CardContent className="p-6">
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-lg font-semibold text-gray-900 truncate">
+                <h3 className="text-lg font-semibold text-gray-900 truncate dark:text-white">
                   {listing.domain}
                 </h3>
                 {listing.verified && (
-                  <Shield className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                  <Shield className="w-4 h-4 text-blue-600 flex-shrink-0 dark:text-blue-400" />
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -92,35 +92,35 @@ export default function ListingCard({ listing }: ListingCardProps) {
           {/* Pricing */}
           <div className="space-y-3 mb-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Price per day</span>
-              <span className="text-lg font-semibold text-gray-900">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Price per day</span>
+              <span className="text-lg font-semibold text-gray-900 dark:text-white">
                 {formatUSD(listing.listing.pricePerDay)}
               </span>
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Security deposit</span>
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Security deposit</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
                 {formatUSD(listing.listing.securityDeposit)}
               </span>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Rental period</span>
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Rental period</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
                 {listing.listing.minDays}-{listing.listing.maxDays} days
               </span>
             </div>
           </div>
 
           {/* Domain Expiry */}
-          <div className="flex items-center text-sm text-gray-500 mb-4">
+          <div className="flex items-center text-sm text-gray-500 mb-4 dark:text-gray-400">
             <Calendar className="w-4 h-4 mr-1" />
             <span>Domain expires {formatDate(listing.expiresAt)}</span>
           </div>
 
           {/* Payment Token */}
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 dark:text-gray-400">
             Payment in USDC
           </div>
         </CardContent>

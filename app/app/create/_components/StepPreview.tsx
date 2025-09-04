@@ -2,6 +2,7 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import Image from 'next/image'
 import KV from './primitives/KV'
 import { AuctionCard } from '@/features/auction/AuctionCard'
 
@@ -34,14 +35,14 @@ export default function StepPreview({
 }) {
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardHeader>
-          <CardTitle>Auction Preview</CardTitle>
+          <CardTitle className="text-gray-900 dark:text-white">Auction Preview</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="font-semibold mb-2">Auction Details</h3>
+              <h3 className="font-semibold mb-2 text-gray-900 dark:text-white">Auction Details</h3>
               <div className="space-y-2 text-sm">
                 <KV k="Domain" v={formData.domain || '-'} />
                 <KV k="Type" v={cap(formData.auctionType)} />
@@ -69,7 +70,7 @@ export default function StepPreview({
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">Preview Card</h3>
+              <h3 className="font-semibold mb-2 text-gray-900 dark:text-white">Preview Card</h3>
               <AuctionCard
                 auction={{
                   id: 'preview',
@@ -128,31 +129,39 @@ export default function StepPreview({
 
       {/* Wallet Status */}
       {wallet && (
-        <Card>
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="pt-6">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Wallet Status:</span>
-                <span className={`text-sm ${wallet.isConnected ? 'text-green-600' : 'text-red-600'}`}>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">Wallet Status:</span>
+                <span className={`text-sm ${wallet.isConnected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {wallet.isConnected ? 'Connected' : 'Not Connected'}
                 </span>
               </div>
               {wallet.isConnected && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Network:</span>
-                  <span className={`text-sm ${wallet.isOnDomaTestnet ? 'text-green-600' : 'text-orange-600'}`}>
-                    {wallet.isOnDomaTestnet ? 'Doma Testnet' : 'Wrong Network'}
-                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">Network:</span>
+                  <div className="flex items-center gap-2">
+                    {wallet.isOnDomaTestnet && (
+                      <Image
+                        src="/images/logo/domaLogo.svg"
+                        alt="Doma Testnet"
+                        width={50}
+                        height={16}
+                        className="rounded-sm"
+                      />
+                    )}
+                  </div>
                 </div>
               )}
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Domain Approval:</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">Domain Approval:</span>
                 <span className={`text-sm ${
                   currentApproval || isApproved 
-                    ? 'text-green-600' 
+                    ? 'text-green-600 dark:text-green-400' 
                     : isApproving 
-                      ? 'text-blue-600' 
-                      : 'text-orange-600'
+                      ? 'text-blue-600 dark:text-blue-400' 
+                      : 'text-orange-600 dark:text-orange-400'
                 }`}>
                   {currentApproval || isApproved 
                     ? 'Approved' 
@@ -165,46 +174,46 @@ export default function StepPreview({
               {auctionStep && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Auction Creation Progress:</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">Auction Creation Progress:</span>
                     {busy && (
                       <div className="flex items-center gap-2">
                         <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                        <span className="text-xs text-blue-600">Please confirm transactions in wallet</span>
+                        <span className="text-xs text-blue-600 dark:text-blue-400">Please confirm transactions in wallet</span>
                       </div>
                     )}
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-xs">
                     <div className={`px-2 py-1 rounded text-center ${
-                      auctionStep === 'list' ? 'bg-blue-100 text-blue-800 animate-pulse' :
-                      ['criteria', 'strategy', 'start', 'completed'].includes(auctionStep) ? 'bg-green-100 text-green-800' :
-                      'bg-gray-100 text-gray-500'
+                      auctionStep === 'list' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 animate-pulse' :
+                      ['criteria', 'strategy', 'start', 'completed'].includes(auctionStep) ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300' :
+                      'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                     }`}>
                       {auctionStep === 'list' ? '⏳ List' : 
                        ['criteria', 'strategy', 'start', 'completed'].includes(auctionStep) ? '✅ List' : 
                        'List'}
                     </div>
                     <div className={`px-2 py-1 rounded text-center ${
-                      auctionStep === 'criteria' ? 'bg-blue-100 text-blue-800 animate-pulse' :
-                      ['strategy', 'start', 'completed'].includes(auctionStep) ? 'bg-green-100 text-green-800' :
-                      'bg-gray-100 text-gray-500'
+                      auctionStep === 'criteria' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 animate-pulse' :
+                      ['strategy', 'start', 'completed'].includes(auctionStep) ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300' :
+                      'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                     }`}>
                       {auctionStep === 'criteria' ? '⏳ Criteria' :
                        ['strategy', 'start', 'completed'].includes(auctionStep) ? '✅ Criteria' :
                        'Criteria'}
                     </div>
                     <div className={`px-2 py-1 rounded text-center ${
-                      auctionStep === 'strategy' ? 'bg-blue-100 text-blue-800 animate-pulse' :
-                      ['start', 'completed'].includes(auctionStep) ? 'bg-green-100 text-green-800' :
-                      'bg-gray-100 text-gray-500'
+                      auctionStep === 'strategy' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 animate-pulse' :
+                      ['start', 'completed'].includes(auctionStep) ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300' :
+                      'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                     }`}>
                       {auctionStep === 'strategy' ? '⏳ Strategy' :
                        ['start', 'completed'].includes(auctionStep) ? '✅ Strategy' :
                        'Strategy'}
                     </div>
                     <div className={`px-2 py-1 rounded text-center ${
-                      auctionStep === 'start' ? 'bg-blue-100 text-blue-800 animate-pulse' :
-                      auctionStep === 'completed' ? 'bg-green-100 text-green-800' :
-                      'bg-gray-100 text-gray-500'
+                      auctionStep === 'start' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 animate-pulse' :
+                      auctionStep === 'completed' ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300' :
+                      'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                     }`}>
                       {auctionStep === 'start' ? '⏳ Go Live' :
                        auctionStep === 'completed' ? '✅ Go Live' :
@@ -213,7 +222,7 @@ export default function StepPreview({
                   </div>
                   {busy && (
                     <div className="text-center">
-                      <p className="text-xs text-orange-600 font-medium">
+                      <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
                         ⚠️ Please dont refresh or leave this page while transactions are processing
                       </p>
                     </div>
@@ -226,7 +235,7 @@ export default function StepPreview({
       )}
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={back}>
+        <Button variant="outline" onClick={back} className="border-gray-300 dark:border-gray-600 text-black hover:bg-gray-50 dark:hover:bg-gray-700">
           Back
         </Button>
         <Button onClick={handleSubmit} disabled={busy} className="bg-blue-600 hover:bg-blue-700">

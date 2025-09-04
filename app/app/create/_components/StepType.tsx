@@ -20,9 +20,9 @@ export default function StepType({
   back: () => void
 }) {
   return (
-    <Card>
+    <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
       <CardHeader>
-        <CardTitle>Choose Auction Type</CardTitle>
+        <CardTitle className="text-gray-900 dark:text-white">Choose Auction Type</CardTitle>
       </CardHeader>
       <CardContent>
         <RadioGroup
@@ -53,7 +53,7 @@ export default function StepType({
           />
         </RadioGroup>
 
-        {errors.auctionType && <p className="text-sm text-red-600 mt-2">{errors.auctionType}</p>}
+        {errors.auctionType && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{errors.auctionType}</p>}
 
         <div className="flex justify-between mt-6">
           <Button variant="outline" onClick={back}>

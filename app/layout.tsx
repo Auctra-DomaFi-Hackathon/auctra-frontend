@@ -6,6 +6,7 @@ import NavbarSwitcher from '@/components/navbar/NavbarSwitcher'
 import CardNav from '@/components/common/CardNav'
 import { Footer } from '@/components/common/Footer'
 import { Web3Provider } from '@/components/providers/WagmiProvider'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import Link from 'next/link'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -36,7 +37,7 @@ const navItems = [
     textColor: "#ffffff",
     links: [
       { label: "Earn & Borrow", href: "/app/supply-borrow", ariaLabel: "View earn and borrow options" },
-      { label: "Create Pool", href: "/app/pool", ariaLabel: "Permissionless Premium Pool" },
+      { label: "Create Oracle", href: "/app/oracle", ariaLabel: "Create Premium Domain" },
     ]
   },
   {
@@ -78,27 +79,29 @@ export default function RootLayout({
         {/* Preload critical assets */}
         <link rel="preload" href="/components/ui/globe-data.json" as="fetch" crossOrigin="anonymous" />
       </head>
-      <body className={inter.className}>
-        <Web3Provider>
-          <div className="min-h-screen flex flex-col relative">
-            <NavbarSwitcher 
-              cardNavProps={{
-                logo: "/images/logo/auctraLogo.png",
-                logoAlt: "Auctra Logo",
-                items: navItems,
-                baseColor: "#16213e",
-                menuColor: "#ffffff",
-                buttonBgColor: "#3b82f6",
-                buttonTextColor: "#ffffff"
-              }}
-            />
-            <main className="flex-1 pt-20">
-              {children}
-            </main>
-            <Footer />
-          </div>
-          <Toaster />
-        </Web3Provider>
+      <body className={`${inter.className} bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
+        <ThemeProvider>
+          <Web3Provider>
+            <div className="min-h-screen flex flex-col relative bg-white dark:bg-gray-900 transition-colors duration-300">
+              <NavbarSwitcher 
+                cardNavProps={{
+                  logo: "/images/logo/auctraLogo.png",
+                  logoAlt: "Auctra Logo",
+                  items: navItems,
+                  baseColor: "#16213e",
+                  menuColor: "#ffffff",
+                  buttonBgColor: "#3b82f6",
+                  buttonTextColor: "#ffffff"
+                }}
+              />
+              <main className="flex-1 pt-20">
+                {children}
+              </main>
+              <Footer />
+            </div>
+            <Toaster />
+          </Web3Provider>
+        </ThemeProvider>
       </body>
     </html>
   )

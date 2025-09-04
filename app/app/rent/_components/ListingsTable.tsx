@@ -131,14 +131,14 @@ export default function ListingsTable() {
 
   if (loading) {
     return (
-      <Card className="bg-white rounded-2xl shadow-sm border border-blue-100">
+      <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-blue-100 dark:border-gray-700">
         <CardHeader>
-          <CardTitle>My Listings</CardTitle>
+          <CardTitle className="dark:text-white">My Listings</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+              <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
             ))}
           </div>
         </CardContent>
@@ -148,15 +148,15 @@ export default function ListingsTable() {
 
   if (myListings.length === 0) {
     return (
-      <Card className="bg-white rounded-2xl shadow-sm border border-blue-100">
+      <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-blue-100 dark:border-gray-700">
         <CardContent className="p-12 text-center">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <DollarSign className="w-8 h-8 text-blue-600" />
+          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            <DollarSign className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             No listings yet
           </h3>
-          <p className="text-gray-500 mb-6">
+          <p className="text-gray-500 dark:text-gray-400 mb-6">
             Create your first rental listing to start earning from your domains.
           </p>
         </CardContent>
@@ -166,23 +166,23 @@ export default function ListingsTable() {
 
   return (
     <>
-      <Card className="bg-white rounded-2xl shadow-sm border border-blue-100">
+      <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-blue-100 dark:border-gray-700">
         <CardHeader>
-          <CardTitle>My Listings ({myListings.length})</CardTitle>
+          <CardTitle className="dark:text-white">My Listings ({myListings.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Domain</TableHead>
-                  <TableHead>Token</TableHead>
-                  <TableHead>Price/Day</TableHead>
-                  <TableHead>Deposit</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
+                <TableRow className="dark:border-gray-700">
+                  <TableHead className="dark:text-gray-300">Domain</TableHead>
+                  <TableHead className="dark:text-gray-300">Token</TableHead>
+                  <TableHead className="dark:text-gray-300">Price/Day</TableHead>
+                  <TableHead className="dark:text-gray-300">Deposit</TableHead>
+                  <TableHead className="dark:text-gray-300">Period</TableHead>
+                  <TableHead className="dark:text-gray-300">Status</TableHead>
+                  <TableHead className="dark:text-gray-300">Expires</TableHead>
+                  <TableHead className="w-[100px] dark:text-gray-300">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -195,20 +195,20 @@ export default function ListingsTable() {
                   const canUnlist = !isRented;
 
                   return (
-                    <TableRow key={listing.id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={listing.id} className="dark:border-gray-700">
+                      <TableCell className="font-medium dark:text-white">
                         {listing.domain}
                       </TableCell>
-                      <TableCell className="font-mono text-sm">
+                      <TableCell className="font-mono text-sm dark:text-gray-300">
                         {listing.listing.tokenId.toString()}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="dark:text-gray-300">
                         {formatUSD(listing.listing.pricePerDay)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="dark:text-gray-300">
                         {formatUSD(listing.listing.securityDeposit)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="dark:text-gray-300">
                         {listing.listing.minDays}-{listing.listing.maxDays}d
                       </TableCell>
                       <TableCell>
@@ -216,11 +216,11 @@ export default function ListingsTable() {
                       </TableCell>
                       <TableCell>
                         {isRented ? (
-                          <span className="text-sm">
+                          <span className="text-sm dark:text-gray-300">
                             {formatDate(listing.rental!.expires)}
                           </span>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-gray-400 dark:text-gray-500">-</span>
                         )}
                       </TableCell>
                       <TableCell>

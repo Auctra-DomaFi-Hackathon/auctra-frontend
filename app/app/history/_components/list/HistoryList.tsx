@@ -27,7 +27,7 @@ export default function HistoryList({
           <div className="space-y-6">
             {Object.entries(grouped).map(([day, items]) => (
               <div key={day}>
-                <div className="mb-2 text-xs sm:text-sm text-gray-500">{day}</div>
+                <div className="mb-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">{day}</div>
                 <div className="space-y-2">
                   {items.map((i: any) => <Row key={i.id} item={i} />)}
                 </div>
@@ -47,7 +47,7 @@ export default function HistoryList({
           <div className="space-y-8">
             {Object.entries(grouped).map(([day, items]) => (
               <div key={day}>
-                <div className="mb-3 text-sm text-gray-500">{day}</div>
+                <div className="mb-3 text-sm text-gray-500 dark:text-gray-400">{day}</div>
                 <div className="space-y-2">
                   {items.map((i: any) => <Row key={i.id} item={i} />)}
                 </div>

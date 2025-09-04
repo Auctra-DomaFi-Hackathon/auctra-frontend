@@ -44,12 +44,12 @@ export default function FilterBar() {
   const hasActiveFilters = filters.search || filters.tld || filters.minPrice !== undefined || filters.maxPrice !== undefined;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-blue-100 p-6 mb-8">
+    <div className="bg-white rounded-2xl shadow-sm border border-blue-100 p-6 mb-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {/* Search */}
         <div className="md:col-span-2 lg:col-span-2">
           <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
             <Input
               placeholder="Search domains..."
               value={filters.search || ""}
@@ -131,7 +131,7 @@ export default function FilterBar() {
               variant="outline"
               size="sm"
               onClick={clearFilters}
-              className="text-gray-600 hover:text-gray-800"
+              className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
             >
               <X className="h-4 w-4 mr-1" />
               Clear

@@ -9,17 +9,12 @@ import {
   Copy,
   ExternalLink,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useAccount, useConnect, useDisconnect, useBalance, useSwitchChain } from "wagmi";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect} from "react";
 import { domaTestnet } from "@/lib/config/wagmi";
+import ThemeToggle from "./ThemeToggle";
 
 export default function SecondaryNavbar() {
   const pathname = usePathname();
@@ -43,6 +38,7 @@ export default function SecondaryNavbar() {
   });
 
   const logo = "/images/logo/auctraLogo.png";
+  const logoWhite = "/images/logo/auctraLogo_white.png";
   const logoAlt = "Auctra Logo";
 
   const navItems = [
@@ -291,7 +287,7 @@ export default function SecondaryNavbar() {
         }
       `}</style>
       
-      <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-b border-gray-100 z-50">
+      <nav className="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 z-50">
         <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Left Navigation */}
@@ -301,9 +297,16 @@ export default function SecondaryNavbar() {
               alt={logoAlt}
               width={28}
               height={28}
-              className="logo"
+              className="logo block dark:hidden"
             />
-            <div className="text-xl font-medium text-black">Auctra</div>
+            <Image
+              src={logoWhite}
+              alt={logoAlt}
+              width={28}
+              height={28}
+              className="logo hidden dark:block"
+            />
+            <div className="text-xl font-medium text-black dark:text-white">Auctra</div>
           </Link>
 
           <div className="hidden md:flex items-center space-x-2 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -325,11 +328,11 @@ export default function SecondaryNavbar() {
                         variant="ghost"
                         onClick={() => handleDropdownClick(itemIndex)}
                         className={cn(
-                          "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition-all duration-200 hover:bg-blue-50 hover:text-blue-600",
+                          "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition-all duration-200 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400",
                           isActive
-                            ? "bg-blue-50 text-blue-700"
-                            : "text-gray-600",
-                          openDropdownIndex === itemIndex && "bg-blue-50 text-blue-700"
+                            ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                            : "text-gray-600 dark:text-gray-300",
+                          openDropdownIndex === itemIndex && "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
                         )}
                       >
                         {item.label}
@@ -342,7 +345,7 @@ export default function SecondaryNavbar() {
                       {/* Custom animated dropdown */}
                       {openDropdownIndex === itemIndex && (
                         <div 
-                          className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-[60]"
+                          className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-[60]"
                           style={{
                             animation: 'dropdownSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards',
                             transformOrigin: 'top center'
@@ -354,10 +357,10 @@ export default function SecondaryNavbar() {
                                 key={subItem.href}
                                 href={subItem.href}
                                 className={cn(
-                                  "rounded-md block px-3 py-2 text-sm transition-colors duration-150 hover:bg-blue-50 hover:text-blue-600",
+                                  "rounded-md block px-3 py-2 text-sm transition-colors duration-150 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400",
                                   pathname === subItem.href
-                                    ? "bg-blue-50 text-blue-700 font-medium"
-                                    : "text-gray-600"
+                                    ? "bg-blue-50 text-blue-700 font-medium dark:bg-blue-900/30 dark:text-blue-400"
+                                    : "text-gray-600 dark:text-gray-300"
                                 )}
                                 onClick={() => setOpenDropdownIndex(null)}
                               >
@@ -378,8 +381,8 @@ export default function SecondaryNavbar() {
                       className={cn(
                         "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                         pathname === item.href
-                          ? "bg-blue-50 text-blue-700"
-                          : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                          ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                          : "text-gray-600 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/30"
                       )}
                     >
                       {item.label}
@@ -393,6 +396,9 @@ export default function SecondaryNavbar() {
 
           {/* Right Actions - Minimal */}
           <div className="flex items-center space-x-3">
+            {/* Dark Mode Toggle */}
+            <ThemeToggle />
+            
             {/* Chain Indicator */}
             {isConnected && (
               <div className="flex items-center">
@@ -487,7 +493,7 @@ export default function SecondaryNavbar() {
                 {/* Wallet Dropdown */}
                 {isDropdownOpen && (
                   <div 
-                    className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-[60]"
+                    className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-[60]"
                     onMouseEnter={handleWalletEnter}
                     onMouseLeave={handleWalletLeave}
                   >
@@ -516,13 +522,13 @@ export default function SecondaryNavbar() {
                           )}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm font-medium text-gray-900 dark:text-black">
                             {connector?.name}
                           </p>
                           <p className={`text-xs ${
                             chain && chain.id !== domaTestnet.id 
-                              ? 'text-red-600' 
-                              : 'text-gray-500'
+                              ? 'text-red-600 dark:text-red-400' 
+                              : 'text-gray-500 dark:text-gray-400'
                           }`}>
                             {chain && chain.id !== domaTestnet.id 
                               ? `Wrong Network: ${chain.name}` 
@@ -584,10 +590,10 @@ export default function SecondaryNavbar() {
                     <div className="p-4 border-b border-gray-100">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             Wallet Address
                           </p>
-                          <p className="text-xs text-gray-500 font-mono break-all">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono break-all">
                             {address}
                           </p>
                         </div>
@@ -658,7 +664,7 @@ export default function SecondaryNavbar() {
                 {/* Connect Wallet Modal */}
                 {isConnectModalOpen && (
                   <div 
-                    className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-[60]"
+                    className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-[60]"
                     onMouseEnter={handleConnectEnter}
                     onMouseLeave={handleConnectLeave}
                   >

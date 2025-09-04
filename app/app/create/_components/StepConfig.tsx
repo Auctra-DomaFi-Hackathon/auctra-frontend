@@ -22,9 +22,9 @@ export default function StepConfig({
   nowISO: string
 }) {
   return (
-    <Card>
+    <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
       <CardHeader>
-        <CardTitle>Auction Configuration</CardTitle>
+        <CardTitle className="text-gray-900 dark:text-white">Auction Configuration</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {formData.auctionType === 'english' && (

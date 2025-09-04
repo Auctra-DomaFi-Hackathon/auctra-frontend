@@ -14,8 +14,8 @@ export default function AuctionGrid({
 }) {
   if (!auctions.length) {
     return (
-      <div className="text-center py-12 bg-gray-50 rounded-xl">
-        <p className="text-gray-600">{emptyLabel}</p>
+      <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        <p className="text-gray-600 dark:text-gray-400">{emptyLabel}</p>
       </div>
     )
   }

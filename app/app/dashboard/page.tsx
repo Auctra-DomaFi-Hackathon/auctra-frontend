@@ -48,17 +48,17 @@ export default function DashboardPage() {
         <Tabs value={tab}>
           <TabsContent value="auctions">
             <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-lg"></div>}>
-              <AuctionsTable rows={auctions} />
+              <AuctionsTable rows={auctions || []} />
             </Suspense>
           </TabsContent>
           <TabsContent value="bids">
             <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-lg"></div>}>
-              <BidsTable rows={bids} />
+              <BidsTable rows={bids || []} />
             </Suspense>
           </TabsContent>
           <TabsContent value="domains">
             <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-lg"></div>}>
-              <DomainsTable rows={domains} />
+              <DomainsTable rows={domains || []} />
             </Suspense>
           </TabsContent>
         </Tabs>

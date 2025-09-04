@@ -17,6 +17,7 @@ import {
   Plus,
   Shield,
   Globe,
+  AlertTriangle,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -31,6 +32,7 @@ import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@apollo/client";
 import { GET_NAME_FROM_TOKEN_QUERY } from "@/lib/graphql/queries";
 import { apolloClient } from "@/lib/graphql/client";
+import { cn } from "@/lib/utils";
 import type {
   NameFromTokenResponse,
   NameFromTokenVariables,
@@ -358,14 +360,14 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
 
   if (!isConnected) {
     return (
-      <Card className={className}>
+      <Card className={cn("dark:bg-gray-800 dark:border-gray-700", className)}>
         <CardContent className="p-6">
           <div className="text-center py-8">
-            <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <CreditCard className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               Connect Your Wallet
             </h3>
-            <p className="text-gray-600 flex items-center justify-center gap-1">
+            <p className="text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
               Connect your wallet to start borrowing
               <Image
                 src="/images/LogoCoin/usd-coin-usdc-logo.png"
@@ -383,11 +385,11 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
   }
 
   return (
-    <Card className={className}>
+    <Card className={cn("dark:bg-gray-800 dark:border-gray-700", className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-purple-600" />
+          <CardTitle className="flex items-center gap-2 dark:text-white">
+            <CreditCard className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             Borrow USDC
             <Image
               src="/images/LogoCoin/usd-coin-usdc-logo.png"
@@ -397,7 +399,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
               className="rounded-full"
             />
           </CardTitle>
-          <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+          <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800">
             <TrendingDown className="h-3 w-3 mr-1" />
             {getBorrowAPR()} APR
           </Badge>
@@ -405,27 +407,21 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
       </CardHeader>
 
       <CardContent className="p-6 pt-0">
-        {/* Collateral Status */}
+                {/* Collateral Status */}
         {!hasCollateral ? (
           <div className="mb-6">
-            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/20 dark:border-amber-800">
               <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center dark:bg-amber-900/30">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                </div>
                 <div>
-                  <h4 className="font-medium text-amber-800 mb-1">
+                  <h4 className="font-medium text-amber-800 mb-1 dark:text-amber-300">
                     No Collateral Deposited
                   </h4>
-                  <p className="text-sm text-amber-700 flex items-center gap-1">
-                    Select and deposit a premium domain NFT as collateral to
-                    borrow
-                    <Image
-                      src="/images/LogoCoin/usd-coin-usdc-logo.png"
-                      alt="USDC"
-                      width={12}
-                      height={12}
-                      className="rounded-full"
-                    />
-                    USDC.
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                    You need to deposit a domain name as collateral before you
+                    can borrow USDC.
                   </p>
                 </div>
               </div>
@@ -494,18 +490,18 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
             )}
           </div>
         ) : (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <Globe className="h-5 w-5 text-blue-400" />
+                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center dark:bg-green-900/30">
+                  <Globe className="h-5 w-5 text-blue-400 dark:text-blue-300" />
                 </div>
                 <div>
-                  <h4 className="font-medium text-green-800 mb-1">
+                  <h4 className="font-medium text-green-800 mb-1 dark:text-green-300">
                     Collateral Active
                   </h4>
                   <div className="space-y-1">
-                    <p className="text-sm text-green-700 font-medium flex items-center gap-2">
+                    <p className="text-sm text-green-700 font-medium flex items-center gap-2 dark:text-green-400">
                       {collateralMetadata ? (
                         getDomainName()
                       ) : (
@@ -515,7 +511,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                         </>
                       )}
                     </p>
-                    <p className="text-sm text-green-700">
+                    <p className="text-sm text-green-700 dark:text-green-400">
                       Token ID:{" "}
                       {(() => {
                         const tokenId =
@@ -528,7 +524,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                         return tokenId;
                       })()}
                     </p>
-                    <p className="text-sm text-green-700">
+                    <p className="text-sm text-green-700 dark:text-green-400">
                       Value: ${formatUSDC(userPosition.collateral.valueUsd6)}
                     </p>
                   </div>
@@ -581,10 +577,10 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Borrow Amount
                     </label>
-                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                    <span className="text-xs text-gray-500 flex items-center gap-1 dark:text-gray-400">
                       Max: {formatUSDC(userPosition.maxBorrowable)}
                       <Image
                         src="/images/LogoCoin/usd-coin-usdc-logo.png"
@@ -613,7 +609,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                       >
                         MAX
                       </Button>
-                      <span className="text-sm font-medium text-gray-600 flex items-center gap-1">
+                      <span className="text-sm font-medium text-gray-600 flex items-center gap-1 dark:text-gray-300">
                         <Image
                           src="/images/LogoCoin/usd-coin-usdc-logo.png"
                           alt="USDC"
@@ -628,15 +624,15 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                 </div>
 
                 {borrowAmount && (
-                  <div className="p-3 bg-purple-50 rounded-lg">
+                  <div className="p-3 bg-purple-50 rounded-lg dark:bg-purple-900/20 dark:border dark:border-purple-800">
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">Borrow APR</span>
-                      <span className="font-medium text-purple-600">
+                      <span className="text-gray-600 dark:text-gray-400">Borrow APR</span>
+                      <span className="font-medium text-purple-600 dark:text-purple-400">
                         {getBorrowAPR()}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">New Health Factor</span>
+                      <span className="text-gray-600 dark:text-gray-400">New Health Factor</span>
                       <span
                         className={`font-medium ${getHealthFactorColor(
                           calculateNewHealthFactor()
@@ -684,10 +680,10 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Repay Amount
                     </label>
-                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                    <span className="text-xs text-gray-500 flex items-center gap-1 dark:text-gray-400">
                       Debt: {formatUSDC(userPosition.debt.principal)}
                       <Image
                         src="/images/LogoCoin/usd-coin-usdc-logo.png"
@@ -716,7 +712,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                       >
                         MAX
                       </Button>
-                      <span className="text-sm font-medium text-gray-600 flex items-center gap-1">
+                      <span className="text-sm font-medium text-gray-600 flex items-center gap-1 dark:text-gray-300">
                         <Image
                           src="/images/LogoCoin/usd-coin-usdc-logo.png"
                           alt="USDC"
@@ -807,8 +803,8 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
         {/* Pool Stats */}
         <div className="grid grid-cols-2 gap-4">
           <div className="text-center">
-            <div className="text-sm text-gray-500 mb-1">Total Borrowed</div>
-            <div className="font-semibold flex items-center justify-center gap-1">
+            <div className="text-sm text-gray-500 mb-1 dark:text-gray-400">Total Borrowed</div>
+            <div className="font-semibold flex items-center justify-center gap-1 dark:text-white">
               <span>{formatUSDC(poolData.totalDebt)}</span>
               USDC
               <Image
@@ -821,8 +817,8 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
             </div>
           </div>
           <div className="text-center">
-            <div className="text-sm text-gray-500 mb-1">LTV Ratio</div>
-            <div className="font-semibold">
+            <div className="text-sm text-gray-500 mb-1 dark:text-gray-400">LTV Ratio</div>
+            <div className="font-semibold dark:text-white">
               {(poolData.ltvBps / 100).toFixed(0)}%
             </div>
           </div>
@@ -830,21 +826,21 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
 
         {/* Your Position */}
         {hasCollateral && (
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium mb-2 flex items-center gap-2">
-              <Shield className="h-4 w-4" />
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg dark:bg-gray-800 dark:border dark:border-gray-700">
+            <h4 className="font-medium mb-2 flex items-center gap-2 dark:text-white">
+              <Shield className="h-4 w-4 dark:text-gray-300" />
               Your Borrow Position
             </h4>
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Collateral Value</span>
-                <span className="font-medium">
+                <span className="text-gray-600 dark:text-gray-400">Collateral Value</span>
+                <span className="font-medium dark:text-white">
                   ${formatUSDC(userPosition.collateral.valueUsd6)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Borrowed Amount</span>
-                <span className="font-medium flex items-center gap-1">
+                <span className="text-gray-600 dark:text-gray-400">Borrowed Amount</span>
+                <span className="font-medium flex items-center gap-1 dark:text-white">
                   <span>{formatUSDC(userPosition.debt.principal)}</span>
                   USDC
                   <Image
@@ -857,7 +853,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Health Factor</span>
+                <span className="text-gray-600 dark:text-gray-400">Health Factor</span>
                 <span
                   className={`font-medium ${getHealthFactorColor(
                     userPosition.healthFactor
@@ -867,8 +863,8 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Max Borrowable</span>
-                <span className="font-medium flex items-center gap-1">
+                <span className="text-gray-600 dark:text-gray-400">Max Borrowable</span>
+                <span className="font-medium flex items-center gap-1 dark:text-white">
                   <span>{formatUSDC(userPosition.maxBorrowable)}</span>
                   USDC
                   <Image

@@ -31,10 +31,10 @@ export default function Stepper({ currentStep, steps }: StepperProps) {
                   className={cn(
                     "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors",
                     isCompleted
-                      ? "bg-blue-600 border-blue-600 text-white"
+                      ? "bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500 text-white"
                       : isCurrent
-                      ? "border-blue-600 text-blue-600 bg-blue-50"
-                      : "border-gray-300 text-gray-400 bg-white"
+                      ? "border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
+                      : "border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-800"
                   )}
                 >
                   {isCompleted ? (
@@ -50,13 +50,13 @@ export default function Stepper({ currentStep, steps }: StepperProps) {
                     className={cn(
                       "text-sm font-medium",
                       isCurrent || isCompleted
-                        ? "text-blue-600"
-                        : "text-gray-500"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-500 dark:text-gray-400"
                     )}
                   >
                     {step.title}
                   </div>
-                  <div className="text-xs text-gray-400 mt-1 max-w-20">
+                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-20">
                     {step.description}
                   </div>
                 </div>
@@ -67,7 +67,7 @@ export default function Stepper({ currentStep, steps }: StepperProps) {
                 <div
                   className={cn(
                     "flex-1 h-0.5 mx-4 transition-colors",
-                    isCompleted ? "bg-blue-600" : "bg-gray-300"
+                    isCompleted ? "bg-blue-600 dark:bg-blue-500" : "bg-gray-300 dark:bg-gray-600"
                   )}
                 />
               )}

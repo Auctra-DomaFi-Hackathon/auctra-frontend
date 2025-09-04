@@ -12,6 +12,7 @@ import Image from 'next/image'
 import { useLendingPool, formatUSDC, parseUSDC, formatAPR } from '@/hooks/useLendingPool'
 import { useAccount } from 'wagmi'
 import { toast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 
 interface SupplyPanelProps {
   className?: string
@@ -172,7 +173,7 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
 
   if (!isConnected) {
     return (
-      <Card className={className}>
+      <Card className={cn("dark:bg-gray-800 dark:border-gray-700", className)}>
         <CardContent className="p-6">
           <div className="text-center py-8">
             <Image 
@@ -182,8 +183,8 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
               height={48}
               className="mx-auto mb-4 opacity-60"
             />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Connect Your Wallet</h3>
-            <p className="text-gray-600 flex items-center justify-center gap-1">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Connect Your Wallet</h3>
+            <p className="text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
               Connect your wallet to start earning with 
               <Image 
                 src="/images/LogoCoin/usd-coin-usdc-logo.png" 
@@ -201,10 +202,10 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
   }
 
   return (
-    <Card className={className}>
+    <Card className={cn("dark:bg-gray-800 dark:border-gray-700", className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
             <Image 
               src="/images/LogoCoin/usd-coin-usdc-logo.png" 
               alt="USDC"
@@ -214,7 +215,7 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
             />
             Supply USDC & Earn
           </CardTitle>
-          <Badge variant="secondary" className="bg-green-100 text-green-700">
+          <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-600">
             <TrendingUp className="h-3 w-3 mr-1" />
             {getSupplyAPR()} APR
           </Badge>
@@ -245,10 +246,10 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Supply Amount
                 </label>
-                <span className="text-xs text-gray-500 flex items-center gap-1">
+                <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                   Balance: {formatUSDC(typeof usdcBalance === 'bigint' ? usdcBalance : BigInt(0))} 
                   <Image 
                     src="/images/LogoCoin/usd-coin-usdc-logo.png" 
@@ -277,7 +278,7 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
                   >
                     MAX
                   </Button>
-                  <span className="text-sm font-medium text-gray-600 flex items-center gap-1">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
                     <Image 
                       src="/images/LogoCoin/usd-coin-usdc-logo.png" 
                       alt="USDC"
@@ -292,10 +293,10 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
             </div>
 
             {supplyAmount && (
-              <div className="p-3 bg-blue-50 rounded-lg">
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">You will earn</span>
-                  <span className="font-medium text-blue-600">{getSupplyAPR()} APR</span>
+                  <span className="text-gray-600 dark:text-gray-400">You will earn</span>
+                  <span className="font-medium text-blue-600 dark:text-blue-400">{getSupplyAPR()} APR</span>
                 </div>
               </div>
             )}
@@ -352,10 +353,10 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Withdraw Amount
                 </label>
-                <span className="text-xs text-gray-500 flex items-center gap-1">
+                <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                   Supplied: {getUserSuppliedAmount()} 
                   <Image 
                     src="/images/LogoCoin/usd-coin-usdc-logo.png" 
@@ -384,7 +385,7 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
                   >
                     MAX
                   </Button>
-                  <span className="text-sm font-medium text-gray-600 flex items-center gap-1">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
                     <Image 
                       src="/images/LogoCoin/usd-coin-usdc-logo.png" 
                       alt="USDC"
@@ -429,8 +430,8 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
         {/* Pool Stats */}
         <div className="grid grid-cols-2 gap-4">
           <div className="text-center">
-            <div className="text-sm text-gray-500 mb-1">Total Supplied</div>
-            <div className="font-semibold flex items-center justify-center gap-1">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Supplied</div>
+            <div className="font-semibold flex items-center justify-center gap-1 text-gray-900 dark:text-white">
               <span>{formatUSDC(poolData.totalAssets)}</span>
               USDC
                <Image 
@@ -443,8 +444,8 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
             </div>
           </div>
           <div className="text-center">
-            <div className="text-sm text-gray-500 mb-1">Utilization</div>
-            <div className="font-semibold">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Utilization</div>
+            <div className="font-semibold text-gray-900 dark:text-white">
               {((Number(poolData.utilization1e18) / 1e18) * 100).toFixed(1)}%
             </div>
           </div>
@@ -452,11 +453,11 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
 
         {/* Your Position */}
         {userPosition.shares > BigInt(0) && (
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h5 className="font-medium mb-2">Your Supply Position</h5>
+          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <h5 className="font-medium mb-2 text-gray-900 dark:text-white">Your Supply Position</h5>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Supplied Amount</span>
-              <span className="font-medium flex items-center gap-1">
+              <span className="text-gray-600 dark:text-gray-400">Supplied Amount</span>
+              <span className="font-medium flex items-center gap-1 text-gray-900 dark:text-white">
                 {getUserSuppliedAmount()} 
                 <Image 
                   src="/images/LogoCoin/usd-coin-usdc-logo.png" 
@@ -469,8 +470,8 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
               </span>
             </div>
             <div className="flex justify-between text-sm mt-1">
-              <span className="text-gray-600">Current APR</span>
-              <span className="font-medium text-green-600">{getSupplyAPR()}</span>
+              <span className="text-gray-600 dark:text-gray-400">Current APR</span>
+              <span className="font-medium text-green-600 dark:text-green-400">{getSupplyAPR()}</span>
             </div>
           </div>
         )}

@@ -14,9 +14,9 @@ export default function ListingsGrid() {
 
   if (error) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-8 text-center">
-        <div className="text-red-600 mb-2">⚠️ Error</div>
-        <p className="text-gray-600">{error}</p>
+      <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-8 text-center dark:bg-gray-800 dark:border-red-800">
+        <div className="text-red-600 mb-2 dark:text-red-400">⚠️ Error</div>
+        <p className="text-gray-600 dark:text-gray-400">{error}</p>
       </div>
     );
   }

@@ -20,16 +20,16 @@ export default function SupplyBorrowPage() {
   return (
     <div className="container mx-auto px-6 lg:px-12 py-10 space-y-8">
       {/* Page Header */}
-      <Card className="border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 shadow-sm">
+      <Card className="border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 shadow-sm">
         <CardHeader>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Layers className="h-6 w-6 text-blue-600" />
+              <Layers className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               <div>
-                <CardTitle className="text-xl sm:text-2xl">
+                <CardTitle className="text-xl sm:text-2xl text-gray-900 dark:text-white">
                   Domain Lending Pool
                 </CardTitle>
-                <p className="text-gray-600 mt-1 flex items-center gap-1">
+                <p className="text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-1">
                   Supply USDC to earn yield or borrow against your premium
                   domains
                 </p>
@@ -39,7 +39,7 @@ export default function SupplyBorrowPage() {
             <div className="flex items-center gap-2">
               <Badge
                 variant="secondary"
-                className="bg-green-100 text-green-700"
+                className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-600"
               >
                 <Activity className="h-3 w-3 mr-1" />
                 Pool Active
@@ -51,12 +51,12 @@ export default function SupplyBorrowPage() {
 
       {/* Pool Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Value Locked</p>
-                <p className="text-lg font-semibold flex items-center gap-1">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Value Locked</p>
+                <p className="text-lg font-semibold flex items-center gap-1 text-gray-900 dark:text-white">
                   <Image
                     src="/images/LogoCoin/usd-coin-usdc-logo.png"
                     alt="USDC"
@@ -67,7 +67,7 @@ export default function SupplyBorrowPage() {
                   {formatUSDC(poolData.totalAssets)}
                 </p>
               </div>
-              <div className="h-8 w-8 bg-blue-100 p-1.5 rounded-lg flex items-center justify-center">
+              <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded-lg flex items-center justify-center">
                 <Image
                   src="/images/LogoCoin/usd-coin-usdc-logo.png"
                   alt="USDC"
@@ -80,12 +80,12 @@ export default function SupplyBorrowPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Borrowed</p>
-                <p className="text-lg font-semibold flex items-center gap-1">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Borrowed</p>
+                <p className="text-lg font-semibold flex items-center gap-1 text-gray-900 dark:text-white">
                   <Image
                     src="/images/LogoCoin/usd-coin-usdc-logo.png"
                     alt="USDC"
@@ -96,7 +96,7 @@ export default function SupplyBorrowPage() {
                   {formatUSDC(poolData.totalDebt)}
                 </p>
               </div>
-              <div className="h-8 w-8 bg-blue-100 p-1.5 rounded-lg flex items-center justify-center">
+              <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded-lg flex items-center justify-center">
                 <Image
                   src="/images/LogoCoin/usd-coin-usdc-logo.png"
                   alt="USDC"
@@ -109,31 +109,31 @@ export default function SupplyBorrowPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Utilization Rate</p>
-                <p className="text-lg font-semibold">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Utilization Rate</p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">
                   {((Number(poolData.utilization1e18) / 1e18) * 100).toFixed(1)}
                   %
                 </p>
               </div>
-              <Activity className="h-8 w-8 text-green-500 bg-green-100 p-1.5 rounded-lg" />
+              <Activity className="h-8 w-8 text-green-500 dark:text-green-400 bg-green-100 dark:bg-green-900/30 p-1.5 rounded-lg" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Current Borrow APR</p>
-                <p className="text-lg font-semibold">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Current Borrow APR</p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">
                   {(poolData.aprBps / 100).toFixed(1)}%
                 </p>
               </div>
-              <Layers className="h-8 w-8 text-orange-500 bg-orange-100 p-1.5 rounded-lg" />
+              <Layers className="h-8 w-8 text-orange-500 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 p-1.5 rounded-lg" />
             </div>
           </CardContent>
         </Card>
@@ -146,36 +146,36 @@ export default function SupplyBorrowPage() {
       </div>
 
       {/* Pool Parameters */}
-      <Card>
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Layers className="h-5 w-5 text-gray-600" />
+          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+            <Layers className="h-5 w-5 text-gray-600 dark:text-gray-400" />
             Pool Parameters
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {(poolData.ltvBps / 100).toFixed(0)}%
               </div>
-              <div className="text-sm text-gray-600">Max LTV</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Max LTV</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                 {(poolData.liqThresholdBps / 100).toFixed(0)}%
               </div>
-              <div className="text-sm text-gray-600">Liquidation Threshold</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Liquidation Threshold</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                 {(poolData.aprBps / 100).toFixed(1)}%
               </div>
-              <div className="text-sm text-gray-600">Base Borrow APR</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Base Borrow APR</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">24h</div>
-              <div className="text-sm text-gray-600">Grace Period</div>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">24h</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Grace Period</div>
             </div>
           </div>
         </CardContent>

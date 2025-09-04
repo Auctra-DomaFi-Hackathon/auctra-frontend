@@ -13,8 +13,8 @@ export default function Row({ item }: { item: ActivityItem }) {
   return (
     <div
       className="
-        flex items-start gap-3 rounded-2xl border border-gray-200 bg-white
-        p-3 sm:p-4 shadow-sm hover:bg-blue-50/30 transition
+        flex items-start gap-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800
+        p-3 sm:p-4 shadow-sm hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition
       "
     >
       <div
@@ -29,31 +29,31 @@ export default function Row({ item }: { item: ActivityItem }) {
 
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          <div className="font-medium text-gray-900 truncate">{item.title}</div>
+          <div className="font-medium text-gray-900 dark:text-white truncate">{item.title}</div>
 
           {item.amount && (
             <Badge
               variant="secondary"
-              className="bg-blue-50 text-blue-700 border-blue-200 text-[11px] sm:text-xs"
+              className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800 text-[11px] sm:text-xs"
             >
               {item.amount}
             </Badge>
           )}
 
           {item.domain && (
-            <Badge variant="outline" className="gap-1 text-[11px] sm:text-xs">
+            <Badge variant="outline" className="gap-1 text-[11px] sm:text-xs dark:border-gray-600 dark:text-gray-300">
               <GlobeMini /> {item.domain}
             </Badge>
           )}
 
-          <Badge variant="outline" className="text-[11px] sm:text-xs">{item.kind}</Badge>
+          <Badge variant="outline" className="text-[11px] sm:text-xs dark:border-gray-600 dark:text-gray-300">{item.kind}</Badge>
         </div>
 
         {item.subtitle && (
-          <div className="text-xs sm:text-sm text-gray-600 mt-0.5">{item.subtitle}</div>
+          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5">{item.subtitle}</div>
         )}
 
-        <div className="text-[11px] sm:text-xs text-gray-500 mt-2 flex items-center gap-1">
+        <div className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-1">
           <Clock className="h-3.5 w-3.5" />
           {timeShort(item.time)}
           {item.txHash && (
@@ -61,7 +61,7 @@ export default function Row({ item }: { item: ActivityItem }) {
               href={`https://sepolia.etherscan.io/tx/${item.txHash}`}
               target="_blank"
               rel="noreferrer"
-              className="ml-3 inline-flex items-center gap-1 text-blue-700 hover:underline"
+              className="ml-3 inline-flex items-center gap-1 text-blue-700 dark:text-blue-400 hover:underline"
             >
               View tx <ArrowUpRight className="h-3.5 w-3.5" />
             </a>

@@ -39,30 +39,30 @@ export default function StepDomain({
 
   return (
     <div className="space-y-6">
-      <Card className="bg-white rounded-2xl shadow-sm border border-blue-100">
+      <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-blue-100 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-blue-600 font-semibold text-sm">1</span>
+          <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+              <span className="text-blue-600 dark:text-blue-400 font-semibold text-sm">1</span>
             </div>
             Select Your Domain
           </CardTitle>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Choose a domain NFT from your wallet to list for rental
           </p>
         </CardHeader>
         
         <CardContent className="space-y-6">
-          <Alert className="bg-blue-50 border-blue-200">
-            <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-700">
+          <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="text-blue-700 dark:text-blue-400">
               Your NFT will be securely held in our rental vault while listed. You maintain ownership and can unlist anytime when not actively rented.
             </AlertDescription>
           </Alert>
 
           {domains.length > 0 ? (
             <div className="space-y-4">
-              <h4 className="font-medium text-gray-900">
+              <h4 className="font-medium text-gray-900 dark:text-white">
                 Your Domains ({domains.length})
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -72,29 +72,29 @@ export default function StepDomain({
                     className={cn(
                       "cursor-pointer transition-all border-2",
                       selectedDomainId === domain.id 
-                        ? "ring-2 ring-blue-600 border-blue-600 bg-blue-50" 
-                        : "border-gray-200 hover:border-blue-300 hover:shadow-md"
+                        ? "ring-2 ring-blue-600 border-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-500" 
+                        : "border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md dark:bg-gray-800"
                     )}
                     onClick={() => onDomainSelect?.(domain)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900">{domain.name}</h4>
-                          <p className="text-xs text-gray-500 font-mono mt-1">
+                          <h4 className="font-semibold text-gray-900 dark:text-white">{domain.name}</h4>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">
                             {domain.tokenId && `Token ID: ${formatTokenId(domain.tokenId)}`}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             Expires: {domain.expiresAt ? new Date(domain.expiresAt).toLocaleDateString() : 'N/A'}
                           </p>
                         </div>
                         <div className="flex flex-col items-end gap-2">
-                          <Badge variant="outline" className="gap-1">
-                            <BadgeCheck className="w-4 h-4 text-blue-600" />
+                          <Badge variant="outline" className="gap-1 dark:border-gray-600 dark:text-gray-300">
+                            <BadgeCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                             Owned
                           </Badge>
                           {selectedDomainId === domain.id && (
-                            <Badge className="bg-blue-600 text-white">
+                            <Badge className="bg-blue-600 dark:bg-blue-500 text-white">
                               Selected
                             </Badge>
                           )}
@@ -106,15 +106,15 @@ export default function StepDomain({
               </div>
             </div>
           ) : (
-            <div className="text-center py-12 bg-gray-50 rounded-lg">
-              <div className="text-gray-400 mb-4">
+            <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="text-gray-400 dark:text-gray-500 mb-4">
                 <BadgeCheck className="w-16 h-16 mx-auto" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Domains Found</h3>
-              <p className="text-gray-500 mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Domains Found</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
                 We couldn&apos;t find any domain NFTs in your connected wallet.
               </p>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-gray-400 dark:text-gray-500">
                 Make sure your wallet is connected and contains domain NFTs.
               </p>
             </div>
@@ -141,13 +141,13 @@ export default function StepDomain({
       </Card>
 
       {/* Info Section */}
-      <Card className="bg-green-50 border-green-200">
+      <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
         <CardContent className="p-4">
-          <h3 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+          <h3 className="font-medium text-green-800 dark:text-green-400 mb-2 flex items-center gap-2">
             <Info className="w-4 h-4" />
             How It Works
           </h3>
-          <div className="text-sm text-green-700 space-y-1">
+          <div className="text-sm text-green-700 dark:text-green-400 space-y-1">
             <p>• Select a domain from your wallet that you want to rent out</p>
             <p>• Set your rental terms (price, duration, security deposit)</p>
             <p>• Your domain will be safely stored in our smart contract vault</p>

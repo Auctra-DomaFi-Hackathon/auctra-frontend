@@ -49,15 +49,15 @@ export default function StepTerms({
 
   return (
     <div className="space-y-6">
-      <Card className="bg-white rounded-2xl shadow-sm border border-blue-100">
+      <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-blue-100 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-blue-600 font-semibold text-sm">2</span>
+          <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+              <span className="text-blue-600 dark:text-blue-400 font-semibold text-sm">2</span>
             </div>
             Rental Terms
           </CardTitle>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Set your pricing and rental duration limits
           </p>
         </CardHeader>
@@ -66,13 +66,13 @@ export default function StepTerms({
           {/* Pricing Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-3">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <h3 className="font-medium text-gray-900">Pricing</h3>
+              <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <h3 className="font-medium text-gray-900 dark:text-white">Pricing</h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="price-per-day" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="price-per-day" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Daily Rate (USD) *
                 </Label>
                 <Input
@@ -84,13 +84,13 @@ export default function StepTerms({
                   onChange={(e) => onPricePerDayChange(e.target.value)}
                   className="mt-1 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   How much you charge per day
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="security-deposit" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="security-deposit" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Security Deposit (USD) *
                 </Label>
                 <Input
@@ -102,7 +102,7 @@ export default function StepTerms({
                   onChange={(e) => onSecurityDepositChange(e.target.value)}
                   className="mt-1 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Refundable deposit for security
                 </p>
               </div>
@@ -112,13 +112,13 @@ export default function StepTerms({
           {/* Duration Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-3">
-              <Calendar className="w-5 h-5 text-blue-600" />
-              <h3 className="font-medium text-gray-900">Rental Duration</h3>
+              <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <h3 className="font-medium text-gray-900 dark:text-white">Rental Duration</h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="min-days" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="min-days" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Minimum Days *
                 </Label>
                 <Input
@@ -129,13 +129,13 @@ export default function StepTerms({
                   onChange={(e) => onMinDaysChange(e.target.value)}
                   className="mt-1 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Shortest rental period allowed
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="max-days" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="max-days" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Maximum Days *
                 </Label>
                 <Input
@@ -146,7 +146,7 @@ export default function StepTerms({
                   onChange={(e) => onMaxDaysChange(e.target.value)}
                   className="mt-1 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Longest rental period allowed
                 </p>
               </div>
@@ -155,27 +155,27 @@ export default function StepTerms({
 
           {/* Preview */}
           {isValid && (
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
               <div className="flex items-center gap-2 mb-3">
-                <Shield className="w-5 h-5 text-blue-600" />
-                <h4 className="font-medium text-blue-900">Rental Preview</h4>
+                <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h4 className="font-medium text-blue-900 dark:text-blue-300">Rental Preview</h4>
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-blue-600">Daily Rate:</span>
-                  <p className="font-medium text-blue-900">{formatUSD(priceUSDC)}</p>
+                  <span className="text-blue-600 dark:text-blue-400">Daily Rate:</span>
+                  <p className="font-medium text-blue-900 dark:text-blue-300">{formatUSD(priceUSDC)}</p>
                 </div>
                 <div>
-                  <span className="text-blue-600">Security Deposit:</span>
-                  <p className="font-medium text-blue-900">{formatUSD(depositUSDC)}</p>
+                  <span className="text-blue-600 dark:text-blue-400">Security Deposit:</span>
+                  <p className="font-medium text-blue-900 dark:text-blue-300">{formatUSD(depositUSDC)}</p>
                 </div>
                 <div>
-                  <span className="text-blue-600">Min Rental:</span>
-                  <p className="font-medium text-blue-900">{minDaysNum} day{minDaysNum !== 1 ? 's' : ''}</p>
+                  <span className="text-blue-600 dark:text-blue-400">Min Rental:</span>
+                  <p className="font-medium text-blue-900 dark:text-blue-300">{minDaysNum} day{minDaysNum !== 1 ? 's' : ''}</p>
                 </div>
                 <div>
-                  <span className="text-blue-600">Max Rental:</span>
-                  <p className="font-medium text-blue-900">{maxDaysNum} day{maxDaysNum !== 1 ? 's' : ''}</p>
+                  <span className="text-blue-600 dark:text-blue-400">Max Rental:</span>
+                  <p className="font-medium text-blue-900 dark:text-blue-300">{maxDaysNum} day{maxDaysNum !== 1 ? 's' : ''}</p>
                 </div>
               </div>
             </div>
@@ -205,10 +205,10 @@ export default function StepTerms({
       </Card>
 
       {/* Tips Section */}
-      <Card className="bg-yellow-50 border-yellow-200">
+      <Card className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
         <CardContent className="p-4">
-          <h3 className="font-medium text-yellow-800 mb-2">💡 Pricing Tips</h3>
-          <div className="text-sm text-yellow-700 space-y-1">
+          <h3 className="font-medium text-yellow-800 dark:text-yellow-400 mb-2">💡 Pricing Tips</h3>
+          <div className="text-sm text-yellow-700 dark:text-yellow-400 space-y-1">
             <p>• Research similar domains to price competitively</p>
             <p>• Higher deposits discourage misuse but may reduce interest</p>
             <p>• Flexible duration ranges attract more renters</p>

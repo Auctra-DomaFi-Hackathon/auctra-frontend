@@ -14,10 +14,10 @@ export default function HistoryPage() {
     <div className="container mx-auto px-6 lg:px-12 py-10">
       <PageHeader />
 
-      <Card className="border-gray-200 shadow-sm">
+      <Card className="border-gray-200 dark:border-gray-700 dark:bg-gray-800 shadow-sm">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <HistoryIcon className="h-5 w-5 text-blue-600" />
+          <CardTitle className="flex items-center gap-2 dark:text-white">
+            <HistoryIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             Activity & Alerts
           </CardTitle>
 
@@ -25,7 +25,7 @@ export default function HistoryPage() {
         </CardHeader>
 
         <CardContent>
-          <HistoryList loading={loading} grouped={grouped} hasItems={flat.length > 0} />
+          <HistoryList loading={loading || false} grouped={grouped} hasItems={flat.length > 0} />
         </CardContent>
       </Card>
     </div>

@@ -14,13 +14,11 @@ import { useCreateAuctionForm } from './_components/hooks/useCreateAuctionForm'
 export default function CreateAuctionPage() {
   const form = useCreateAuctionForm()
 
-  if (form.loading) return <LoadingState label="Loading your domains…" />
-
   return (
     <div className="container mx-auto px-6 py-10 max-w-4xl">
       <header className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Create Auction</h1>
-        <p className="text-lg text-gray-600">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Create Auction</h1>
+        <p className="text-lg text-gray-600 dark:text-gray-300">
           List your domain with transparent on-chain price discovery.
         </p>
       </header>

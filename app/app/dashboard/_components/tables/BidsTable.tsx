@@ -17,25 +17,25 @@ export default function BidsTable({ rows }: { rows: BidRow[] }) {
   const bSort = useSort(rows)
 
   return (
-    <Card className="border-gray-200 shadow-sm">
+    <Card className="border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
           {/* <Coins className="h-5 w-5 text-blue-600" /> */}
-          <PushPin className="h-5 w-5 text-blue-600" />
+          <PushPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           My Bids
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-blue-50/40">
-              <TableRow>
+            <TableHeader className="bg-blue-50/40 dark:bg-gray-700/50">
+              <TableRow className="border-gray-200 dark:border-gray-600">
                 <SortHead onClick={() => bSort.toggle('domain')} active={bSort.key==='domain'} dir={bSort.dir}>Domain</SortHead>
                 <SortHead onClick={() => bSort.toggle('type')} active={bSort.key==='type'} dir={bSort.dir}>Type</SortHead>
-                <th className="px-4 py-2 whitespace-nowrap">Your Bid</th>
-                <th className="px-4 py-2 whitespace-nowrap">Phase/Rank</th>
+                <th className="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300">Your Bid</th>
+                <th className="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300">Phase/Rank</th>
                 <SortHead onClick={() => bSort.toggle('result')} active={bSort.key==='result'} dir={bSort.dir}>Result</SortHead>
-                <th className="px-4 py-2">Tx</th>
+                <th className="px-4 py-2 text-gray-700 dark:text-gray-300">Tx</th>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -45,18 +45,18 @@ export default function BidsTable({ rows }: { rows: BidRow[] }) {
                 <EmptyRow message="You haven't placed any bids" colSpan={6} />
               ) : (
                 bSort.sorted.map((r) => (
-                  <TableRow key={r.id} className="hover:bg-blue-50/30 transition">
-                    <TableCell className="font-medium">{r.domain}</TableCell>
-                    <TableCell>{r.type}</TableCell>
-                    <TableCell>{r.yourBid}</TableCell>
-                    <TableCell>{r.phaseOrRank}</TableCell>
+                  <TableRow key={r.id} className="hover:bg-blue-50/30 dark:hover:bg-gray-700/50 transition border-gray-200 dark:border-gray-700">
+                    <TableCell className="font-medium text-gray-900 dark:text-white">{r.domain}</TableCell>
+                    <TableCell className="text-gray-700 dark:text-gray-300">{r.type}</TableCell>
+                    <TableCell className="text-gray-700 dark:text-gray-300">{r.yourBid}</TableCell>
+                    <TableCell className="text-gray-700 dark:text-gray-300">{r.phaseOrRank}</TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
                         className={cn(
-                          r.result === 'Won' && 'text-blue-700 border-blue-200 bg-blue-50',
-                          r.result === 'Lost' && 'text-red-700 border-red-200 bg-red-50',
-                          r.result === 'Pending' && 'text-gray-700'
+                          r.result === 'Won' && 'text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/30',
+                          r.result === 'Lost' && 'text-red-700 dark:text-red-300 border-red-200 dark:border-red-600 bg-red-50 dark:bg-red-900/30',
+                          r.result === 'Pending' && 'text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'
                         )}
                       >
                         {r.result}
@@ -65,7 +65,7 @@ export default function BidsTable({ rows }: { rows: BidRow[] }) {
                     <TableCell>
                       {r.txHash ? (
                         <a
-                          className="text-blue-700 hover:underline"
+                          className="text-blue-700 dark:text-blue-400 hover:underline"
                           href={`https://sepolia.etherscan.io/tx/${r.txHash}`}
                           target="_blank"
                           rel="noreferrer"
@@ -73,7 +73,7 @@ export default function BidsTable({ rows }: { rows: BidRow[] }) {
                           View
                         </a>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-gray-400 dark:text-gray-500">—</span>
                       )}
                     </TableCell>
                   </TableRow>

@@ -71,7 +71,7 @@ export default function DomainsTable({ rows }: { rows: DomainRow[] }) {
           href={explorerUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
+          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors flex items-center gap-1"
           title={`View ${tokenAddress} on Doma Explorer`}
         >
           <span className="font-mono text-sm">{shortAddress}</span>
@@ -82,18 +82,18 @@ export default function DomainsTable({ rows }: { rows: DomainRow[] }) {
   };
 
   return (
-    <Card className="border-gray-200 shadow-sm">
+    <Card className="border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
-          <Globe className="h-5 w-5 text-blue-600" />
+        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+          <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           My Domains
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-blue-50/40">
-              <TableRow>
+            <TableHeader className="bg-blue-50/40 dark:bg-gray-700/50">
+              <TableRow className="border-gray-200 dark:border-gray-600">
                 <SortHead
                   onClick={() => dSort.toggle("domain")}
                   active={dSort.key === "domain"}
@@ -115,11 +115,11 @@ export default function DomainsTable({ rows }: { rows: DomainRow[] }) {
                 >
                   Status
                 </SortHead>
-                <th className="px-4 py-2">Expires</th>
-                <th className="px-4 py-2">Token Address</th>
-                <th className="px-4 py-2">Token ID</th>
-                <th className="px-4 py-2">Chain</th>
-                <th className="text-right px-4 py-2">Actions</th>
+                <th className="px-4 py-2 text-gray-700 dark:text-gray-300">Expires</th>
+                <th className="px-4 py-2 text-gray-700 dark:text-gray-300">Token Address</th>
+                <th className="px-4 py-2 text-gray-700 dark:text-gray-300">Token ID</th>
+                <th className="px-4 py-2 text-gray-700 dark:text-gray-300">Chain</th>
+                <th className="text-right px-4 py-2 text-gray-700 dark:text-gray-300">Actions</th>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -131,19 +131,19 @@ export default function DomainsTable({ rows }: { rows: DomainRow[] }) {
                 dSort.sorted.map((r) => (
                   <TableRow
                     key={r.id}
-                    className="hover:bg-blue-50/30 transition"
+                    className="hover:bg-blue-50/30 dark:hover:bg-gray-700/50 transition border-gray-200 dark:border-gray-700"
                   >
-                    <TableCell className="font-medium">{r.domain}</TableCell>
-                    <TableCell>{r.tld}</TableCell>
+                    <TableCell className="font-medium text-gray-900 dark:text-white">{r.domain}</TableCell>
+                    <TableCell className="text-gray-700 dark:text-gray-300">{r.tld}</TableCell>
                     <TableCell>
                       <Badge
                         variant="secondary"
-                        className="bg-blue-50 text-blue-700 border-blue-200"
+                        className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-600"
                       >
                         {r.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600 ">
+                    <TableCell className="text-sm text-gray-600 dark:text-gray-400">
                       <span className="flex items-center justify-center">
                         {r.expiresAt
                           ? new Date(r.expiresAt).toLocaleDateString()
@@ -153,7 +153,7 @@ export default function DomainsTable({ rows }: { rows: DomainRow[] }) {
                     <TableCell>
                       {renderTokenAddressCell(r.tokenAddress)}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600 font-mono">
+                    <TableCell className="text-sm text-gray-600 dark:text-gray-400 font-mono">
                       {r.tokenId ? (
                         <span
                           title={r.tokenId}

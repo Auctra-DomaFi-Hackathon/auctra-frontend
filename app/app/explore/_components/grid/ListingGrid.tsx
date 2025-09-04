@@ -31,8 +31,8 @@ export default function ListingGrid({
   };
   if (!listings.length) {
     return (
-      <div className="text-center py-12 bg-gray-50 rounded-xl">
-        <p className="text-gray-600">{emptyLabel}</p>
+      <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        <p className="text-gray-600 dark:text-gray-400">{emptyLabel}</p>
       </div>
     );
   }
@@ -70,51 +70,51 @@ export default function ListingGrid({
         {listings.map((listing) => (
           <Card
             key={listing.id}
-            className="hover:shadow-lg transition-shadow cursor-pointer"
+            className="hover:shadow-lg transition-shadow cursor-pointer bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
           >
             <CardHeader className="space-y-2">
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-lg">
+                  <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
                     {listing.metadata?.name ||
                       `Token #${listing.tokenId.slice(-8)}`}
                   </h3>
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                     {listing.metadata?.tld || ".eth"}
                   </Badge>
                 </div>
                 <Badge
                   variant="outline"
-                  className="text-green-600 border-green-300"
+                  className="text-green-600 dark:text-green-400 border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/30"
                 >
                   {listing.status}
                 </Badge>
               </div>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Seller: {formatAddress(listing.seller)}
               </p>
             </CardHeader>
 
             <CardContent className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Reserve Price:
                 </span>
-                <span className="font-bold text-lg text-blue-600">
+                <span className="font-bold text-lg text-blue-600 dark:text-blue-400">
                   {formatPrice(listing.reservePrice)}
                 </span>
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Strategy:
                 </span>
                 <Badge
                   variant={listing.strategy ? "default" : "outline"}
                   className={
                     listing.strategy
-                      ? "bg-purple-100 text-purple-700"
-                      : "text-gray-500"
+                      ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-600"
+                      : "text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600"
                   }
                 >
                   {getStrategyName(listing.strategy)}
@@ -122,12 +122,12 @@ export default function ListingGrid({
               </div>
 
               {listing.metadata?.description && (
-                <p className="text-sm text-gray-600 line-clamp-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
                   {listing.metadata.description}
                 </p>
               )}
 
-              <div className="flex justify-between text-xs text-gray-500">
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                 <span>
                   Listed:{" "}
                   {new Date(
@@ -137,10 +137,10 @@ export default function ListingGrid({
                 <span>Token: {listing.tokenId.slice(0, 8)}...</span>
               </div>
 
-              <div className="flex justify-between items-center text-xs text-gray-500">
+              <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
                 {listing.paymentToken ===
                 "0x0000000000000000000000000000000000000000" ? (
-                  <span className="font-bold text-blue-800">Payment: ETH</span>
+                  <span className="font-bold text-blue-800 dark:text-blue-400">Payment: ETH</span>
                 ) : (
                   <span>Payment: {formatAddress(listing.paymentToken)}</span>
                 )}

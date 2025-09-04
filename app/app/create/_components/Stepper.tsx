@@ -29,7 +29,7 @@ export default function Stepper({
                 'flex items-center justify-center w-10 h-10 rounded-full border-2',
                 active && 'bg-blue-600 border-blue-600 text-white',
                 completed && 'bg-green-600 border-green-600 text-white',
-                !active && !completed && 'border-gray-300 text-gray-400'
+                !active && !completed && 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500'
               )}
             >
               <Icon className="w-5 h-5" />
@@ -37,15 +37,15 @@ export default function Stepper({
             <span
               className={cn(
                 'ml-2 text-sm font-medium',
-                active && 'text-blue-600',
-                completed && 'text-green-700',
-                !active && !completed && 'text-gray-500'
+                active && 'text-blue-600 dark:text-blue-400',
+                completed && 'text-green-700 dark:text-green-400',
+                !active && !completed && 'text-gray-500 dark:text-gray-400'
               )}
             >
               {step.label}
             </span>
             {index < steps.length - 1 && (
-              <div className={cn('w-16 h-px mx-4', currentIndex > index ? 'bg-green-600' : 'bg-gray-300')} />
+              <div className={cn('w-16 h-px mx-4', currentIndex > index ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600')} />
             )}
           </div>
         )

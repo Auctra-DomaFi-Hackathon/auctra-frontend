@@ -152,12 +152,12 @@ export default function OraclePage() {
   if (!isConnected) {
     return (
       <div className="container mx-auto px-6 lg:px-12 py-10">
-        <Card className="max-w-md mx-auto">
+        <Card className="max-w-md mx-auto dark:bg-gray-800 dark:border-gray-700">
           <CardContent className="p-6">
             <div className="text-center py-8">
-              <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Connect Your Wallet</h3>
-              <p className="text-gray-600">Connect your wallet to access Oracle configuration</p>
+              <Settings className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Connect Your Wallet</h3>
+              <p className="text-gray-600 dark:text-gray-400">Connect your wallet to access Oracle configuration</p>
             </div>
           </CardContent>
         </Card>
@@ -173,23 +173,23 @@ export default function OraclePage() {
   return (
     <div className="container mx-auto px-6 lg:px-12 py-10">
       {/* Page Header */}
-      <Card className="border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 shadow-sm mb-8">
+      <Card className="border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 dark:bg-gray-800 dark:border-gray-700 shadow-sm mb-8">
         <CardHeader>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Settings className="h-6 w-6 text-blue-600" />
+              <Settings className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               <div>
-                <CardTitle className="text-xl sm:text-2xl">
+                <CardTitle className="text-xl sm:text-2xl dark:text-white">
                   Domain Oracle Configuration
                 </CardTitle>
-                <p className="text-gray-600 mt-1">
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
                   Set up premium domains for lending pool collateral
                 </p>
               </div>
             </div>
             
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-green-100 text-green-700">
+              <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Testing Mode
               </Badge>
@@ -201,13 +201,13 @@ export default function OraclePage() {
       {/* Main Configuration Form */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Column - Domain Selection */}
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-blue-600" />
+            <CardTitle className="flex items-center gap-2 dark:text-white">
+              <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               Select Domain NFT
             </CardTitle>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Choose a domain NFT to configure as premium collateral
             </p>
           </CardHeader>
@@ -221,20 +221,20 @@ export default function OraclePage() {
         </Card>
 
         {/* Right Column - Oracle Configuration */}
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
+            <CardTitle className="flex items-center gap-2 dark:text-white">
+              <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
               Premium Configuration
             </CardTitle>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Set domain value and expiry for premium status
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Domain Value */}
             <div>
-              <Label htmlFor="value" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="value" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Domain Value (USD)
               </Label>
               <div className="mt-1 relative">
@@ -249,17 +249,17 @@ export default function OraclePage() {
                   step="1"
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <span className="text-sm font-medium text-gray-600">USD</span>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">USD</span>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Minimum value: $1 USD
               </p>
             </div>
 
             {/* Expiry Years */}
             <div>
-              <Label htmlFor="expiry" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="expiry" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Expiry (Years from now)
               </Label>
               <div className="mt-1 relative">
@@ -275,27 +275,27 @@ export default function OraclePage() {
                   step="1"
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <Calendar className="h-3 w-3 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-600">Years</span>
+                  <Calendar className="h-3 w-3 text-gray-400 dark:text-gray-500" />
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Years</span>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Must be at least 30 days from now
               </p>
             </div>
 
             {/* Preview */}
             {selectedDomain && (
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h4 className="font-medium text-blue-800 mb-2">Configuration Preview</h4>
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h4 className="font-medium text-blue-800 dark:text-blue-400 mb-2">Configuration Preview</h4>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-blue-700">Domain:</span>
-                    <span className="font-medium text-blue-900">{selectedDomain.name}</span>
+                    <span className="text-blue-700 dark:text-blue-400">Domain:</span>
+                    <span className="font-medium text-blue-900 dark:text-blue-300">{selectedDomain.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-blue-700">Token ID:</span>
-                    <span className="font-mono text-blue-900">
+                    <span className="text-blue-700 dark:text-blue-400">Token ID:</span>
+                    <span className="font-mono text-blue-900 dark:text-blue-300">
                       {(() => {
                         const tokenId = selectedDomain.tokenId?.toString();
                         if (!tokenId) return 'N/A';
@@ -307,16 +307,16 @@ export default function OraclePage() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-blue-700">Value:</span>
-                    <span className="font-medium text-blue-900">${valueUsd} USD</span>
+                    <span className="text-blue-700 dark:text-blue-400">Value:</span>
+                    <span className="font-medium text-blue-900 dark:text-blue-300">${valueUsd} USD</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-blue-700">Status:</span>
-                    <span className="font-medium text-green-600">Premium</span>
+                    <span className="text-blue-700 dark:text-blue-400">Status:</span>
+                    <span className="font-medium text-green-600 dark:text-green-400">Premium</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-blue-700">Expires:</span>
-                    <span className="font-medium text-blue-900">
+                    <span className="text-blue-700 dark:text-blue-400">Expires:</span>
+                    <span className="font-medium text-blue-900 dark:text-blue-300">
                       {new Date(calculateExpiryTimestamp(expiryYears) * 1000).toLocaleDateString()}
                     </span>
                   </div>
@@ -347,50 +347,50 @@ export default function OraclePage() {
       </div>
 
       {/* Instructions */}
-      <Card className="mt-8">
+      <Card className="mt-8 dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle>How Oracle Configuration Works</CardTitle>
+          <CardTitle className="dark:text-white">How Oracle Configuration Works</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <h3 className="font-semibold text-blue-600 mb-3">Requirements</h3>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <h3 className="font-semibold text-blue-600 dark:text-blue-400 mb-3">Requirements</h3>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
                   Domain must have valid NFT token ID
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
                   Value must be greater than $0 USD
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
                   Expiry must be at least 30 days from now
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
                   Status will be set to isPremium = true
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-purple-600 mb-3">After Configuration</h3>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <h3 className="font-semibold text-purple-600 dark:text-purple-400 mb-3">After Configuration</h3>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="w-1.5 h-1.5 bg-purple-500 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
                   Domain can be used as collateral in lending pools
                 </li>
                 <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="w-1.5 h-1.5 bg-purple-500 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
                   Oracle will return premium status and value
                 </li>
                 <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="w-1.5 h-1.5 bg-purple-500 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
                   Users can deposit domain for borrowing USDC
                 </li>
                 <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="w-1.5 h-1.5 bg-purple-500 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
                   Configuration is stored on-chain via MockDomainOracle
                 </li>
               </ul>

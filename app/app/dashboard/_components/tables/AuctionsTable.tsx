@@ -23,19 +23,19 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
   const aSort = useSort(rows);
 
   return (
-    <Card className="border-gray-200 shadow-sm">
+    <Card className="border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
           {/* <Box className="h-5 w-5 text-blue-600" /> */}
-          <CurrencyEth className="text-blue-600 h-5 w-5" />
+          <CurrencyEth className="text-blue-600 dark:text-blue-400 h-5 w-5" />
           My Auctions
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-blue-50/40">
-              <TableRow>
+            <TableHeader className="bg-blue-50/40 dark:bg-gray-700/50">
+              <TableRow className="border-gray-200 dark:border-gray-600">
                 <SortHead
                   onClick={() => aSort.toggle("domain")}
                   active={aSort.key === "domain"}
@@ -112,20 +112,20 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
                 aSort.sorted.map((r) => (
                   <TableRow
                     key={r.id}
-                    className="hover:bg-blue-50/30 transition"
+                    className="hover:bg-blue-50/30 dark:hover:bg-gray-700/50 transition border-gray-200 dark:border-gray-700"
                   >
-                    <TableCell className="font-medium w-28">
+                    <TableCell className="font-medium w-28 text-gray-900 dark:text-white">
                       {r.domain}
                     </TableCell>
-                    <TableCell className="text-blue-600 font-semibold w-16">
+                    <TableCell className="text-blue-600 dark:text-blue-400 font-semibold w-16">
                       {r.tld}
                     </TableCell>
-                    <TableCell className="w-28">{r.type} Auction</TableCell>
+                    <TableCell className="w-28 text-gray-700 dark:text-gray-300">{r.type} Auction</TableCell>
                     <TableCell className="w-16">
                       <StatusChip state={r.state} />
                     </TableCell>
-                    <TableCell className="w-20">{r.timeLeft}</TableCell>
-                    <TableCell className="text-sm text-gray-600 w-24">
+                    <TableCell className="w-20 text-gray-700 dark:text-gray-300">{r.timeLeft}</TableCell>
+                    <TableCell className="text-sm text-gray-600 dark:text-gray-400 w-24">
                       {r.createdAt}
                     </TableCell>
                     <TableCell className="w-20">
@@ -139,7 +139,7 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
                         />
                       </div>
                     </TableCell>
-                    <TableCell className="text-right w-24">{r.top}</TableCell>
+                    <TableCell className="text-right w-24 text-gray-900 dark:text-white">{r.top}</TableCell>
                     {/* <TableCell className="text-right">
                       <Button variant="outline" size="sm">View</Button>
                     </TableCell> */}

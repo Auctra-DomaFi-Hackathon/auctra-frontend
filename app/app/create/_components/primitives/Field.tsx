@@ -32,7 +32,7 @@ export default function Field({
 }) {
   return (
     <div>
-      <Label htmlFor={id} className={showDomaLogo ? "flex items-center gap-2" : ""}>
+      <Label htmlFor={id} className={showDomaLogo ? "mb-3 flex items-center gap-2 text-black dark:text-white" : "text-black dark:text-white"}>
         {label}
         {showDomaLogo && (
           <Image src="/images/logo/domaLogo.svg" alt="Doma" className="h-4 w-4" width={50} height={20}/>
@@ -48,11 +48,11 @@ export default function Field({
         placeholder={placeholder}
       />
       {hint && (
-        <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
           <Info className="h-3.5 w-3.5" /> {hint}
         </div>
       )}
-      {error && <div className="text-sm text-red-600 mt-1">{error}</div>}
+      {error && <div className="text-sm text-red-600 dark:text-red-400 mt-1">{error}</div>}
     </div>
   )
 }

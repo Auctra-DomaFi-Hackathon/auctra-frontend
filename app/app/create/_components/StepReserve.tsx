@@ -26,9 +26,9 @@ export default function StepReserve({
   toNum: (v: string) => number
 }) {
   return (
-    <Card>
+    <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
       <CardHeader>
-        <CardTitle>Set Reserve Price</CardTitle>
+        <CardTitle className="text-gray-900 dark:text-white">Set Reserve Price</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <Field
@@ -50,17 +50,17 @@ export default function StepReserve({
             Suggest via Oracle
           </Button>
           {suggestedReserve && (
-            <Badge className="bg-blue-50 text-blue-700 border-blue-200" variant="outline">
+            <Badge className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700" variant="outline">
               Suggested: {suggestedReserve.reserve.toLocaleString()} ETH
             </Badge>
           )}
         </div>
 
         {suggestedReserve && (
-          <Card className="bg-blue-50/50 border-blue-100">
+          <Card className="bg-blue-50/50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800">
             <CardContent className="p-4">
-              <h4 className="font-semibold mb-2">Oracle Rationale</h4>
-              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+              <h4 className="font-semibold mb-2 text-gray-900 dark:text-white">Oracle Rationale</h4>
+              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300">
                 {suggestedReserve.rationale.map((r, i) => (
                   <li key={i}>{r}</li>
                 ))}
@@ -75,7 +75,7 @@ export default function StepReserve({
             checked={formData.autoListing}
             onCheckedChange={(c) => setField('autoListing', !!c)}
           />
-          <Label htmlFor="auto-listing">Auto-list if auction doesn’t meet reserve</Label>
+          <Label htmlFor="auto-listing" className='text-black dark:text-white'>Auto-list if auction doesn’t meet reserve</Label>
         </div>
 
         <div className="flex justify-between">

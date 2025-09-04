@@ -66,9 +66,9 @@ export default function RentDialog({ listing, open, onOpenChange }: RentDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md dark:bg-gray-800 dark:border-gray-700">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-gray-900">
+          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white">
             Rent {listing.domain}
           </DialogTitle>
         </DialogHeader>
@@ -76,7 +76,7 @@ export default function RentDialog({ listing, open, onOpenChange }: RentDialogPr
         <div className="space-y-6">
           {/* Days Selection */}
           <div>
-            <Label htmlFor="days" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="days" className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Rental Period (days)
             </Label>
             <div className="mt-2">
@@ -89,44 +89,44 @@ export default function RentDialog({ listing, open, onOpenChange }: RentDialogPr
                 max={listing.listing.maxDays}
                 className="w-full"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">
                 Min: {listing.listing.minDays} days, Max: {listing.listing.maxDays} days
               </p>
             </div>
           </div>
 
           {/* Cost Breakdown */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-3">Cost Breakdown</h4>
+          <div className="bg-gray-50 rounded-lg p-4 dark:bg-gray-700">
+            <h4 className="font-medium text-gray-900 mb-3 dark:text-white">Cost Breakdown</h4>
             
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">
+                <span className="text-gray-600 dark:text-gray-400">
                   Base price ({days} × {formatUSD(listing.listing.pricePerDay)}/day)
                 </span>
-                <span className="font-medium">{formatUSD(costBreakdown.basePrice)}</span>
+                <span className="font-medium dark:text-white">{formatUSD(costBreakdown.basePrice)}</span>
               </div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Protocol fee (2%)</span>
-                <span className="font-medium">{formatUSD(costBreakdown.protocolFee)}</span>
+                <span className="text-gray-600 dark:text-gray-400">Protocol fee (2%)</span>
+                <span className="font-medium dark:text-white">{formatUSD(costBreakdown.protocolFee)}</span>
               </div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Security deposit (refundable)</span>
-                <span className="font-medium">{formatUSD(costBreakdown.securityDeposit)}</span>
+                <span className="text-gray-600 dark:text-gray-400">Security deposit (refundable)</span>
+                <span className="font-medium dark:text-white">{formatUSD(costBreakdown.securityDeposit)}</span>
               </div>
 
               <Separator className="my-2" />
 
               <div className="flex justify-between font-semibold">
-                <span>Total Cost</span>
-                <span className="text-lg">{formatUSD(costBreakdown.total)}</span>
+                <span className="dark:text-white">Total Cost</span>
+                <span className="text-lg dark:text-white">{formatUSD(costBreakdown.total)}</span>
               </div>
             </div>
 
-            <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
-              <p className="text-xs text-blue-700">
+            <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+              <p className="text-xs text-blue-700 dark:text-blue-400">
                 The security deposit will be returned after the rental period ends,
                 minus any damages or violations.
               </p>

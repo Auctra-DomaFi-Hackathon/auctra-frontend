@@ -10,7 +10,7 @@ import { useExploreData } from './_components/hooks/useExploreData'
 
 // Lazy load heavy components
 const FilterSidebar = dynamic(() => import('./_components/sidebar/FilterSidebar'), {
-  loading: () => <div className="w-full lg:w-80 h-96 bg-gray-50 animate-pulse rounded-lg"></div>
+  loading: () => <div className="w-full lg:w-80 h-96 bg-gray-50 dark:bg-gray-800 animate-pulse rounded-lg border border-gray-200 dark:border-gray-700"></div>
 })
 const AuctionGrid = dynamic(() => import('./_components/grid/AuctionGrid'), {
   loading: () => <LoadingGrid count={4} />
@@ -49,7 +49,7 @@ export default function ExplorePage() {
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Left Filter Panel */}
         <aside className="w-full lg:w-80 lg:flex-shrink-0 space-y-6 order-2 lg:order-1">
-          <Suspense fallback={<div className="w-full lg:w-80 h-96 bg-gray-50 animate-pulse rounded-lg"></div>}>
+          <Suspense fallback={<div className="w-full lg:w-80 h-96 bg-gray-50 dark:bg-gray-800 animate-pulse rounded-lg border border-gray-200 dark:border-gray-700"></div>}>
             <FilterSidebar
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -88,8 +88,8 @@ export default function ExplorePage() {
             <TabsContent value="listings">
               <Suspense fallback={<LoadingGrid count={4} />}>
                 {listingsError ? (
-                  <div className="text-center py-12 bg-red-50 rounded-xl">
-                    <p className="text-red-600">
+                  <div className="text-center py-12 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                    <p className="text-red-600 dark:text-red-400">
                       Failed to load listings: {listingsError.message}
                     </p>
                   </div>
