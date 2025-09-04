@@ -1,12 +1,40 @@
 "use client";
 
-import { useExploreRentals } from "@/lib/rental/hooks";
+import { useActiveRentalListings } from "@/lib/graphql/hooks";
+import { RentalListingWithMetadata } from "@/lib/graphql/types";
+import { ListingWithMeta } from "@/lib/rental/types";
 import ListingCard from "./ListingCard";
 import LoadingSkeleton from "./LoadingSkeleton";
 import EmptyState from "./EmptyState";
 
+// Adapter function to convert GraphQL rental listing to expected format
+const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMetadata): ListingWithMeta => {
+  return {
+    id: parseInt(rentalListing.id),
+    domain: rentalListing.metadata?.name || `Domain-${rentalListing.tokenId.slice(-8)}`,
+    tld: rentalListing.metadata?.tld || '.eth',
+    verified: false,
+    expiresAt: 0, // We don't have domain expiry info from rental listing
+    listing: {
+      nft: rentalListing.nft as `0x${string}`,
+      tokenId: BigInt(rentalListing.tokenId),
+      owner: rentalListing.owner as `0x${string}`,
+      paymentToken: rentalListing.paymentToken as `0x${string}`,
+      pricePerDay: BigInt(rentalListing.pricePerDay),
+      securityDeposit: BigInt(rentalListing.securityDeposit),
+      minDays: rentalListing.minDays,
+      maxDays: rentalListing.maxDays,
+      paused: rentalListing.paused,
+    },
+    rental: null, // We don't have current rental info in this query
+  };
+};
+
 export default function ListingsGrid() {
-  const { listings, loading, error } = useExploreRentals();
+  const { rentalListings, loading, error } = useActiveRentalListings(50);
+
+  // Convert GraphQL rental listings to the expected format
+  const adaptedListings = rentalListings.map(adaptRentalListingToListingWithMeta);
 
   if (loading) {
     return <LoadingSkeleton />;
@@ -21,13 +49,13 @@ export default function ListingsGrid() {
     );
   }
 
-  if (listings.length === 0) {
+  if (adaptedListings.length === 0) {
     return <EmptyState />;
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {listings.map((listing) => (
+      {adaptedListings.map((listing) => (
         <ListingCard key={listing.id} listing={listing} />
       ))}
     </div>

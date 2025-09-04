@@ -102,3 +102,111 @@ export interface NameFromTokenResponse {
 export interface NameFromTokenVariables {
   tokenId: string;
 }
+
+// RENTAL TYPES - From RENTAL_QUERY.md
+export interface RentalListing {
+  id: string;
+  owner: string;
+  nft: string;
+  tokenId: string;
+  pricePerDay: string;
+  securityDeposit: string;
+  paymentToken: string;
+  minDays: number;
+  maxDays: number;
+  paused: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RentalListingWithMetadata extends RentalListing {
+  metadata?: NFTMetadata;
+}
+
+export interface GetAllActiveRentalListingsResponse {
+  rentalListings: {
+    totalCount: number;
+    items: RentalListing[];
+  };
+}
+
+export interface GetAllActiveRentalListingsVariables {
+  limit?: number;
+}
+
+export interface GetListingDetailsResponse {
+  rentalListings: {
+    totalCount: number;
+    items: RentalListing[];
+  };
+}
+
+export interface GetListingDetailsVariables {
+  ids: string[];
+  limit?: number;
+}
+
+export interface GetRentalListingsByOwnerResponse {
+  rentalListings: {
+    totalCount: number;
+    items: RentalListing[];
+  };
+}
+
+export interface GetRentalListingsByOwnerVariables {
+  owner: string;
+  limit?: number;
+}
+
+export interface UserRentalProfile {
+  id: string;
+  totalRentals: string;
+  totalSpent: string;
+  totalDeposits: string;
+  activeRentals: string;
+  expiredRentals: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RentalHistory {
+  id: string;
+  listingId: string;
+  eventType: string;
+  user: string;
+  owner: string;
+  nft: string;
+  tokenId: string;
+  timestamp: string;
+  data: any;
+}
+
+export interface DepositRecord {
+  id: string;
+  listingId: string;
+  amount: string;
+  paymentToken: string;
+  locked: boolean;
+  claimed: boolean;
+  lockedAt: string;
+  claimedAt: string | null;
+  claimedBy: string | null;
+}
+
+export interface GetUserRentalHistoryResponse {
+  userRentalProfile: UserRentalProfile | null;
+  rentalHistorys: {
+    totalCount: number;
+    items: RentalHistory[];
+  };
+  depositRecords: {
+    totalCount: number;
+    items: DepositRecord[];
+  };
+}
+
+export interface GetUserRentalHistoryVariables {
+  user: string;
+  limit?: number;
+}

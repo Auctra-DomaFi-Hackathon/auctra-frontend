@@ -13,89 +13,80 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Pause, Play, Edit, Trash2, Plus, Calendar, DollarSign } from "lucide-react";
-import { useManageRentals } from "@/lib/rental/hooks";
+import { useRentalListingsByOwner } from "@/lib/graphql/hooks";
+import { RentalListingWithMetadata } from "@/lib/graphql/types";
+import { ListingWithMeta } from "@/lib/rental/types";
 import { formatUSD, formatDate, formatTimeLeft, getDaysLeft } from "@/lib/rental/format";
 import { useState } from "react";
 import EditTermsDialog from "./EditTermsDialog";
 import ExtendDialog from "./ExtendDialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAccount } from "wagmi";
+
+// Adapter function to convert GraphQL rental listing to expected format
+const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMetadata): ListingWithMeta => {
+  return {
+    id: parseInt(rentalListing.id),
+    domain: rentalListing.metadata?.name || `Domain-${rentalListing.tokenId.slice(-8)}`,
+    tld: rentalListing.metadata?.tld || '.eth',
+    verified: false,
+    expiresAt: 0, // We don't have domain expiry info from rental listing
+    listing: {
+      nft: rentalListing.nft as `0x${string}`,
+      tokenId: BigInt(rentalListing.tokenId),
+      owner: rentalListing.owner as `0x${string}`,
+      paymentToken: rentalListing.paymentToken as `0x${string}`,
+      pricePerDay: BigInt(rentalListing.pricePerDay),
+      securityDeposit: BigInt(rentalListing.securityDeposit),
+      minDays: rentalListing.minDays,
+      maxDays: rentalListing.maxDays,
+      paused: rentalListing.paused,
+    },
+    rental: null, // We don't have current rental info in this query
+  };
+};
 
 export default function ListingsTable() {
-  const { myListings, loading, actions } = useManageRentals();
+  const { address } = useAccount();
+  const { rentalListings, loading } = useRentalListingsByOwner(address, 50);
+  
+  // Convert GraphQL rental listings to the expected format
+  const myListings = rentalListings.map(adaptRentalListingToListingWithMeta);
   const { toast } = useToast();
   const [editingListing, setEditingListing] = useState<number | null>(null);
   const [extendingListing, setExtendingListing] = useState<number | null>(null);
 
+  // TODO: Implement action handlers with smart contract integration
   const handlePauseToggle = async (id: number, currentPaused: boolean) => {
-    try {
-      await actions.pause(id, !currentPaused);
-      toast({
-        title: "Success!",
-        description: `Listing ${!currentPaused ? 'paused' : 'unpaused'} successfully`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update listing",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Coming Soon!",
+      description: "Pause/unpause functionality will be available with smart contract integration",
+      variant: "default",
+    });
   };
 
   const handleUnlist = async (id: number) => {
-    if (!confirm("Are you sure you want to unlist this domain? This action cannot be undone.")) {
-      return;
-    }
-
-    try {
-      await actions.unlist(id);
-      toast({
-        title: "Success!",
-        description: "Listing removed successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to remove listing",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Coming Soon!",
+      description: "Unlist functionality will be available with smart contract integration",
+      variant: "default",
+    });
   };
 
   const handleEndRent = async (id: number) => {
-    if (!confirm("Are you sure you want to end this rental?")) {
-      return;
-    }
-
-    try {
-      await actions.endRent(id);
-      toast({
-        title: "Success!",
-        description: "Rental ended successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to end rental",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Coming Soon!",
+      description: "End rental functionality will be available with smart contract integration",
+      variant: "default",
+    });
   };
 
   const handleClaimDeposit = async (id: number) => {
-    try {
-      await actions.claimDeposit(id, "0x00000000000000000000000000000000000A11cE" as any);
-      toast({
-        title: "Success!",
-        description: "Deposit claimed successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to claim deposit",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Coming Soon!",
+      description: "Claim deposit functionality will be available with smart contract integration",
+      variant: "default",
+    });
   };
 
   const getStatusBadge = (listing: any) => {

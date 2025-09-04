@@ -134,7 +134,7 @@ export default function DomainsTable({ rows }: { rows: DomainRow[] }) {
                     className="hover:bg-blue-50/30 dark:hover:bg-gray-700/50 transition border-gray-200 dark:border-gray-700"
                   >
                     <TableCell className="font-medium text-gray-900 dark:text-white">{r.domain}</TableCell>
-                    <TableCell className="text-gray-700 dark:text-gray-300">{r.tld}</TableCell>
+                    <TableCell className="text-blue-600 dark:text-blue-400 font-bold">{r.tld}</TableCell>
                     <TableCell>
                       <Badge
                         variant="secondary"

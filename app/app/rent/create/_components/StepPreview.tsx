@@ -19,7 +19,9 @@ interface StepPreviewProps {
   minDays: string;
   maxDays: string;
   onBack: () => void;
-  onSubmit: () => void;
+  onSubmit: () => void; // Step 1: Approve NFT
+  onCreateRental?: () => void; // Step 2: Create Rental
+  onSetTerms?: () => void; // Step 3: Set Terms
   loading?: boolean;
   error?: string;
   flowStep?: string;
@@ -29,6 +31,8 @@ interface StepPreviewProps {
   hash?: string;
   isCompleted?: boolean;
   listingId?: number | null;
+  getCurrentStepNumber?: () => number;
+  canExecuteStep?: (step: number) => boolean;
 }
 
 export default function StepPreview({
@@ -40,6 +44,8 @@ export default function StepPreview({
   maxDays,
   onBack,
   onSubmit,
+  onCreateRental,
+  onSetTerms,
   loading,
   error,
   flowStep,
@@ -49,6 +55,8 @@ export default function StepPreview({
   hash,
   isCompleted,
   listingId,
+  getCurrentStepNumber,
+  canExecuteStep,
 }: StepPreviewProps) {
   const [domainMetadata, setDomainMetadata] = useState<NFTMetadata | null>(null);
   const [metadataLoading, setMetadataLoading] = useState(false);
@@ -61,6 +69,34 @@ export default function StepPreview({
   // Calculate potential earnings
   const minEarning = priceUSDC * BigInt(minDaysNum);
   const maxEarning = priceUSDC * BigInt(maxDaysNum);
+
+  // Get current step info
+  const currentStepNumber = getCurrentStepNumber ? getCurrentStepNumber() : 0;
+  
+  // Transaction step data
+  const steps = [
+    {
+      number: 1,
+      title: "Approve NFT",
+      description: "Allow the rental vault to manage your NFT",
+      action: onSubmit,
+      icon: Shield,
+    },
+    {
+      number: 2, 
+      title: "Create Rental",
+      description: "Deposit your NFT to create the listing",
+      action: onCreateRental,
+      icon: Hash,
+    },
+    {
+      number: 3,
+      title: "Set Terms",
+      description: "Configure pricing and rental conditions",
+      action: onSetTerms,
+      icon: DollarSign,
+    },
+  ];
 
   // Function to fetch NFT metadata from tokenId using Doma API
   const fetchNFTMetadata = async (tokenId: string): Promise<NFTMetadata> => {
@@ -221,69 +257,130 @@ export default function StepPreview({
             </div>
           </div>
 
-          {/* Transaction Status */}
-          {flowStep && flowStep !== 'idle' && (
-            <div className="space-y-4">
-              <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                {isCompleted ? (
-                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                ) : loading ? (
-                  <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                )}
-                Transaction Status
-              </h3>
-              
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Current Step:</span>
-                  <Badge variant={isCompleted ? "default" : "secondary"} className={
-                    isCompleted ? "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400" : "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                  }>
-                    {flowStep}
-                  </Badge>
-                </div>
+          {/* Transaction Steps */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              Create Listing Steps
+            </h3>
+            
+            <div className="space-y-3">
+              {steps.map((step, index) => {
+                const Icon = step.icon;
+                const isCurrentStep = currentStepNumber === step.number;
+                const isCompleted = currentStepNumber > step.number;
+                const canExecute = canExecuteStep ? canExecuteStep(step.number) : false;
+                const isExecuting = isCurrentStep && (isPending || isConfirming);
                 
-                <div className="flex justify-between items-start">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
-                  <div className="text-right">
-                    <div className="text-sm font-medium dark:text-white">
-                      {flowDescription}
+                return (
+                  <div key={step.number} className={`border rounded-lg p-4 transition-all ${
+                    isCurrentStep 
+                      ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                      : isCompleted
+                      ? 'border-green-500 dark:border-green-400 bg-green-50 dark:bg-green-900/20'
+                      : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          isCompleted 
+                            ? 'bg-green-100 dark:bg-green-900/40' 
+                            : isCurrentStep 
+                            ? 'bg-blue-100 dark:bg-blue-900/40' 
+                            : 'bg-gray-100 dark:bg-gray-700'
+                        }`}>
+                          {isCompleted ? (
+                            <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+                          ) : isExecuting ? (
+                            <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
+                          ) : (
+                            <Icon className={`w-5 h-5 ${
+                              isCurrentStep 
+                                ? 'text-blue-600 dark:text-blue-400' 
+                                : 'text-gray-500 dark:text-gray-400'
+                            }`} />
+                          )}
+                        </div>
+                        <div>
+                          <div className={`font-medium ${
+                            isCompleted 
+                              ? 'text-green-700 dark:text-green-400' 
+                              : isCurrentStep 
+                              ? 'text-blue-700 dark:text-blue-400' 
+                              : 'text-gray-700 dark:text-gray-300'
+                          }`}>
+                            Step {step.number}: {step.title}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            {step.description}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {isCompleted && (
+                          <Badge variant="outline" className="bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
+                            Completed
+                          </Badge>
+                        )}
+                        
+                        {canExecute && step.action && (
+                          <Button
+                            onClick={step.action}
+                            disabled={isExecuting}
+                            size="sm"
+                            className={`min-w-24 ${
+                              step.number === 1 
+                                ? 'bg-blue-600 hover:bg-blue-700' 
+                                : step.number === 2 
+                                ? 'bg-purple-600 hover:bg-purple-700' 
+                                : 'bg-green-600 hover:bg-green-700'
+                            }`}
+                          >
+                            {isExecuting ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              step.title
+                            )}
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    {(isPending || isConfirming) && (
-                      <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                        {isPending ? "Waiting for confirmation..." : "Confirming transaction..."}
+                    
+                    {/* Transaction details for current executing step */}
+                    {isCurrentStep && hash && (
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">Transaction:</span>
+                          <a 
+                            href={`https://explorer-testnet.doma.xyz/tx/${hash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1"
+                          >
+                            View on Explorer <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
                       </div>
                     )}
                   </div>
-                </div>
-
-                {hash && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Transaction:</span>
-                    <a 
-                      href={`https://explorer-testnet.doma.xyz/tx/${hash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1"
-                    >
-                      View on Explorer <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                )}
-
-                {isCompleted && listingId !== null && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Listing ID:</span>
-                    <Badge variant="outline" className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
-                      #{listingId}
-                    </Badge>
-                  </div>
-                )}
-              </div>
+                );
+              })}
             </div>
-          )}
+
+            {/* Success message */}
+            {isCompleted && listingId !== null && (
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <span className="font-medium text-green-700 dark:text-green-400">Listing Created Successfully!</span>
+                </div>
+                <div className="text-sm text-green-600 dark:text-green-400">
+                  Your rental listing #{listingId} is now live and available for rent.
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Security Notice */}
           {!loading && !isCompleted && (
@@ -314,39 +411,35 @@ export default function StepPreview({
                 className="bg-blue-600 hover:bg-blue-700 min-w-32"
               >
                 <Check className="w-4 h-4 mr-2" />
-                View Listing
+                View My Listings
               </Button>
             ) : (
-              <Button
-                onClick={onSubmit}
-                disabled={loading}
-                className="bg-green-600 hover:bg-green-700 min-w-32"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {flowDescription || "Creating..."}
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-4 h-4 mr-2" />
-                    Create Listing
-                  </>
-                )}
-              </Button>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Use the step buttons above to create your listing
+              </div>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Success Notice */}
-      <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+      {/* Process Notice */}
+      <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
         <CardContent className="p-4">
-          <h3 className="font-medium text-green-800 dark:text-green-400 mb-2">🎉 Ready to Go Live!</h3>
-          <p className="text-sm text-green-700 dark:text-green-400">
-            Once created, your listing will be immediately available for renters to discover and rent. 
-            You can manage, pause, or modify terms anytime from your dashboard.
-          </p>
+          <h3 className="font-medium text-blue-800 dark:text-blue-400 mb-2">📋 How It Works</h3>
+          <div className="text-sm text-blue-700 dark:text-blue-400 space-y-2">
+            <div className="flex items-start gap-2">
+              <span className="text-blue-600 dark:text-blue-400 font-semibold">1.</span>
+              <span><strong>Approve NFT:</strong> Give permission to the rental vault contract</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-purple-600 dark:text-purple-400 font-semibold">2.</span>
+              <span><strong>Create Rental:</strong> Deposit your NFT to create the listing</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-green-600 dark:text-green-400 font-semibold">3.</span>
+              <span><strong>Set Terms:</strong> Configure pricing and make your listing live</span>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

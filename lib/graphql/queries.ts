@@ -168,3 +168,137 @@ export const GET_USER_AUCTION_HISTORY_QUERY = gql`
     }
   }
 `;
+
+// RENTAL QUERIES - From RENTAL_QUERY.md
+// 1. Active Domain Rentals for /app/rent page  
+export const GET_ALL_ACTIVE_RENTAL_LISTINGS_QUERY = gql`
+  query GetAllActiveRentalListings($limit: Int = 50) {
+    rentalListings(
+      limit: $limit
+      orderBy: "updatedAt"
+      orderDirection: "desc"
+    ) {
+      totalCount
+      items {
+        id
+        owner
+        nft
+        tokenId
+        pricePerDay
+        securityDeposit
+        paymentToken
+        minDays
+        maxDays
+        paused
+        active
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const GET_LISTING_DETAILS_QUERY = gql`
+  query ListingDetails($ids: [String!], $limit: Int = 50) {
+    rentalListings(where: { id_in: $ids }, limit: $limit) {
+      totalCount
+      items {
+        id
+        owner
+        nft
+        tokenId
+        pricePerDay
+        securityDeposit
+        paymentToken
+        minDays
+        maxDays
+        paused
+        active
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+// 2. Domain Rental Listings by Owner for My Listings
+export const GET_RENTAL_LISTINGS_BY_OWNER_QUERY = gql`
+  query RentalListingsByOwner($owner: String!, $limit: Int = 50) {
+    rentalListings(
+      where: { owner: $owner, active: true }
+      orderBy: "updatedAt"
+      orderDirection: "desc"
+      limit: $limit
+    ) {
+      totalCount
+      items {
+        id
+        owner
+        nft
+        tokenId
+        pricePerDay
+        securityDeposit
+        paymentToken
+        active
+        paused
+        updatedAt
+      }
+    }
+  }
+`;
+
+// 3. User Rental History for My Rentals section
+export const GET_USER_RENTAL_HISTORY_QUERY = gql`
+  query UserRentalHistory($user: String!, $limit: Int = 50) {
+    userRentalProfile(id: $user) {
+      id
+      totalRentals
+      totalSpent
+      totalDeposits
+      activeRentals
+      expiredRentals
+      createdAt
+      updatedAt
+    }
+
+    rentalHistorys(
+      where: { user: $user }
+      orderBy: "timestamp"
+      orderDirection: "desc"
+      limit: $limit
+    ) {
+      totalCount
+      items {
+        id
+        listingId
+        eventType
+        user
+        owner
+        nft
+        tokenId
+        timestamp
+        data
+      }
+    }
+
+    depositRecords(
+      where: { user: $user }
+      orderBy: "lockedAt"
+      orderDirection: "desc"
+      limit: $limit
+    ) {
+      totalCount
+      items {
+        id
+        listingId
+        amount
+        paymentToken
+        locked
+        claimed
+        lockedAt
+        claimedAt
+        claimedBy
+      }
+    }
+  }
+`;

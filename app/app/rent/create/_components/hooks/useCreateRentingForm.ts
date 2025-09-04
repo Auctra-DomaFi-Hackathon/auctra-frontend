@@ -83,19 +83,20 @@ export function useCreateRentingForm() {
     }
   }, [rentalFlow.hasError, rentalFlow.error]);
 
-  // Continue flow automatically when needed
-  useEffect(() => {
-    if (rentalFlow.isInProgress && !rentalFlow.isPending && !rentalFlow.isConfirming) {
-      rentalFlow.continueFlow({
-        nftAddress,
-        tokenId,
-        pricePerDay,
-        securityDeposit,
-        minDays: parseInt(minDays),
-        maxDays: parseInt(maxDays),
-      });
-    }
-  }, [rentalFlow, nftAddress, tokenId, pricePerDay, securityDeposit, minDays, maxDays]);
+  // Flow continuation is now handled automatically in useCreateRentalFlow
+  // This useEffect is no longer needed but kept commented for reference
+  // useEffect(() => {
+  //   if (rentalFlow.isInProgress && !rentalFlow.isPending && !rentalFlow.isConfirming) {
+  //     rentalFlow.continueFlow({
+  //       nftAddress,
+  //       tokenId,
+  //       pricePerDay,
+  //       securityDeposit,
+  //       minDays: parseInt(minDays),
+  //       maxDays: parseInt(maxDays),
+  //     });
+  //   }
+  // }, [rentalFlow, nftAddress, tokenId, pricePerDay, securityDeposit, minDays, maxDays]);
 
   // Handle domain selection
   const handleDomainSelect = (domain: Domain) => {
@@ -221,7 +222,9 @@ export function useCreateRentingForm() {
     minDays,
     maxDays,
     onBack: handleBack,
-    onSubmit: handleSubmit,
+    onSubmit: handleSubmit, // Step 1: Approve NFT
+    onCreateRental: rentalFlow.createRental, // Step 2: Create Rental
+    onSetTerms: rentalFlow.setTerms, // Step 3: Set Terms
     loading: loading || rentalFlow.isInProgress,
     error: error || rentalFlow.error,
     flowStep: rentalFlow.currentStep,
@@ -231,6 +234,8 @@ export function useCreateRentingForm() {
     hash: rentalFlow.hash,
     isCompleted: rentalFlow.isCompleted,
     listingId: rentalFlow.listingId,
+    getCurrentStepNumber: rentalFlow.getCurrentStepNumber,
+    canExecuteStep: rentalFlow.canExecuteStep,
   };
 
   const stepperProps = {
