@@ -10,14 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useState, useEffect, useCallback } from "react";
 import { ListingWithMeta } from "@/lib/rental/types";
-import { formatUSD } from "@/lib/rental/format";
 import { useRentDomain, RentalCostBreakdown } from "@/hooks/useRentDomain";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, Shield, Clock, CheckCircle, Loader2, ExternalLink, AlertCircle, Wallet } from "lucide-react";
+import { Info, BadgeInfo, Clock, CheckCircle, Loader2, ExternalLink, AlertCircle, Wallet } from "lucide-react";
 import { useAccount } from "wagmi";
 
 interface RentDomainPopupProps {
@@ -250,7 +248,7 @@ export default function RentDomainPopup({ listing, open, onOpenChange }: RentDom
       <DialogContent className="sm:max-w-lg dark:bg-gray-800 dark:border-gray-700">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <DollarSign className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <Info className="w-6 h-6 text-black dark:text-blue-400" />
             Rent {listing.domain}{listing.tld}
           </DialogTitle>
         </DialogHeader>
@@ -314,7 +312,7 @@ export default function RentDomainPopup({ listing, open, onOpenChange }: RentDom
           {/* Cost Breakdown */}
           <div className="bg-gray-50 rounded-lg p-4 dark:bg-gray-700">
             <h4 className="font-medium text-gray-900 mb-3 dark:text-white flex items-center gap-2">
-              <Shield className="w-4 h-4" />
+              <BadgeInfo className="w-4 h-4" />
               Cost Breakdown
             </h4>
             

@@ -42,17 +42,17 @@ export default function ListingGrid({
       // Get the full ETH value without parseFloat to avoid precision loss
       const fullEthValue = formatEther(priceWei);
       const ethNumber = parseFloat(fullEthValue);
-      
+
       // If the original Wei value is non-zero but parseFloat gives 0, use full precision
-      if (ethNumber === 0 && priceWei !== '0') {
+      if (ethNumber === 0 && priceWei !== "0") {
         return `${fullEthValue} ETH`;
       }
-      
+
       // For very small values (less than 0.001), show more precision
       if (ethNumber > 0 && ethNumber < 0.001) {
         return `${parseFloat(fullEthValue).toFixed(6)} ETH`;
       }
-      
+
       // For normal values, use standard formatting
       return `${ethNumber.toLocaleString()} ETH`;
     } catch {
@@ -79,7 +79,10 @@ export default function ListingGrid({
                     {listing.metadata?.name ||
                       `Token #${listing.tokenId.slice(-8)}`}
                   </h3>
-                  <Badge variant="secondary" className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                  <Badge
+                    variant="secondary"
+                    className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  >
                     {listing.metadata?.tld || ".eth"}
                   </Badge>
                 </div>
@@ -102,6 +105,13 @@ export default function ListingGrid({
                 </span>
                 <span className="font-bold text-lg text-blue-600 dark:text-blue-400">
                   {formatPrice(listing.reservePrice)}
+                  <Image
+                    src="/images/LogoCoin/eth-logo.svg"
+                    alt="ETH"
+                    width={20}
+                    height={12}
+                    className="rounded-full inline-block ml-2 mb-1"
+                  />
                 </span>
               </div>
 
@@ -113,7 +123,7 @@ export default function ListingGrid({
                   variant={listing.strategy ? "default" : "outline"}
                   className={
                     listing.strategy
-                      ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-600"
+                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-600"
                       : "text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600"
                   }
                 >
@@ -134,17 +144,22 @@ export default function ListingGrid({
                     parseInt(listing.createdAt) * 1000
                   ).toLocaleDateString()}
                 </span>
-                <span>Token: {listing.tokenId.slice(0, 8)}...</span>
+                <span>Token ID: {listing.tokenId.slice(0, 8)}...</span>
               </div>
 
               <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-                {listing.paymentToken ===
+                {/* {listing.paymentToken ===
                 "0x0000000000000000000000000000000000000000" ? (
-                  <span className="font-bold text-blue-800 dark:text-blue-400">Payment: ETH</span>
+                  <span className="font-bold text-blue-800 dark:text-blue-400">
+                    Payment: ETH 
+                  </span>
                 ) : (
                   <span>Payment: {formatAddress(listing.paymentToken)}</span>
-                )}
-                
+                )} */}
+                <span className="font-bold text-blue-800 dark:text-blue-400">
+                  Chain
+                </span>
+
                 <div className="flex items-center gap-1">
                   <Image
                     src="/images/logo/domaLogo.svg"

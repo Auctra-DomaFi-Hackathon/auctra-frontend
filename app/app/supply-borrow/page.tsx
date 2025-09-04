@@ -39,7 +39,7 @@ export default function SupplyBorrowPage() {
             <div className="flex items-center gap-2">
               <Badge
                 variant="secondary"
-                className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-600"
+                className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-600"
               >
                 <Activity className="h-3 w-3 mr-1" />
                 Pool Active
@@ -55,7 +55,7 @@ export default function SupplyBorrowPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Value Locked</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Value Locked (TVL)</p>
                 <p className="text-lg font-semibold flex items-center gap-1 text-gray-900 dark:text-white">
                   <Image
                     src="/images/LogoCoin/usd-coin-usdc-logo.png"
@@ -119,7 +119,7 @@ export default function SupplyBorrowPage() {
                   %
                 </p>
               </div>
-              <Activity className="h-8 w-8 text-green-500 dark:text-green-400 bg-green-100 dark:bg-green-900/30 p-1.5 rounded-lg" />
+              <Activity className="h-8 w-8 text-blue-500 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded-lg" />
             </div>
           </CardContent>
         </Card>
@@ -128,12 +128,12 @@ export default function SupplyBorrowPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Current Borrow APR</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Borrow APR</p>
                 <p className="text-lg font-semibold text-gray-900 dark:text-white">
                   {(poolData.aprBps / 100).toFixed(1)}%
                 </p>
               </div>
-              <Layers className="h-8 w-8 text-orange-500 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 p-1.5 rounded-lg" />
+              <Layers className="h-8 w-8 text-blue-500 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded-lg" />
             </div>
           </CardContent>
         </Card>
@@ -162,7 +162,7 @@ export default function SupplyBorrowPage() {
               <div className="text-sm text-gray-600 dark:text-gray-400">Max LTV</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {(poolData.liqThresholdBps / 100).toFixed(0)}%
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Liquidation Threshold</div>
@@ -174,7 +174,7 @@ export default function SupplyBorrowPage() {
               <div className="text-sm text-gray-600 dark:text-gray-400">Base Borrow APR</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">24h</div>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">24h</div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Grace Period</div>
             </div>
           </div>

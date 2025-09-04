@@ -45,11 +45,11 @@ export function getTone(kind: EventKind, title: string) {
   if (kind === 'Liquidations') return { bg: 'bg-amber-50', border: 'border-amber-200', icon: 'text-amber-600' }
   if (kind === 'Renting') {
     switch (title) {
-      case 'Domain Rented': return { bg: 'bg-green-50', border: 'border-green-200', icon: 'text-green-700' }
+      case 'Domain Rented': return { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-700' }
       case 'Rental Extended': return { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-700' }
       case 'Rental Ended': return { bg: 'bg-gray-50', border: 'border-gray-200', icon: 'text-gray-600' }
-      case 'Security Deposit Locked': return { bg: 'bg-orange-50', border: 'border-orange-200', icon: 'text-orange-600' }
-      case 'Security Deposit Claimed': return { bg: 'bg-green-50', border: 'border-green-200', icon: 'text-green-700' }
+      case 'Security Deposit Locked': return { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-600' }
+      case 'Security Deposit Claimed': return { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-700' }
       default: return { bg: 'bg-purple-50', border: 'border-purple-200', icon: 'text-purple-700' }
     }
   }
@@ -57,3 +57,4 @@ export function getTone(kind: EventKind, title: string) {
 }
 
 export const timeShort = _timeShort
+//border bg-blue-50 border-blue-200

@@ -21,6 +21,20 @@ export function useHistoryData() {
   
   const { address } = useAccount()
 
+  // Helper function to format ETH amounts (remove unnecessary decimals)
+  const formatETH = React.useCallback((value: number): string => {
+    if (value % 1 === 0) {
+      // If it's a whole number, don't show decimals
+      return value.toString()
+    } else if (value < 0.001) {
+      // For very small amounts, show more decimals
+      return value.toFixed(6)
+    } else {
+      // For normal amounts, show up to 4 decimals but remove trailing zeros
+      return parseFloat(value.toFixed(4)).toString()
+    }
+  }, [])
+
   // Function to fetch NFT metadata from tokenId using Doma API (same as useAuctionHistory.ts)
   const fetchNFTMetadata = React.useCallback(async (tokenId: string): Promise<NFTMetadata> => {
     try {
@@ -108,8 +122,9 @@ export function useHistoryData() {
         : `Token #${auction.tokenId.slice(-8)}`
 
       // Convert wei to ETH for prices
-      const reservePrice = auction.reservePrice ? 
-        (parseFloat(auction.reservePrice) / 1e18).toFixed(4) : '0'
+      const reservePriceValue = auction.reservePrice ? 
+        parseFloat(auction.reservePrice) / 1e18 : 0
+      const reservePrice = formatETH(reservePriceValue)
 
       // Get auction type from strategy
       const auctionType = getStrategyName(auction.strategy)

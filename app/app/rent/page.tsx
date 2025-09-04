@@ -9,7 +9,7 @@ export default function RentPage() {
           Rent Domains
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Discover and rent premium domains for your projects
+          Discover and rent premium domains for your projects with the cheap price.
         </p>
       </div>
 

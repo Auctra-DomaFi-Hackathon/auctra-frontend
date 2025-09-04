@@ -120,11 +120,15 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
                     <TableCell className="text-blue-600 dark:text-blue-400 font-semibold w-16">
                       {r.tld}
                     </TableCell>
-                    <TableCell className="w-28 text-gray-700 dark:text-gray-300">{r.type} Auction</TableCell>
+                    <TableCell className="w-28 text-gray-700 dark:text-gray-300">
+                      {r.type} Auction
+                    </TableCell>
                     <TableCell className="w-16">
                       <StatusChip state={r.state} />
                     </TableCell>
-                    <TableCell className="w-20 text-gray-700 dark:text-gray-300">{r.timeLeft}</TableCell>
+                    <TableCell className="w-20 text-gray-700 dark:text-gray-300">
+                      {r.timeLeft}
+                    </TableCell>
                     <TableCell className="text-sm text-gray-600 dark:text-gray-400 w-24">
                       {r.createdAt}
                     </TableCell>
@@ -139,7 +143,16 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
                         />
                       </div>
                     </TableCell>
-                    <TableCell className="text-right w-24 text-gray-900 dark:text-white">{r.top}</TableCell>
+                    <TableCell className="text-right w-24 text-gray-900 dark:text-white">
+                      {r.top}
+                      <Image
+                        src="/images/LogoCoin/eth-logo.svg"
+                        alt="ETH"
+                        width={20}
+                        height={12}
+                        className="rounded-full inline-block ml-2 mb-1"
+                      />
+                    </TableCell>
                     {/* <TableCell className="text-right">
                       <Button variant="outline" size="sm">View</Button>
                     </TableCell> */}

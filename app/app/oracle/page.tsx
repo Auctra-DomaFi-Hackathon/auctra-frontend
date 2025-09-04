@@ -10,11 +10,10 @@ import {
   Settings, 
   Globe, 
   CheckCircle, 
-  AlertCircle, 
   Loader2, 
   ExternalLink,
   Calendar,
-  DollarSign 
+  Info 
 } from 'lucide-react'
 import Image from 'next/image'
 import { useAccount } from 'wagmi'
@@ -173,7 +172,7 @@ export default function OraclePage() {
   return (
     <div className="container mx-auto px-6 lg:px-12 py-10">
       {/* Page Header */}
-      <Card className="border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 dark:bg-gray-800 dark:border-gray-700 shadow-sm mb-8">
+      <Card className="border-gray-200 bg-gradient-to-r from-blue-50 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/20 dark:bg-gray-800 dark:border-gray-700 shadow-sm mb-8">
         <CardHeader>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -189,9 +188,9 @@ export default function OraclePage() {
             </div>
             
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
+              <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
                 <CheckCircle className="h-3 w-3 mr-1" />
-                Testing Mode
+                Oracle Testing Mode
               </Badge>
             </div>
           </div>
@@ -224,7 +223,7 @@ export default function OraclePage() {
         <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 dark:text-white">
-              <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               Premium Configuration
             </CardTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -312,7 +311,7 @@ export default function OraclePage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-blue-700 dark:text-blue-400">Status:</span>
-                    <span className="font-medium text-green-600 dark:text-green-400">Premium</span>
+                    <span className="font-medium text-blue-600 dark:text-blue-400">Premium</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-blue-700 dark:text-blue-400">Expires:</span>
@@ -357,40 +356,40 @@ export default function OraclePage() {
               <h3 className="font-semibold text-blue-600 dark:text-blue-400 mb-3">Requirements</h3>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-blue-500 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                   Domain must have valid NFT token ID
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-blue-500 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                   Value must be greater than $0 USD
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-blue-500 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                   Expiry must be at least 30 days from now
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-blue-500 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                   Status will be set to isPremium = true
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-purple-600 dark:text-purple-400 mb-3">After Configuration</h3>
+              <h3 className="font-semibold text-blue-600 dark:text-blue-400 mb-3">After Configuration</h3>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 bg-purple-500 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="w-1.5 h-1.5 bg-blue-500 dark:bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
                   Domain can be used as collateral in lending pools
                 </li>
                 <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 bg-purple-500 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="w-1.5 h-1.5 bg-blue-500 dark:bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
                   Oracle will return premium status and value
                 </li>
                 <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 bg-purple-500 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="w-1.5 h-1.5 bg-blue-500 dark:bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
                   Users can deposit domain for borrowing USDC
                 </li>
                 <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 bg-purple-500 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="w-1.5 h-1.5 bg-blue-500 dark:bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
                   Configuration is stored on-chain via MockDomainOracle
                 </li>
               </ul>

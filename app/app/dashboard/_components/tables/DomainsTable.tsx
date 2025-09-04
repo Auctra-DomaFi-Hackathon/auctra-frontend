@@ -119,7 +119,6 @@ export default function DomainsTable({ rows }: { rows: DomainRow[] }) {
                 <th className="px-4 py-2 text-gray-700 dark:text-gray-300">Token Address</th>
                 <th className="px-4 py-2 text-gray-700 dark:text-gray-300">Token ID</th>
                 <th className="px-4 py-2 text-gray-700 dark:text-gray-300">Chain</th>
-                <th className="text-right px-4 py-2 text-gray-700 dark:text-gray-300">Actions</th>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -170,11 +169,6 @@ export default function DomainsTable({ rows }: { rows: DomainRow[] }) {
                       )}
                     </TableCell>
                     <TableCell>{renderChainCell(r.tokenChain)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="outline" size="sm">
-                        Manage
-                      </Button>
-                    </TableCell>
                   </TableRow>
                 ))
               )}

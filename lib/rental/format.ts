@@ -10,7 +10,7 @@ export function formatUSDC(amount: bigint): string {
 
 export function formatUSD(amount: bigint): string {
   const formatted = Number(amount) / 1_000_000; // 6 decimals
-  return `$${formatted.toLocaleString('en-US', {
+  return `${formatted.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -62,6 +62,6 @@ export function getDaysLeft(expiryTimestamp: number): number {
 export function parseUSDCInput(value: string): bigint {
   const cleanValue = value.replace(/[^0-9.]/g, '');
   const numValue = parseFloat(cleanValue);
-  if (isNaN(numValue)) return 0n;
+  if (isNaN(numValue)) return BigInt(0);
   return BigInt(Math.floor(numValue * 1_000_000));
 }

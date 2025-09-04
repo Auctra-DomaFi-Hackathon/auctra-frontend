@@ -15,7 +15,7 @@ import {
   CheckCircle,
   Loader2,
   Plus,
-  Shield,
+  HeartPulse,
   Globe,
   AlertTriangle,
 } from "lucide-react";
@@ -352,7 +352,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
 
   const getHealthFactorColor = (hf: bigint) => {
     const healthFactor = Number(hf) / 1e18;
-    if (healthFactor >= 2) return "text-green-600";
+    if (healthFactor >= 2) return "text-blue-600";
     if (healthFactor >= 1.5) return "text-yellow-600";
     if (healthFactor >= 1.2) return "text-orange-600";
     return "text-red-600";
@@ -388,18 +388,11 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
     <Card className={cn("dark:bg-gray-800 dark:border-gray-700", className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 dark:text-white">
-            <CreditCard className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-            Borrow USDC
-            <Image
-              src="/images/LogoCoin/usd-coin-usdc-logo.png"
-              alt="USDC"
-              width={20}
-              height={16}
-              className="rounded-full"
-            />
+          <CardTitle className="flex items-center gap-2 dark:text-white text-xl">
+             <Globe className=" text-blue-600 dark:text-gray-400" />
+            Borrow USDC with Domain Collateral
           </CardTitle>
-          <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800">
+          <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800">
             <TrendingDown className="h-3 w-3 mr-1" />
             {getBorrowAPR()} APR
           </Badge>
@@ -490,18 +483,18 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
             )}
           </div>
         ) : (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800">
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center dark:bg-green-900/30">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center dark:bg-blue-900/30">
                   <Globe className="h-5 w-5 text-blue-400 dark:text-blue-300" />
                 </div>
                 <div>
-                  <h4 className="font-medium text-green-800 mb-1 dark:text-green-300">
+                  <h4 className="font-medium text-blue-800 mb-1 dark:text-blue-300">
                     Collateral Active
                   </h4>
                   <div className="space-y-1">
-                    <p className="text-sm text-green-700 font-medium flex items-center gap-2 dark:text-green-400">
+                    <p className="text-sm text-blue-700 font-medium flex items-center gap-2 dark:text-blue-400">
                       {collateralMetadata ? (
                         getDomainName()
                       ) : (
@@ -511,7 +504,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                         </>
                       )}
                     </p>
-                    <p className="text-sm text-green-700 dark:text-green-400">
+                    <p className="text-sm text-blue-700 dark:text-blue-400">
                       Token ID:{" "}
                       {(() => {
                         const tokenId =
@@ -524,8 +517,15 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                         return tokenId;
                       })()}
                     </p>
-                    <p className="text-sm text-green-700 dark:text-green-400">
-                      Value: ${formatUSDC(userPosition.collateral.valueUsd6)}
+                    <p className="text-sm text-blue-700 dark:text-blue-400">
+                      Value: {formatUSDC(userPosition.collateral.valueUsd6)}
+                      <Image
+                        src="/images/LogoCoin/usd-coin-usdc-logo.png"
+                        alt="USDC"
+                        width={15}
+                        height={10}
+                        className="rounded-full inline-block ml-1"
+                      />
                     </p>
                   </div>
                 </div>
@@ -624,10 +624,10 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                 </div>
 
                 {borrowAmount && (
-                  <div className="p-3 bg-purple-50 rounded-lg dark:bg-purple-900/20 dark:border dark:border-purple-800">
+                  <div className="p-3 bg-blue-50 rounded-lg dark:bg-blue-900/20 dark:border dark:border-blue-800">
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-600 dark:text-gray-400">Borrow APR</span>
-                      <span className="font-medium text-purple-600 dark:text-purple-400">
+                      <span className="font-medium text-blue-600 dark:text-blue-400">
                         {getBorrowAPR()}
                       </span>
                     </div>
@@ -828,7 +828,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
         {hasCollateral && (
           <div className="mt-6 p-4 bg-gray-50 rounded-lg dark:bg-gray-800 dark:border dark:border-gray-700">
             <h4 className="font-medium mb-2 flex items-center gap-2 dark:text-white">
-              <Shield className="h-4 w-4 dark:text-gray-300" />
+              <HeartPulse className="h-5 w-5 dark:text-gray-300" />
               Your Borrow Position
             </h4>
             <div className="space-y-1 text-sm">
