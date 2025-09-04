@@ -5,9 +5,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Search, Filter, X } from "lucide-react";
 import { useExploreRentals } from "@/lib/rental/hooks";
+import { useActiveRentalListings } from "@/lib/graphql/hooks";
+import { useMemo } from "react";
 
 export default function FilterBar() {
   const { filters, setFilters } = useExploreRentals();
+  const { rentalListings } = useActiveRentalListings(100); // Get more listings to extract TLDs
+  
+  // Extract unique TLDs from actual rental listings
+  const availableTLDs = useMemo(() => {
+    const tlds = new Set<string>();
+    rentalListings.forEach(listing => {
+      if (listing.metadata?.tld) {
+        tlds.add(listing.metadata.tld);
+      }
+    });
+    return Array.from(tlds).sort();
+  }, [rentalListings]);
 
   const handleSearchChange = (value: string) => {
     setFilters(prev => ({ ...prev, search: value }));
@@ -67,11 +81,9 @@ export default function FilterBar() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All TLDs</SelectItem>
-              <SelectItem value=".com">.com</SelectItem>
-              <SelectItem value=".xyz">.xyz</SelectItem>
-              <SelectItem value=".io">.io</SelectItem>
-              <SelectItem value=".org">.org</SelectItem>
-              <SelectItem value=".net">.net</SelectItem>
+              {availableTLDs.map(tld => (
+                <SelectItem key={tld} value={tld}>{tld}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -80,7 +92,7 @@ export default function FilterBar() {
         <div className="flex gap-2">
           <Input
             type="number"
-            placeholder="Min $"
+            placeholder="Min ETH"
             value={filters.minPrice || ""}
             onChange={(e) => handlePriceRangeChange(
               e.target.value ? parseFloat(e.target.value) : undefined,
@@ -88,11 +100,11 @@ export default function FilterBar() {
             )}
             className="text-sm"
             min="0"
-            step="0.01"
+            step="0.0001"
           />
           <Input
             type="number"
-            placeholder="Max $"
+            placeholder="Max ETH"
             value={filters.maxPrice || ""}
             onChange={(e) => handlePriceRangeChange(
               filters.minPrice,
@@ -100,7 +112,7 @@ export default function FilterBar() {
             )}
             className="text-sm"
             min="0"
-            step="0.01"
+            step="0.0001"
           />
         </div>
 

@@ -96,6 +96,9 @@ export default function ListingCard({ listing }: ListingCardProps) {
               <div className="flex items-center gap-2 mb-2">
                 <h3 className="text-lg font-semibold text-gray-900 truncate dark:text-white">
                   {listing.domain}
+                  <span className="text-blue-700 font-bold dark:text-gray-400 text-sm">
+                    {listing.tld}
+                  </span>
                 </h3>
                 {listing.verified && (
                   <Shield className="w-4 h-4 text-blue-600 flex-shrink-0 dark:text-blue-400" />
@@ -156,7 +159,8 @@ export default function ListingCard({ listing }: ListingCardProps) {
           <div className="flex items-center text-sm text-gray-500 mb-4 dark:text-gray-400">
             <Calendar className="w-4 h-4 mr-1" />
             <span>
-              Domain expires in {listing.expiresAt ? formatDate(listing.expiresAt) : 'Unknown'}.
+              Domain expires in{" "}
+              {listing.expiresAt ? formatDate(listing.expiresAt) : "Unknown"}.
             </span>
           </div>
 

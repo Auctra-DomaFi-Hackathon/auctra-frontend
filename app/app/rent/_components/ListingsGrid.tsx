@@ -2,11 +2,14 @@
 
 import { useActiveRentalListings } from "@/lib/graphql/hooks";
 import { RentalListingWithMetadata } from "@/lib/graphql/types";
-import { ListingWithMeta } from "@/lib/rental/types";
+import { ListingWithMeta, ExploreFilters } from "@/lib/rental/types";
 import ListingCard from "./ListingCard";
 import LoadingSkeleton from "./LoadingSkeleton";
 import EmptyState from "./EmptyState";
 import { ExplorePagination } from "../../explore/_components/ExplorePagination";
+import { useExploreRentals } from "@/lib/rental/hooks";
+import { useMemo } from "react";
+import { formatEther } from "ethers";
 
 // Adapter function to convert GraphQL rental listing to expected format
 const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMetadata): ListingWithMeta => {
@@ -43,9 +46,90 @@ const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMet
 
 export default function ListingsGrid() {
   const { rentalListings, loading, error, currentPage, totalPages, onPageChange } = useActiveRentalListings(6);
+  const { filters } = useExploreRentals();
 
   // Convert GraphQL rental listings to the expected format
   const adaptedListings = rentalListings.map(adaptRentalListingToListingWithMeta);
+
+  // Apply filters to the adapted listings
+  const filteredListings = useMemo(() => {
+    let filtered = adaptedListings;
+
+    // Apply search filter
+    if (filters.search) {
+      const search = filters.search.toLowerCase();
+      filtered = filtered.filter(item =>
+        item.domain.toLowerCase().includes(search)
+      );
+    }
+
+    // Apply TLD filter
+    if (filters.tld) {
+      filtered = filtered.filter(item => item.tld === filters.tld);
+    }
+
+    // Apply price filters (convert from ETH to USD for comparison)
+    if (filters.minPrice !== undefined) {
+      filtered = filtered.filter(item => {
+        try {
+          const priceEth = parseFloat(formatEther(item.listing.pricePerDay));
+          return priceEth >= filters.minPrice!;
+        } catch {
+          return true;
+        }
+      });
+    }
+
+    if (filters.maxPrice !== undefined) {
+      filtered = filtered.filter(item => {
+        try {
+          const priceEth = parseFloat(formatEther(item.listing.pricePerDay));
+          return priceEth <= filters.maxPrice!;
+        } catch {
+          return true;
+        }
+      });
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: number | string;
+      let bValue: number | string;
+
+      switch (filters.sort) {
+        case "price":
+          try {
+            aValue = parseFloat(formatEther(a.listing.pricePerDay));
+            bValue = parseFloat(formatEther(b.listing.pricePerDay));
+          } catch {
+            aValue = 0;
+            bValue = 0;
+          }
+          break;
+        case "expiry":
+          aValue = a.expiresAt;
+          bValue = b.expiresAt;
+          break;
+        case "domain":
+        default:
+          aValue = a.domain;
+          bValue = b.domain;
+          break;
+      }
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return filters.sortOrder === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      const numA = Number(aValue);
+      const numB = Number(bValue);
+      return filters.sortOrder === "asc" ? numA - numB : numB - numA;
+    });
+
+    return filtered;
+  }, [adaptedListings, filters]);
 
   if (loading) {
     return <LoadingSkeleton />;
@@ -60,14 +144,14 @@ export default function ListingsGrid() {
     );
   }
 
-  if (adaptedListings.length === 0) {
+  if (filteredListings.length === 0 && !loading) {
     return <EmptyState />;
   }
 
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {adaptedListings.map((listing) => (
+        {filteredListings.map((listing) => (
           <ListingCard key={listing.id} listing={listing} />
         ))}
       </div>
