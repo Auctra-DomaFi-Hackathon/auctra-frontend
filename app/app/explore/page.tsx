@@ -79,7 +79,7 @@ export default function ExplorePage() {
           <ExploreHeader />
           <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
             <StatusTabs tab={tab} setTab={setTab} counts={counts} />
-            {(['expiring', 'ongoing', 'liquidation'] as const).map((s) => (
+            {(['liquidation'] as const).map((s) => (
               <TabsContent key={s} value={s}>
                 <Suspense fallback={<LoadingGrid count={4} />}>
                   <AuctionGrid

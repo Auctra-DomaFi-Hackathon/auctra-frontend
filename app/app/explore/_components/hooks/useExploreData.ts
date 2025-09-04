@@ -8,7 +8,7 @@ import { useActiveListings } from '@/lib/graphql/hooks'
 import { formatEther } from 'ethers'
 import { getStrategyName } from '@/lib/utils/strategy'
 
-export type StatusTab = 'expiring' | 'ongoing' | 'liquidation' | 'listings'
+export type StatusTab = 'liquidation' | 'listings'
 type SortKey = 'ending-soon' | 'newest' | 'price-low' | 'price-high'
 
 export function useExploreData() {
@@ -17,7 +17,7 @@ export function useExploreData() {
   const [loading, setLoading] = useState(true)
 
   // auction pagination
-  const [currentPage, setCurrentPage] = useState<Record<StatusTab, number>>({expiring: 1, ongoing: 1, liquidation: 1, listings: 1})
+  const [currentPage, setCurrentPage] = useState<Record<StatusTab, number>>({liquidation: 1, listings: 1})
   const itemsPerPage = 6
 
   // filters
@@ -31,7 +31,7 @@ export function useExploreData() {
   const [tab, setTab] = useState<StatusTab>('listings')
 
   // Fetch active listings from GraphQL with pagination
-  const { listings, loading: listingsLoading, error: listingsError, currentPage: listingsPage, totalPages: listingsTotalPages, onPageChange: onListingsPageChange } = useActiveListings(6)
+  const { listings, loading: listingsLoading, error: listingsError, currentPage: listingsPage, totalPages: listingsTotalPages, totalCount: listingsTotalCount, onPageChange: onListingsPageChange } = useActiveListings(6)
 
   // load data progressively
   useEffect(() => {
@@ -74,10 +74,6 @@ export function useExploreData() {
   const auctionTypes = ['Dutch', 'Sealed Bid', 'English'] as const
 
   const applyStatus = (a: Auction, status: StatusTab) => {
-    const end = new Date(a.endTime).getTime()
-    const in24h = end < Date.now() + 24 * 60 * 60 * 1000
-    if (status === 'expiring') return a.status === 'active' && in24h
-    if (status === 'ongoing') return a.status === 'active'
     if (status === 'liquidation') return (a.type || '').toLowerCase() === 'liquidation'
     return true
   }
@@ -122,9 +118,9 @@ export function useExploreData() {
       return copy
     }
 
-    const base: Record<StatusTab, Auction[]> = { expiring: [], ongoing: [], liquidation: [], listings: [] }
+    const base: Record<StatusTab, Auction[]> = { liquidation: [], listings: [] }
     auctions.forEach((a) => {
-      (['expiring', 'ongoing', 'liquidation'] as StatusTab[]).forEach((s) => {
+      (['liquidation'] as StatusTab[]).forEach((s) => {
         if (applyStatus(a, s)) base[s].push(a)
       })
     })
@@ -139,16 +135,10 @@ export function useExploreData() {
       };
     };
 
-    const expiringFiltered = applySort(applyFilters(base.expiring));
-    const ongoingFiltered = applySort(applyFilters(base.ongoing));
     const liquidationFiltered = applySort(applyFilters(base.liquidation));
 
     return {
-      expiring: paginate(expiringFiltered, currentPage.expiring),
-      ongoing: paginate(ongoingFiltered, currentPage.ongoing),
       liquidation: paginate(liquidationFiltered, currentPage.liquidation),
-      expiringTotal: expiringFiltered.length,
-      ongoingTotal: ongoingFiltered.length,
       liquidationTotal: liquidationFiltered.length,
     }
   }, [auctions, q, selectedTLDs, selectedTypes, priceMin, priceMax, sortBy, domainById, currentPage])
@@ -250,10 +240,8 @@ export function useExploreData() {
   }, [listings, q, selectedTLDs, selectedTypes, priceMin, priceMax, sortBy]);
 
   const counts = {
-    expiring: byStatus.expiringTotal || 0,
-    ongoing: byStatus.ongoingTotal || 0,
     liquidation: byStatus.liquidationTotal || 0,
-    listings: filteredListings.length,
+    listings: listingsTotalCount || 0,
   }
 
   // togglers
@@ -272,7 +260,7 @@ export function useExploreData() {
 
   // Reset pagination when filters change
   useEffect(() => {
-    setCurrentPage({ expiring: 1, ongoing: 1, liquidation: 1, listings: 1 });
+    setCurrentPage({ liquidation: 1, listings: 1 });
   }, [q, selectedTLDs, selectedTypes, priceMin, priceMax, sortBy]);
 
   return {

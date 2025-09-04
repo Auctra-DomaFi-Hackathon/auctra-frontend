@@ -132,7 +132,7 @@ export default function ListingGrid({
 
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Strategy:
+                  Auction Type:
                 </span>
                 <Badge
                   variant={listing.strategy ? "default" : "outline"}
