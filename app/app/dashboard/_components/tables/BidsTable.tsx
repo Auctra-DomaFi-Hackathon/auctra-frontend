@@ -66,7 +66,7 @@ export default function BidsTable({ rows }: { rows: BidRow[] }) {
                       {r.txHash ? (
                         <a
                           className="text-blue-700 dark:text-blue-400 hover:underline"
-                          href={`https://sepolia.etherscan.io/tx/${r.txHash}`}
+                          href={`https://explorer-testnet.doma.xyz/tx/${r.txHash}`}
                           target="_blank"
                           rel="noreferrer"
                         >

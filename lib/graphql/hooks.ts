@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useQuery } from '@apollo/client';
 import { graphqlService, type EnhancedDomainItem } from './services';
-import { GET_ACTIVE_LISTINGS_QUERY, GET_NAME_FROM_TOKEN_QUERY, GET_ALL_ACTIVE_RENTAL_LISTINGS_QUERY, GET_LISTING_DETAILS_QUERY, GET_RENTAL_LISTINGS_BY_OWNER_QUERY, GET_USER_RENTAL_HISTORY_QUERY } from './queries';
+import { GET_ACTIVE_LISTINGS_QUERY, GET_NAME_FROM_TOKEN_QUERY, MY_DOMAINS_QUERY, GET_ALL_ACTIVE_RENTAL_LISTINGS_QUERY, GET_LISTING_DETAILS_QUERY, GET_RENTAL_LISTINGS_BY_OWNER_QUERY, GET_USER_RENTAL_HISTORY_QUERY } from './queries';
 import { listingsApolloClient, apolloClient } from './client';
 import type { GetActiveListingsResponse, GetActiveListingsVariables, Listing, NFTMetadata, NameFromTokenResponse, NameFromTokenVariables, GetAllActiveRentalListingsResponse, GetAllActiveRentalListingsVariables, GetListingDetailsResponse, GetListingDetailsVariables, GetRentalListingsByOwnerResponse, GetRentalListingsByOwnerVariables, GetUserRentalHistoryResponse, GetUserRentalHistoryVariables, RentalListingWithMetadata, RentalHistory } from './types';
 
@@ -164,39 +164,100 @@ export function useActiveRentalListings(limit: number = 50) {
     }
   );
 
-  // Function to fetch NFT metadata from tokenId using Doma API (reuse from existing hook)
-  const fetchNFTMetadata = async (tokenId: string): Promise<NFTMetadata> => {
+  // Function to fetch domain metadata with expires using the same approach as useMyDomains
+  const fetchDomainWithExpires = async (tokenId: string): Promise<NFTMetadata & { expiresAt?: number }> => {
     try {
+      console.log('🔍 Fetching domain data for tokenId:', tokenId);
+      
+      // First get the domain name from token API
       const { data } = await apolloClient.query<NameFromTokenResponse, NameFromTokenVariables>({
         query: GET_NAME_FROM_TOKEN_QUERY,
         variables: { tokenId },
         errorPolicy: 'all'
       });
 
-      const name = data?.nameStatistics?.name;
-      if (name) {
-        const [sld, tld] = name.split('.');
+      console.log('📊 Raw API response for tokenId', tokenId, ':', data);
+      const domainName = data?.nameStatistics?.name;
+      
+      if (domainName) {
+        // If we got a domain name, use MY_DOMAINS_QUERY approach to get expires
+        try {
+          const { data: domainData } = await apolloClient.query({
+            query: MY_DOMAINS_QUERY,
+            variables: {
+              take: 1,
+              ownedBy: [], // We don't filter by owner, just search by name
+              sortOrder: "DESC"
+            },
+            errorPolicy: 'all'
+          });
+
+          // Find the domain that matches our name
+          const matchingDomain = domainData?.names?.items?.find(
+            (item: any) => item.name === domainName
+          );
+
+          if (matchingDomain?.expiresAt) {
+            const expiresAt = Number(matchingDomain.expiresAt);
+            console.log('✅ Found expires from MY_DOMAINS_QUERY:', {
+              domainName,
+              rawExpiresAt: matchingDomain.expiresAt,
+              convertedExpiresAt: expiresAt,
+              date: new Date(expiresAt * 1000).toLocaleString()
+            });
+
+            const [sld, tld] = domainName.split('.');
+            return {
+              name: sld || domainName,
+              tld: tld ? `.${tld}` : '.com',
+              description: `Domain: ${domainName}`,
+              expiresAt
+            };
+          }
+        } catch (domainQueryError) {
+          console.error('Failed to fetch domain expires from MY_DOMAINS_QUERY:', domainQueryError);
+        }
+      }
+
+      // Fallback to original approach if MY_DOMAINS_QUERY fails
+      const rawExpiresAt = data?.token?.expiresAt;
+      const expiresAt = rawExpiresAt && !isNaN(Number(rawExpiresAt)) ? Number(rawExpiresAt) : 0;
+      
+      console.log('⚠️ Using fallback expires data for', domainName || tokenId, ':', { 
+        rawExpiresAt, 
+        convertedExpiresAt: expiresAt,
+        date: expiresAt ? new Date(expiresAt * 1000).toLocaleString() : 'Invalid'
+      });
+      
+      if (domainName) {
+        const [sld, tld] = domainName.split('.');
         return {
-          name: sld || name,
+          name: sld || domainName,
           tld: tld ? `.${tld}` : '.eth',
-          description: `Domain: ${name}`
+          description: `Domain: ${domainName}`,
+          expiresAt
         };
       } else {
         return {
           name: `Domain-${tokenId.slice(-8)}`,
           tld: '.eth',
-          description: `NFT Domain with token ID: ${tokenId}`
+          description: `NFT Domain with token ID: ${tokenId}`,
+          expiresAt
         };
       }
     } catch (error) {
-      console.error('Failed to fetch NFT metadata from Doma API:', error);
+      console.error('Failed to fetch domain metadata:', error);
       return {
         name: `Unknown-${tokenId.slice(-8)}`,
         tld: '.eth',
-        description: `Failed to fetch domain info`
+        description: `Failed to fetch domain info`,
+        expiresAt: 0
       };
     }
   };
+
+  // Renamed function for clarity (wrap with useCallback to fix dependency warning)
+  const fetchNFTMetadata = useCallback(fetchDomainWithExpires, []);
 
   // Fetch metadata for all listings
   useEffect(() => {

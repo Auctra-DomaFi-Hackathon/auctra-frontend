@@ -56,6 +56,15 @@ export default function Row({ item }: { item: ActivityItem }) {
                   className="rounded-full"
                 />
               )}
+              {item.kind === 'Renting' && (
+                <Image
+                  src="/images/LogoCoin/usd-coin-usdc-logo.png"
+                  alt="USDC"
+                  width={14}
+                  height={14}
+                  className="rounded-full"
+                />
+              )}
             </Badge>
           )}
 

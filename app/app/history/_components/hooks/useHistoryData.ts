@@ -7,6 +7,7 @@ import { MOCK } from '../utils/mock'
 import { useAuctionHistory } from '@/lib/graphql/hooks/useAuctionHistory'
 import { getStrategyName } from '@/lib/utils/strategy'
 import useUserLendingHistory from '@/hooks/useUserLendingHistory'
+import { useUserRentalHistory } from '@/lib/graphql/hooks'
 import { formatAmountToETH } from '@/lib/utils/lending'
 import { GET_NAME_FROM_TOKEN_QUERY } from '@/lib/graphql/queries'
 import { apolloClient } from '@/lib/graphql/client'
@@ -21,14 +22,14 @@ export function useHistoryData() {
   const { address } = useAccount()
 
   // Function to fetch NFT metadata from tokenId using Doma API (same as useAuctionHistory.ts)
-  const fetchNFTMetadata = async (tokenId: string): Promise<NFTMetadata> => {
+  const fetchNFTMetadata = React.useCallback(async (tokenId: string): Promise<NFTMetadata> => {
     try {
       console.log(`🔄 Fetching metadata for tokenId: ${tokenId}`);
       const { data: metadataData } = await apolloClient.query<NameFromTokenResponse, NameFromTokenVariables>({
         query: GET_NAME_FROM_TOKEN_QUERY,
         variables: { tokenId },
         errorPolicy: 'all',
-        fetchPolicy: 'network-only', // Force fresh fetch
+        fetchPolicy: 'cache-first', // Use cache to prevent excessive requests
       });
 
       console.log(`📊 Raw metadata response for tokenId ${tokenId}:`, metadataData);
@@ -61,7 +62,7 @@ export function useHistoryData() {
         description: `Failed to fetch domain info`
       };
     }
-  };
+  }, []);
   
   // Fetch auction history from GraphQL
   const {
@@ -80,6 +81,14 @@ export function useHistoryData() {
     address || '',
     '0x133272720610d669Fa4C5891Ab62a302455585Dd' // DomainLendingPool address
   )
+
+  // Fetch rental history from GraphQL
+  const {
+    rentalHistory,
+    depositRecords,
+    loading: rentalLoading,
+    error: rentalError,
+  } = useUserRentalHistory(address || '', 50)
 
   React.useEffect(() => {
     const t = setTimeout(() => setLoading(false), 600) // simulate fetch
@@ -132,6 +141,9 @@ export function useHistoryData() {
 
   // State for lending activities with metadata
   const [lendingActivities, setLendingActivities] = React.useState<ActivityItem[]>([])
+
+  // State for rental activities with metadata
+  const [rentalActivities, setRentalActivities] = React.useState<ActivityItem[]>([])
 
   // Transform lending data to ActivityItem format with async metadata fetching
   React.useEffect(() => {
@@ -257,22 +269,172 @@ export function useHistoryData() {
       setLendingActivities(sortedActivities)
     }
 
-    transformLendingData()
-  }, [supplyHistory, borrowHistory, address])
+    if (supplyHistory.transactions.length > 0 || borrowHistory.transactions.length > 0 || borrowHistory.collateralHistory.length > 0) {
+      transformLendingData()
+    }
+  }, [supplyHistory.transactions.length, borrowHistory.transactions.length, borrowHistory.collateralHistory.length, address, fetchNFTMetadata])
 
-  // Combine real auction data with real lending data and mock data for other activities
+  // Transform rental data to ActivityItem format with async metadata fetching
+  React.useEffect(() => {
+    if (!address) {
+      setRentalActivities([])
+      return
+    }
+
+    const transformRentalData = async () => {
+      const activities: ActivityItem[] = []
+
+      console.log('🏠 Processing rental history:', rentalHistory)
+
+      // Create a metadata cache to avoid multiple fetches for the same tokenId
+      const metadataCache = new Map<string, { name: string; tld: string } | null>()
+
+      // Group rental history by tokenId to ensure consistent naming
+      const rentalsByTokenId = rentalHistory.reduce((acc, item) => {
+        if (!acc[item.tokenId]) {
+          acc[item.tokenId] = []
+        }
+        acc[item.tokenId].push(item)
+        return acc
+      }, {} as Record<string, any[]>)
+
+      console.log('🏠 Rental history grouped by tokenId:', rentalsByTokenId)
+
+      // First pass: fetch metadata for all unique tokenIds
+      const uniqueTokenIds = Object.keys(rentalsByTokenId)
+      for (const tokenId of uniqueTokenIds) {
+        if (!metadataCache.has(tokenId)) {
+          try {
+            const metadata = await fetchNFTMetadata(tokenId)
+            metadataCache.set(tokenId, metadata)
+            console.log(`🏠 Cached rental metadata for tokenId ${tokenId}:`, metadata)
+          } catch (error) {
+            console.error(`❌ Failed to fetch rental metadata for tokenId ${tokenId}:`, error)
+            metadataCache.set(tokenId, null)
+          }
+        }
+      }
+
+      // Second pass: process all rental events using cached metadata
+      for (const [tokenId, items] of Object.entries(rentalsByTokenId)) {
+        const metadata = metadataCache.get(tokenId)
+        let domainName: string
+
+        if (metadata && metadata.name) {
+          domainName = `${metadata.name}${metadata.tld || '.doma'}`
+          console.log(`🏠 Using real domain name "${domainName}" from metadata for rental tokenId: ${tokenId}`)
+        } else {
+          domainName = `Domain-${tokenId.slice(-8)}`
+          console.warn(`🏠 Using tokenId fallback "${domainName}" for rental tokenId: ${tokenId}`)
+        }
+
+        // Process all rental events with this tokenId
+        for (const item of items) {
+          let title: string
+          let subtitle: string
+          let amount: string | undefined
+
+          // Parse rental event data
+          const eventData = typeof item.data === 'string' ? JSON.parse(item.data) : item.data
+
+          switch (item.eventType) {
+            case 'Rented':
+              title = 'Domain Rented'
+              subtitle = `Rented ${domainName} for ${eventData?.days || 'N/A'} days`
+              amount = eventData?.totalPaid ? `${(parseFloat(eventData.totalPaid) / 1e6).toFixed(2)} USDC` : undefined
+              break
+            case 'Extended':
+              title = 'Rental Extended'
+              subtitle = `Extended ${domainName} rental`
+              break
+            case 'Ended':
+              title = 'Rental Ended'
+              subtitle = `Rental period for ${domainName} ended`
+              break
+            default:
+              title = 'Rental Activity'
+              subtitle = `${item.eventType} - ${domainName}`
+          }
+
+          console.log(`🏠 Creating rental activity: ${title} for domain: ${domainName}`)
+
+          activities.push({
+            id: `rental-${item.id}`,
+            kind: 'Renting' as EventKind,
+            title,
+            subtitle,
+            domain: domainName,
+            amount,
+            time: new Date(parseInt(item.timestamp) * 1000).toISOString(),
+          })
+        }
+      }
+
+      // Also process deposit records
+      console.log('🏠 Processing deposit records:', depositRecords)
+      
+      for (const deposit of depositRecords) {
+        // Find corresponding rental history to get domain name
+        const relatedRental = rentalHistory.find(r => r.listingId === deposit.listingId)
+        let domainName = 'Unknown Domain'
+        
+        if (relatedRental) {
+          const metadata = metadataCache.get(relatedRental.tokenId)
+          if (metadata && metadata.name) {
+            domainName = `${metadata.name}${metadata.tld || '.doma'}`
+          } else {
+            domainName = `Domain-${relatedRental.tokenId.slice(-8)}`
+          }
+        }
+
+        const depositAmount = `${(parseFloat(deposit.amount) / 1e6).toFixed(2)} USDC`
+
+        if (deposit.claimed) {
+          activities.push({
+            id: `deposit-claim-${deposit.id}`,
+            kind: 'Renting' as EventKind,
+            title: 'Security Deposit Claimed',
+            subtitle: `Deposit returned for ${domainName}`,
+            amount: depositAmount,
+            time: new Date(parseInt(deposit.claimedAt || deposit.lockedAt) * 1000).toISOString(),
+          })
+        } else if (deposit.locked) {
+          activities.push({
+            id: `deposit-lock-${deposit.id}`,
+            kind: 'Renting' as EventKind,
+            title: 'Security Deposit Locked',
+            subtitle: `Deposit locked for ${domainName}`,
+            amount: depositAmount,
+            time: new Date(parseInt(deposit.lockedAt) * 1000).toISOString(),
+          })
+        }
+      }
+
+      const sortedActivities = activities.sort((a, b) => +new Date(b.time) - +new Date(a.time))
+      console.log('🏠 Final rental activities:', sortedActivities)
+      setRentalActivities(sortedActivities)
+    }
+
+    if (rentalHistory.length > 0 || depositRecords.length > 0) {
+      transformRentalData()
+    }
+  }, [rentalHistory.length, depositRecords.length, address, fetchNFTMetadata])
+
+  // Combine real auction, lending, and rental data with mock data for other activities
   const allActivities = React.useMemo(() => {
     if (address) {
-      // If wallet connected, use real auction + lending data + mock for other types
+      // If wallet connected, use real auction + lending + rental data + mock for other types
       const otherMockData = MOCK.filter(item => 
-        item.kind !== 'Auctions' && item.kind !== 'Supply & Borrow'
+        item.kind !== 'Auctions' && 
+        item.kind !== 'Supply & Borrow' && 
+        item.kind !== 'Renting'
       )
-      return [...auctionActivities, ...lendingActivities, ...otherMockData]
+      return [...auctionActivities, ...lendingActivities, ...rentalActivities, ...otherMockData]
     } else {
       // If no wallet, show all mock data
       return MOCK
     }
-  }, [auctionActivities, lendingActivities, address])
+  }, [auctionActivities, lendingActivities, rentalActivities, address])
 
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -291,11 +453,12 @@ export function useHistoryData() {
 
   const grouped = React.useMemo(() => groupBy(filtered, (i: ActivityItem) => dayKey(i.time)), [filtered])
 
-  // Loading state includes auction and lending loading
-  const isLoading = loading || (address && (auctionsLoading || lendingLoading))
+  // Loading state includes auction, lending, and rental loading  
+  const isLoading = loading || (address && (auctionsLoading || lendingLoading || rentalLoading))
 
   console.log('useHistoryData - auction activities:', auctionActivities)
   console.log('useHistoryData - lending activities:', lendingActivities)
+  console.log('useHistoryData - rental activities:', rentalActivities)
   console.log('useHistoryData - all activities:', allActivities)
   console.log('useHistoryData - filtered:', filtered)
 
@@ -308,6 +471,7 @@ export function useHistoryData() {
     grouped, 
     flat: filtered,
     auctionsError,
-    lendingError
+    lendingError,
+    rentalError
   }
 }

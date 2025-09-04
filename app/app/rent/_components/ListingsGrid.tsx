@@ -9,12 +9,21 @@ import EmptyState from "./EmptyState";
 
 // Adapter function to convert GraphQL rental listing to expected format
 const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMetadata): ListingWithMeta => {
+  const expiresAt = (rentalListing.metadata as any)?.expiresAt || 0;
+  console.log('🔄 Adapter processing listing:', {
+    tokenId: rentalListing.tokenId,
+    domain: rentalListing.metadata?.name,
+    rawMetadata: rentalListing.metadata,
+    expiresAt,
+    expiresDate: expiresAt ? new Date(expiresAt * 1000).toLocaleString() : 'Invalid'
+  });
+  
   return {
     id: parseInt(rentalListing.id),
     domain: rentalListing.metadata?.name || `Domain-${rentalListing.tokenId.slice(-8)}`,
     tld: rentalListing.metadata?.tld || '.eth',
     verified: false,
-    expiresAt: 0, // We don't have domain expiry info from rental listing
+    expiresAt, // Get domain expiry from metadata
     listing: {
       nft: rentalListing.nft as `0x${string}`,
       tokenId: BigInt(rentalListing.tokenId),

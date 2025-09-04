@@ -89,14 +89,30 @@ export default function RentDomainPopup({ listing, open, onOpenChange }: RentDom
       });
     } else if (isConfirmed && currentAction === 'rent') {
       const shortHash = hash ? `${hash.slice(0, 10)}...${hash.slice(-8)}` : '';
+      const explorerUrl = hash ? `https://explorer-testnet.doma.xyz/tx/${hash}` : '';
+      
       toast({
         title: '🎉 Domain Rented Successfully!',
-        description: `${listing.domain}${listing.tld} is yours for ${days} days! Transaction: ${shortHash}`,
-        duration: 10000,
+        description: (
+          <div className="space-y-2">
+            <p>{listing.domain}{listing.tld} is yours for {days} days!</p>
+            <p>Transaction: {shortHash}</p>
+            {explorerUrl && (
+              <a 
+                href={explorerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline text-sm font-medium"
+              >
+                View Transaction <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+          </div>
+        ),
+        duration: 15000, // Extended duration so user can click the link
       });
       onOpenChange(false);
-      // Refresh the page to show updated data
-      setTimeout(() => window.location.reload(), 1000);
+      // Remove the page reload - let user manually refresh if needed
     }
   }, [isConfirmed, currentAction, listing.domain, listing.tld, days, hash, toast, onOpenChange]);
 
@@ -207,7 +223,7 @@ export default function RentDomainPopup({ listing, open, onOpenChange }: RentDom
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-md dark:bg-gray-800 dark:border-gray-700">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white text-red-600">
+            <DialogTitle className="text-xl font-semibold text-red-600 dark:text-red-400">
               Error
             </DialogTitle>
           </DialogHeader>
@@ -410,20 +426,6 @@ export default function RentDomainPopup({ listing, open, onOpenChange }: RentDom
             )}
           </div>
 
-          {/* Info Notice */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <div className="flex items-start gap-2">
-              <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5" />
-              <div className="text-sm text-blue-700 dark:text-blue-400">
-                <p className="font-medium mb-1">Rental Process:</p>
-                <p>1. Approve USDC payment for the total cost</p>
-                <p>2. Rent the domain for your specified period</p>
-                <p className="mt-2 text-xs">
-                  The security deposit will be returned after the rental ends, minus any protocol fees.
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

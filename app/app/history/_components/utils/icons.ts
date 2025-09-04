@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Gavel, Coins, CheckCircle2, XCircle, ShieldAlert, Wallet, TrendingUp, TrendingDown, PlusCircle, MinusCircle } from 'lucide-react'
+import { Bell, Gavel, Coins, CheckCircle2, XCircle, ShieldAlert, Wallet, TrendingUp, TrendingDown, PlusCircle, MinusCircle, Home, Calendar, CreditCard } from 'lucide-react'
 import type { EventKind } from './types'
 import { timeShort as _timeShort } from './date'
 
@@ -21,6 +21,16 @@ export function getIcon(kind: EventKind, title: string) {
       }
     }
     case 'Liquidations': return ShieldAlert
+    case 'Renting': {
+      switch (title) {
+        case 'Domain Rented': return Home
+        case 'Rental Extended': return Calendar  
+        case 'Rental Ended': return CheckCircle2
+        case 'Security Deposit Locked': return CreditCard
+        case 'Security Deposit Claimed': return TrendingUp
+        default: return Home
+      }
+    }
     case 'Alerts': default: return Bell
   }
 }
@@ -33,6 +43,16 @@ export function getTone(kind: EventKind, title: string) {
     return { bg: 'bg-red-50', border: 'border-red-200', icon: 'text-red-600' }
   }
   if (kind === 'Liquidations') return { bg: 'bg-amber-50', border: 'border-amber-200', icon: 'text-amber-600' }
+  if (kind === 'Renting') {
+    switch (title) {
+      case 'Domain Rented': return { bg: 'bg-green-50', border: 'border-green-200', icon: 'text-green-700' }
+      case 'Rental Extended': return { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-700' }
+      case 'Rental Ended': return { bg: 'bg-gray-50', border: 'border-gray-200', icon: 'text-gray-600' }
+      case 'Security Deposit Locked': return { bg: 'bg-orange-50', border: 'border-orange-200', icon: 'text-orange-600' }
+      case 'Security Deposit Claimed': return { bg: 'bg-green-50', border: 'border-green-200', icon: 'text-green-700' }
+      default: return { bg: 'bg-purple-50', border: 'border-purple-200', icon: 'text-purple-700' }
+    }
+  }
   return { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-700' }
 }
 
