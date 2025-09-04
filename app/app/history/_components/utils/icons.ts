@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Gavel, Coins, CheckCircle2, XCircle, ShieldAlert, Wallet } from 'lucide-react'
+import { Bell, Gavel, Coins, CheckCircle2, XCircle, ShieldAlert, Wallet, TrendingUp, TrendingDown, PlusCircle, MinusCircle } from 'lucide-react'
 import type { EventKind } from './types'
 import { timeShort as _timeShort } from './date'
 
@@ -9,7 +9,17 @@ export function getIcon(kind: EventKind, title: string) {
     case 'Auctions': return Gavel
     case 'Bids': return Coins
     case 'Wins/Losses': return title.toLowerCase().includes('won') ? CheckCircle2 : XCircle
-    case 'Supply & Borrow': return Wallet
+    case 'Supply & Borrow': {
+      switch (title) {
+        case 'Supply': return TrendingUp
+        case 'Withdraw': return TrendingDown
+        case 'Borrow': return MinusCircle
+        case 'Repay': return PlusCircle
+        case 'Collateral Deposit': return PlusCircle
+        case 'Collateral Withdraw': return MinusCircle
+        default: return Wallet
+      }
+    }
     case 'Liquidations': return ShieldAlert
     case 'Alerts': default: return Bell
   }

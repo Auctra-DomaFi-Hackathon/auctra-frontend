@@ -5,6 +5,7 @@ import { Clock, ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getIcon, getTone, timeShort } from '../utils/icons'
 import type { ActivityItem } from '../utils/types'
+import Image from 'next/image'
 
 export default function Row({ item }: { item: ActivityItem }) {
   const Icon = getIcon(item.kind, item.title)
@@ -34,9 +35,18 @@ export default function Row({ item }: { item: ActivityItem }) {
           {item.amount && (
             <Badge
               variant="secondary"
-              className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800 text-[11px] sm:text-xs"
+              className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800 text-[11px] sm:text-xs flex items-center gap-1"
             >
               {item.amount}
+              {item.kind === 'Supply & Borrow' && (
+                <Image
+                  src="/images/LogoCoin/usd-coin-usdc-logo.png"
+                  alt="USDC"
+                  width={14}
+                  height={14}
+                  className="rounded-full"
+                />
+              )}
             </Badge>
           )}
 
@@ -58,12 +68,12 @@ export default function Row({ item }: { item: ActivityItem }) {
           {timeShort(item.time)}
           {item.txHash && (
             <a
-              href={`https://sepolia.etherscan.io/tx/${item.txHash}`}
+              href={`https://explorer-testnet.doma.xyz/tx/${item.txHash}`}
               target="_blank"
               rel="noreferrer"
               className="ml-3 inline-flex items-center gap-1 text-blue-700 dark:text-blue-400 hover:underline"
             >
-              View tx <ArrowUpRight className="h-3.5 w-3.5" />
+              View transaction hash <ArrowUpRight className="h-3.5 w-3.5" />
             </a>
           )}
         </div>

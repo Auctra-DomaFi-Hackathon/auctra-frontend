@@ -147,11 +147,11 @@ export function useLendingPool() {
     isLoadingCurrentRate || isLoadingUtilization || isLoadingLtv || isLoadingLiqThreshold || isLoadingApr
 
   const poolData: LendingPoolData = {
-    totalAssets: totalAssets || BigInt(0),
-    totalDebt: totalDebt || BigInt(0),
-    exchangeRate: exchangeRate || parseUnits('1', 18),
-    currentRateBps: currentRateBps || BigInt(0),
-    utilization1e18: utilization1e18 || BigInt(0),
+    totalAssets: (totalAssets as bigint) || BigInt(0),
+    totalDebt: (totalDebt as bigint) || BigInt(0),
+    exchangeRate: (exchangeRate as bigint) || parseUnits('1', 18),
+    currentRateBps: (currentRateBps as bigint) || BigInt(0),
+    utilization1e18: (utilization1e18 as bigint) || BigInt(0),
     ltvBps: Number(ltvBps || 0),
     liqThresholdBps: Number(liqThresholdBps || 0),
     aprBps: Number(aprBps || 0),
@@ -159,11 +159,11 @@ export function useLendingPool() {
 
   const userPosition: UserPosition = {
     collateral: userCollateral ? {
-      owner: userCollateral[0],
-      nft: userCollateral[1],
-      tokenId: userCollateral[2],
-      valueUsd6: userCollateral[3],
-      active: userCollateral[4],
+      owner: (userCollateral as any)[0],
+      nft: (userCollateral as any)[1],
+      tokenId: (userCollateral as any)[2],
+      valueUsd6: (userCollateral as any)[3],
+      active: (userCollateral as any)[4],
     } : {
       owner: '0x0000000000000000000000000000000000000000',
       nft: '0x0000000000000000000000000000000000000000',
@@ -172,17 +172,17 @@ export function useLendingPool() {
       active: false,
     },
     debt: userDebt ? {
-      principal: userDebt[0],
-      lastAccrued: userDebt[1],
-      liquidationEligibleAt: userDebt[2],
+      principal: (userDebt as any)[0],
+      lastAccrued: (userDebt as any)[1],
+      liquidationEligibleAt: (userDebt as any)[2],
     } : {
       principal: BigInt(0),
       lastAccrued: BigInt(0),
       liquidationEligibleAt: BigInt(0),
     },
-    shares: userShares || BigInt(0),
-    healthFactor: healthFactor || BigInt(0),
-    maxBorrowable: maxBorrowable || BigInt(0),
+    shares: (userShares as bigint) || BigInt(0),
+    healthFactor: (healthFactor as bigint) || BigInt(0),
+    maxBorrowable: (maxBorrowable as bigint) || BigInt(0),
   }
 
   // Contract interaction functions
@@ -261,8 +261,8 @@ export function useLendingPool() {
     // Data
     poolData,
     userPosition,
-    usdcBalance: usdcBalance || 0n,
-    usdcAllowance: usdcAllowance || 0n,
+    usdcBalance: usdcBalance || BigInt(0),
+    usdcAllowance: usdcAllowance || BigInt(0),
     
     // Loading states
     isLoadingPoolData,
@@ -288,7 +288,9 @@ export function useLendingPool() {
 
 // Helper functions for formatting
 export const formatUSDC = (amount: bigint) => {
-  return formatUnits(amount, 6)
+  const formatted = formatUnits(amount, 6)
+  const number = parseFloat(formatted)
+  return Math.floor(number).toLocaleString()
 }
 
 export const parseUSDC = (amount: string) => {
