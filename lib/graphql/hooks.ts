@@ -175,19 +175,22 @@ export function useActiveListings(limit: number = 6) {
 
 // RENTAL HOOKS - From CLAUDE.md requirements
 
-// 1. Hook for Active Domain Rentals (for /app/rent page)
-export function useActiveRentalListings(limit: number = 50) {
+// 1. Hook for Active Domain Rentals (for /app/rent page) with pagination
+export function useActiveRentalListings(limit: number = 6) {
   const [rentalListingsWithMetadata, setRentalListingsWithMetadata] = useState<RentalListingWithMetadata[]>([]);
   const [metadataLoading, setMetadataLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   const { data, loading, error, refetch } = useQuery<GetAllActiveRentalListingsResponse, GetAllActiveRentalListingsVariables>(
     GET_ALL_ACTIVE_RENTAL_LISTINGS_QUERY,
     {
       client: listingsApolloClient,
-      variables: { limit },
+      variables: { limit: 100 }, // Fetch all rental listings initially
       errorPolicy: 'all',
       onCompleted: (data) => {
         console.log('🔍 Rental listings query completed:', data);
+        setTotalCount(data?.rentalListings?.items?.length || 0);
       },
       onError: (error) => {
         console.error('❌ Rental listings query error:', error);
@@ -255,7 +258,12 @@ export function useActiveRentalListings(limit: number = 50) {
   // Renamed function for clarity (wrap with useCallback to fix dependency warning)
   const fetchNFTMetadata = useCallback(fetchDomainWithExpires, []);
 
-  // Fetch metadata for all listings
+  // Function to change page
+  const onPageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
+
+  // Fetch metadata for all listings and paginate
   useEffect(() => {
     if (!data?.rentalListings?.items?.length) {
       setRentalListingsWithMetadata([]);
@@ -273,25 +281,39 @@ export function useActiveRentalListings(limit: number = 50) {
         );
         // Filter for active, non-paused listings
         const activeListings = listingsWithMeta.filter(listing => listing.active && !listing.paused);
-        setRentalListingsWithMetadata(activeListings);
-        console.log(`✅ Fetched ${listingsWithMeta.length} total listings, ${activeListings.length} active`);
+        
+        // Paginate the results
+        const startIndex = (currentPage - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedListings = activeListings.slice(startIndex, endIndex);
+        
+        setRentalListingsWithMetadata(paginatedListings);
+        setTotalCount(activeListings.length);
+        console.log(`✅ Fetched ${listingsWithMeta.length} total listings, ${activeListings.length} active, showing page ${currentPage}`);
       } catch (error) {
         console.error('Failed to fetch metadata for rental listings:', error);
-        setRentalListingsWithMetadata(data.rentalListings.items);
+        const fallbackListings = data.rentalListings.items.slice((currentPage - 1) * limit, currentPage * limit);
+        setRentalListingsWithMetadata(fallbackListings);
       } finally {
         setMetadataLoading(false);
       }
     };
 
     fetchAllMetadata();
-  }, [data, fetchNFTMetadata]);
+  }, [data, fetchNFTMetadata, currentPage, limit]);
+
+  const totalPages = Math.ceil(totalCount / limit);
 
   return {
     rentalListings: rentalListingsWithMetadata,
     allListings: rentalListingsWithMetadata,
     loading: loading || metadataLoading,
     error,
-    refetch
+    refetch,
+    currentPage,
+    totalPages,
+    totalCount,
+    onPageChange
   };
 }
 

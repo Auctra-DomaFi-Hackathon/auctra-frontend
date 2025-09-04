@@ -6,6 +6,7 @@ import { ListingWithMeta } from "@/lib/rental/types";
 import ListingCard from "./ListingCard";
 import LoadingSkeleton from "./LoadingSkeleton";
 import EmptyState from "./EmptyState";
+import { ExplorePagination } from "../../explore/_components/ExplorePagination";
 
 // Adapter function to convert GraphQL rental listing to expected format
 const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMetadata): ListingWithMeta => {
@@ -41,7 +42,7 @@ const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMet
 };
 
 export default function ListingsGrid() {
-  const { rentalListings, loading, error } = useActiveRentalListings(50);
+  const { rentalListings, loading, error, currentPage, totalPages, onPageChange } = useActiveRentalListings(6);
 
   // Convert GraphQL rental listings to the expected format
   const adaptedListings = rentalListings.map(adaptRentalListingToListingWithMeta);
@@ -64,10 +65,22 @@ export default function ListingsGrid() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {adaptedListings.map((listing) => (
-        <ListingCard key={listing.id} listing={listing} />
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {adaptedListings.map((listing) => (
+          <ListingCard key={listing.id} listing={listing} />
+        ))}
+      </div>
+      
+      {/* Pagination */}
+      {totalPages && totalPages > 1 && currentPage && onPageChange && (
+        <ExplorePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          className="mt-8"
+        />
+      )}
+    </>
   );
 }
