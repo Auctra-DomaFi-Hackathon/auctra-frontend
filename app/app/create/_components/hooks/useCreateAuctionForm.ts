@@ -87,6 +87,9 @@ export function useCreateAuctionForm() {
   const [suggestedReserve, setSuggestedReserve] = useState<{ reserve: number; rationale: string[] } | null>(null)
   const [busy, setBusy] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [domainSearchResult, setDomainSearchResult] = useState<Domain | null>(null)
+  const [searchingDomain, setSearchingDomain] = useState(false)
+  const [searchDebounceTimeout, setSearchDebounceTimeout] = useState<NodeJS.Timeout | null>(null)
   const [transactionHashes, setTransactionHashes] = useState<{
     list?: string
     criteria?: string
@@ -250,6 +253,91 @@ export function useCreateAuctionForm() {
       tokenId: domain.tokenId || '',
       tokenChain: domain.tokenChain || '',
     }))
+    setDomainSearchResult(null) // Clear search result when selecting from owned domains
+  }
+
+  // Search domain function for manual entry
+  async function searchDomainByName(domainName: string) {
+    if (!domainName.trim()) {
+      setDomainSearchResult(null)
+      return
+    }
+
+    setSearchingDomain(true)
+    try {
+      const searchTerm = domainName.toLowerCase()
+      console.log('🔍 Searching domains with term:', searchTerm)
+      
+      // Search in user's owned domains (partial match)
+      const matchingDomains = myDomains.filter(domain => 
+        domain.name.toLowerCase().includes(searchTerm)
+      )
+      
+      console.log('📊 Found matching domains:', matchingDomains)
+      
+      if (matchingDomains.length > 0) {
+        // If exact match exists, prioritize it
+        const exactMatch = matchingDomains.find(d => d.name.toLowerCase() === searchTerm)
+        const bestMatch = exactMatch || matchingDomains[0]
+        
+        console.log('✅ Best match found:', bestMatch)
+        setDomainSearchResult(bestMatch)
+        setSearchingDomain(false)
+        return
+      }
+
+      // If no matches found in owned domains, create manual entry placeholder
+      console.log('📝 No matches found, creating manual entry for:', domainName)
+      const manualDomain: Domain = {
+        id: `manual-${Date.now()}`,
+        name: domainName,
+        tld: domainName.includes('.') ? `.${domainName.split('.').pop()}` : '.eth',
+        expiresAt: undefined,
+        tokenAddress: '',
+        tokenId: '',
+        tokenChain: '',
+      }
+      
+      setDomainSearchResult(manualDomain)
+    } catch (error) {
+      console.error('Error searching domain:', error)
+      setDomainSearchResult(null)
+    } finally {
+      setSearchingDomain(false)
+    }
+  }
+
+  // Handle manual domain input with debounce
+  function handleManualDomainInput(value: string) {
+    console.log('🔍 Manual domain input:', value)
+    setField('domain', value)
+    
+    // Clear previous timeout
+    if (searchDebounceTimeout) {
+      clearTimeout(searchDebounceTimeout)
+    }
+
+    // Set new timeout for search
+    const newTimeout = setTimeout(() => {
+      searchDomainByName(value)
+    }, 300) // 300ms debounce for faster feedback
+    
+    setSearchDebounceTimeout(newTimeout)
+  }
+
+  // Select searched domain
+  function selectSearchedDomain(domain: Domain) {
+    console.log('✅ Selecting searched domain:', domain)
+    setFormData((p) => ({
+      ...p,
+      domainId: domain.id,
+      domain: domain.name,
+      tokenAddress: domain.tokenAddress || '',
+      tokenId: domain.tokenId || '',
+      tokenChain: domain.tokenChain || '',
+    }))
+    setDomainSearchResult(null)
+    console.log('✅ Domain selected, form should now be valid')
   }
 
   async function handleSuggestReserve() {
@@ -515,6 +603,11 @@ export function useCreateAuctionForm() {
       handleDomainSelect,
       setField,
       next,
+      // Domain search functionality
+      domainSearchResult,
+      searchingDomain,
+      handleManualDomainInput,
+      selectSearchedDomain,
     },
     typeStepProps: {
       formData,
