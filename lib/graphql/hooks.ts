@@ -82,39 +82,59 @@ export function useActiveListings(limit: number = 6) {
     }
   );
 
-  // Function to fetch NFT metadata from tokenId using Doma API
+  // Function to fetch domain metadata with ISO DateTime parsing (single query approach)
   const fetchNFTMetadata = async (tokenId: string): Promise<NFTMetadata> => {
     try {
-      const { data } = await apolloClient.query<NameFromTokenResponse, NameFromTokenVariables>({
-        query: GET_NAME_FROM_TOKEN_QUERY,
-        variables: { tokenId },
-        errorPolicy: 'all'
+      console.log('🔍 Fetching domain data for tokenId:', tokenId);
+      
+      // Single query for both name and expiry (ISO DateTime)
+      const { data } = await apolloClient.query<TokenNameAndExpiryResponse, TokenNameAndExpiryVariables>({
+        query: GET_TOKEN_NAME_AND_EXPIRY,
+        variables: { tokenId },                // tokenId harus STRING (angka sangat besar)
+        fetchPolicy: "network-only",
+        errorPolicy: "all",
       });
 
-      const name = data?.nameStatistics?.name;
-      if (name) {
-        // Split domain name to get SLD and TLD
-        const [sld, tld] = name.split('.');
-        return {
-          name: sld || name,
-          tld: tld ? `.${tld}` : '.eth',
-          description: `Domain: ${name}`,
+      console.log("Token Name & Expiry Query:", JSON.stringify(data, null, 2));
 
-        };
-      } else {
-        // Fallback if name not found
-        return {
-          name: `Domain-${tokenId.slice(-8)}`,
-          tld: '.eth',
-          description: `NFT Domain with token ID: ${tokenId}`
-        };
-      }
+      const fullName = data?.nameStatistics?.name ?? null;
+      const expiresAtUnix = toUnixSecondsFromISO(data?.token?.expiresAt); // ✔️ aman, bukan NaN
+      const expirationISO = data?.token?.expiresAt ?? null;
+      const isExpired = expiresAtUnix != null
+        ? expiresAtUnix <= Math.floor(Date.now() / 1000)
+        : null;
+
+      // pecah SLD/TLD jika ada nama
+      const [sld, tld] = fullName ? fullName.split(".") : [undefined, undefined];
+
+      console.log('✅ Final domain metadata:', {
+        tokenId,
+        fullName,
+        sld,
+        tld,
+        expiresAtUnix,
+        expirationISO,
+        isExpired,
+        date: expiresAtUnix ? new Date(expiresAtUnix * 1000).toLocaleString() : 'No expiry data'
+      });
+
+      return {
+        name: sld ?? (fullName ?? `Domain-${tokenId.slice(-8)}`),
+        tld: tld ? `.${tld}` : ".eth",
+        description: fullName ? `Domain: ${fullName}` : `NFT Domain with token ID: ${tokenId}`,
+        expiresAt: expiresAtUnix,
+        expirationISO,
+        isExpired,
+      };
     } catch (error) {
-      console.error('Failed to fetch NFT metadata from Doma API:', error);
+      console.error("❌ Failed to fetch domain expiry:", error);
       return {
         name: `Unknown-${tokenId.slice(-8)}`,
-        tld: '.eth',
-        description: `Failed to fetch domain info`
+        tld: ".eth",
+        description: "Failed to fetch domain info",
+        expiresAt: null,
+        expirationISO: null,
+        isExpired: null,
       };
     }
   };

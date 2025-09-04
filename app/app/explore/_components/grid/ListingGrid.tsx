@@ -154,10 +154,10 @@ export default function ListingGrid({
 
               <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                 <span>
-                  Listed:{" "}
-                  {new Date(
-                    parseInt(listing.createdAt) * 1000
-                  ).toLocaleDateString()}
+                  Expires at:{" "}
+                  {listing.metadata?.expiresAt
+                    ? new Date(listing.metadata.expiresAt * 1000).toLocaleDateString()
+                    : 'Unknown'}
                 </span>
                 <span>Token ID: {listing.tokenId.slice(0, 8)}...</span>
               </div>
