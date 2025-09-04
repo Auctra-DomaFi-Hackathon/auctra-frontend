@@ -146,7 +146,7 @@ export function useLendingPool() {
   const isLoadingPoolData = isLoadingTotalAssets || isLoadingTotalDebt || isLoadingExchangeRate || 
     isLoadingCurrentRate || isLoadingUtilization || isLoadingLtv || isLoadingLiqThreshold || isLoadingApr
 
-  const poolData: LendingPoolData = {
+    const poolData: LendingPoolData = {
     totalAssets: (totalAssets as bigint) || BigInt(0),
     totalDebt: (totalDebt as bigint) || BigInt(0),
     exchangeRate: (exchangeRate as bigint) || parseUnits('1', 18),
@@ -183,9 +183,7 @@ export function useLendingPool() {
     shares: (userShares as bigint) || BigInt(0),
     healthFactor: (healthFactor as bigint) || BigInt(0),
     maxBorrowable: (maxBorrowable as bigint) || BigInt(0),
-  }
-
-  // Contract interaction functions
+  }  // Contract interaction functions
   const approveUSDC = async (amount: bigint) => {
     writeContract({
       address: CONTRACTS.USDC as `0x${string}`,
@@ -261,8 +259,8 @@ export function useLendingPool() {
     // Data
     poolData,
     userPosition,
-    usdcBalance: usdcBalance || BigInt(0),
-    usdcAllowance: usdcAllowance || BigInt(0),
+    usdcBalance: (usdcBalance as bigint) || BigInt(0),
+    usdcAllowance: (usdcAllowance as bigint) || BigInt(0),
     
     // Loading states
     isLoadingPoolData,

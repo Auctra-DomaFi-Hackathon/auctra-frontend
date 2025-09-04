@@ -7,7 +7,7 @@ import { Shield, Clock, Calendar } from "lucide-react";
 import { ListingWithMeta } from "@/lib/rental/types";
 import { formatUSD, formatDate, formatTimeLeft, getDaysLeft } from "@/lib/rental/format";
 import { useState } from "react";
-import RentDialog from "./RentDialog";
+import RentDomainPopup from "./RentDomainPopup";
 
 interface ListingCardProps {
   listing: ListingWithMeta;
@@ -142,7 +142,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
       </Card>
 
       {showRentDialog && isAvailable && (
-        <RentDialog
+        <RentDomainPopup
           listing={listing}
           open={showRentDialog}
           onOpenChange={setShowRentDialog}
