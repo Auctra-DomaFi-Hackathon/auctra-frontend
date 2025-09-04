@@ -36,6 +36,7 @@ export default function StepType({
             title="English Auction"
             desc="Traditional auction where bidders compete with increasingly higher bids."
             selected={formData.auctionType === 'english'}
+            onClick={(value) => setField('auctionType', value)}
           />
           <OptionBlock
             id="dutch"
@@ -43,6 +44,7 @@ export default function StepType({
             title="Dutch Auction"
             desc="Price starts high and decays over time until someone buys."
             selected={formData.auctionType === 'dutch'}
+            onClick={(value) => setField('auctionType', value)}
           />
           <OptionBlock
             id="sealed"
@@ -50,6 +52,7 @@ export default function StepType({
             title="Sealed Bid"
             desc="Bidders commit secret bids, reveal later. Highest valid bid wins."
             selected={formData.auctionType === 'sealed'}
+            onClick={(value) => setField('auctionType', value)}
           />
         </RadioGroup>
 

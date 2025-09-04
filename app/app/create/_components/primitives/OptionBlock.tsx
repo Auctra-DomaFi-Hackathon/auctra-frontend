@@ -11,15 +11,25 @@ export default function OptionBlock({
   title,
   desc,
   selected,
+  onClick,
 }: {
   id: string
   value: AuctionKind
   title: string
   desc: string
   selected: boolean
+  onClick?: (value: AuctionKind) => void
 }) {
   return (
-    <div className={cn('flex items-start space-x-3 p-4 border rounded-lg bg-white dark:bg-gray-800 transition-colors duration-200', selected ? 'border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700')}>
+    <div 
+      className={cn(
+        'flex items-start space-x-3 p-4 border rounded-lg bg-white dark:bg-gray-800 transition-colors duration-200 cursor-pointer', 
+        selected 
+          ? 'border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30' 
+          : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+      )}
+      onClick={() => onClick?.(value)}
+    >
       <RadioGroupItem value={value} id={id} className="mt-1" />
       <div className="flex-1">
         <Label htmlFor={id} className="text-lg font-semibold text-gray-900 dark:text-white cursor-pointer">
