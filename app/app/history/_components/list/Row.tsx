@@ -47,6 +47,15 @@ export default function Row({ item }: { item: ActivityItem }) {
                   className="rounded-full"
                 />
               )}
+              {item.kind === 'Auctions' && (
+                <Image
+                  src="/images/LogoCoin/eth-logo.svg"
+                  alt="ETH"
+                  width={14}
+                  height={14}
+                  className="rounded-full"
+                />
+              )}
             </Badge>
           )}
 
