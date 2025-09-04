@@ -16,6 +16,10 @@ export function useExploreData() {
   const [domains, setDomains] = useState<Domain[]>([])
   const [loading, setLoading] = useState(true)
 
+  // auction pagination
+  const [currentPage, setCurrentPage] = useState<Record<StatusTab, number>>({expiring: 1, ongoing: 1, liquidation: 1, listings: 1})
+  const itemsPerPage = 6
+
   // filters
   const [searchQuery, setSearchQuery] = useState('')
   const q = useDebounce(searchQuery, 250)
@@ -26,8 +30,8 @@ export function useExploreData() {
   const [sortBy, setSortBy] = useState<SortKey>('ending-soon')
   const [tab, setTab] = useState<StatusTab>('listings')
 
-  // Fetch active listings from GraphQL
-  const { listings, loading: listingsLoading, error: listingsError } = useActiveListings(50)
+  // Fetch active listings from GraphQL with pagination
+  const { listings, loading: listingsLoading, error: listingsError, currentPage: listingsPage, totalPages: listingsTotalPages, onPageChange: onListingsPageChange } = useActiveListings(6)
 
   // load data progressively
   useEffect(() => {
@@ -89,7 +93,7 @@ export function useExploreData() {
       if (selectedTLDs.length) {
         out = out.filter((a) => {
           const d = domainById.get(a.domainId)
-          return d && selectedTLDs.includes(d.tld)
+          return d && d.tld && selectedTLDs.includes(d.tld)
         })
       }
       if (selectedTypes.length) {
@@ -118,22 +122,46 @@ export function useExploreData() {
       return copy
     }
 
-    const base: Record<StatusTab, Auction[]> = { expiring: [], ongoing: [], liquidation: [] }
+    const base: Record<StatusTab, Auction[]> = { expiring: [], ongoing: [], liquidation: [], listings: [] }
     auctions.forEach((a) => {
       (['expiring', 'ongoing', 'liquidation'] as StatusTab[]).forEach((s) => {
         if (applyStatus(a, s)) base[s].push(a)
       })
     })
 
+    // Apply pagination to auction results
+    const paginate = <T,>(items: T[], page: number): { items: T[], totalPages: number } => {
+      const startIndex = (page - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      return {
+        items: items.slice(startIndex, endIndex),
+        totalPages: Math.ceil(items.length / itemsPerPage)
+      };
+    };
+
+    const expiringFiltered = applySort(applyFilters(base.expiring));
+    const ongoingFiltered = applySort(applyFilters(base.ongoing));
+    const liquidationFiltered = applySort(applyFilters(base.liquidation));
+
     return {
-      expiring: applySort(applyFilters(base.expiring)),
-      ongoing: applySort(applyFilters(base.ongoing)),
-      liquidation: applySort(applyFilters(base.liquidation)),
+      expiring: paginate(expiringFiltered, currentPage.expiring),
+      ongoing: paginate(ongoingFiltered, currentPage.ongoing),
+      liquidation: paginate(liquidationFiltered, currentPage.liquidation),
+      expiringTotal: expiringFiltered.length,
+      ongoingTotal: ongoingFiltered.length,
+      liquidationTotal: liquidationFiltered.length,
     }
-  }, [auctions, q, selectedTLDs, selectedTypes, priceMin, priceMax, sortBy, domainById])
+  }, [auctions, q, selectedTLDs, selectedTypes, priceMin, priceMax, sortBy, domainById, currentPage])
 
   // Filter listings similar to how auctions are filtered
   const filteredListings = useMemo(() => {
+    console.log('🗺 Filtering listings:', { 
+      originalListings: listings?.length, 
+      q, 
+      selectedTLDs, 
+      selectedTypes 
+    });
+    
     if (!listings) return [];
     
     let filtered = listings;
@@ -216,13 +244,15 @@ export function useExploreData() {
       });
     }
     
-    return sortedFiltered;
+    const result = sortedFiltered;
+    console.log('🔎 Filtered result:', { resultCount: result.length });
+    return result;
   }, [listings, q, selectedTLDs, selectedTypes, priceMin, priceMax, sortBy]);
 
   const counts = {
-    expiring: byStatus.expiring.length,
-    ongoing: byStatus.ongoing.length,
-    liquidation: byStatus.liquidation.length,
+    expiring: byStatus.expiringTotal || 0,
+    ongoing: byStatus.ongoingTotal || 0,
+    liquidation: byStatus.liquidationTotal || 0,
     listings: filteredListings.length,
   }
 
@@ -234,6 +264,16 @@ export function useExploreData() {
     const key = type.toLowerCase()
     setSelectedTypes((prev) => (checked ? [...prev, key] : prev.filter((x) => x !== key)))
   }
+
+  // Page change functions for auctions
+  const onAuctionPageChange = (status: StatusTab, page: number) => {
+    setCurrentPage(prev => ({ ...prev, [status]: page }));
+  };
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage({ expiring: 1, ongoing: 1, liquidation: 1, listings: 1 });
+  }, [q, selectedTLDs, selectedTypes, priceMin, priceMax, sortBy]);
 
   return {
     loading: loading || listingsLoading,
@@ -249,5 +289,10 @@ export function useExploreData() {
     domainById,
     listings: filteredListings,
     listingsError,
+    listingsPage,
+    listingsTotalPages,
+    onListingsPageChange,
+    onAuctionPageChange,
+    currentPage,
   }
 }

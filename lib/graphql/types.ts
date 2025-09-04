@@ -69,6 +69,8 @@ export interface GetActiveListingsResponse {
 
 export interface GetActiveListingsVariables {
   limit?: number;
+  after?: string;
+  before?: string;
 }
 
 // NFT Metadata types
@@ -76,7 +78,10 @@ export interface NFTMetadata {
   name: string;
   tld: string;
   image?: string;
-  description?: string;
+  description: string;
+  expiresAt?: number | null;        // UNIX seconds
+  expirationISO?: string | null;    // "YYYY-MM-DDTHH:mm:ss.sssZ"
+  isExpired?: boolean | null;
 }
 
 // Doma API types
@@ -95,11 +100,31 @@ export interface DomaNameStatistics {
 }
 
 export interface NameFromTokenResponse {
-  token: DomaTokenInfo;
-  nameStatistics: DomaNameStatistics;
+  nameStatistics: { name: string | null } | null;
 }
 
 export interface NameFromTokenVariables {
+  tokenId: string;
+}
+
+export interface NameExpiryResponse {
+  name: { 
+    expiresAt: string | number | null;
+    registrar: { name: string } | null;
+  } | null;
+}
+
+export interface NameExpiryVariables {
+  name: string;
+}
+
+// New types for combined token name and expiry query
+export interface TokenNameAndExpiryResponse {
+  nameStatistics?: { name?: string | null } | null;
+  token?: { tokenId: string; expiresAt: string; networkId: string } | null;
+}
+
+export interface TokenNameAndExpiryVariables {
   tokenId: string;
 }
 

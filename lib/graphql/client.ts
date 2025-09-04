@@ -28,5 +28,21 @@ const listingsHttpLink = createHttpLink({
 
 export const listingsApolloClient = new ApolloClient({
   link: listingsHttpLink,
-  cache: new InMemoryCache(),
+  cache: new InMemoryCache({
+    typePolicies: {
+      Query: {
+        fields: {
+          listings: {
+            keyArgs: ['where', 'orderBy', 'orderDirection'],
+            merge(existing = { items: [], pageInfo: {} }, incoming) {
+              return {
+                ...incoming,
+                items: [...(existing.items || []), ...(incoming.items || [])],
+              };
+            },
+          },
+        },
+      },
+    },
+  }),
 });

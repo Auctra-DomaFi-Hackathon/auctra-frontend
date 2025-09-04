@@ -34,6 +34,11 @@ export default function ExplorePage() {
     domainById,
     listings,
     listingsError,
+    listingsPage,
+    listingsTotalPages,
+    onListingsPageChange,
+    onAuctionPageChange,
+    currentPage,
   } = useExploreData()
 
   if (loading) {
@@ -78,9 +83,12 @@ export default function ExplorePage() {
               <TabsContent key={s} value={s}>
                 <Suspense fallback={<LoadingGrid count={4} />}>
                   <AuctionGrid
-                    auctions={byStatus[s]}
+                    auctions={byStatus[s]?.items || []}
                     domainById={domainById}
                     emptyLabel={`No ${s} auctions found matching your criteria.`}
+                    currentPage={currentPage[s] || 1}
+                    totalPages={byStatus[s]?.totalPages || 1}
+                    onPageChange={(page) => onAuctionPageChange(s, page)}
                   />
                 </Suspense>
               </TabsContent>
@@ -97,6 +105,9 @@ export default function ExplorePage() {
                   <ListingGrid
                     listings={listings || []}
                     emptyLabel="No active listings found."
+                    currentPage={listingsPage}
+                    totalPages={listingsTotalPages}
+                    onPageChange={onListingsPageChange}
                   />
                 )}
               </Suspense>

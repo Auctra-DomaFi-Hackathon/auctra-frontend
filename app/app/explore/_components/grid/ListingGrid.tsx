@@ -6,6 +6,7 @@ import { formatEther } from "ethers";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ExplorePagination } from "../ExplorePagination";
 import { getStrategyName } from "@/lib/utils/strategy";
 import BidDialog from "@/components/auction/BidDialog";
 import Image from "next/image";
@@ -17,9 +18,15 @@ interface ListingWithMetadata extends Listing {
 export default function ListingGrid({
   listings,
   emptyLabel,
+  currentPage,
+  totalPages,
+  onPageChange,
 }: {
   listings: ListingWithMetadata[];
   emptyLabel: string;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
 }) {
   const [selectedListing, setSelectedListing] =
     useState<ListingWithMetadata | null>(null);
@@ -29,6 +36,14 @@ export default function ListingGrid({
     setSelectedListing(listing);
     setIsBidDialogOpen(true);
   };
+
+  // Debug pagination props
+  console.log('📋 ListingGrid render:', { 
+    listingsCount: listings.length, 
+    currentPage, 
+    totalPages,
+    onPageChange: !!onPageChange
+  });
   if (!listings.length) {
     return (
       <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
@@ -194,6 +209,16 @@ export default function ListingGrid({
           </Card>
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages && totalPages > 1 && currentPage && onPageChange && (
+        <ExplorePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          className="mt-8"
+        />
+      )}
 
       {/* Bid Dialog */}
       <BidDialog

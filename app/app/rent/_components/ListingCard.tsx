@@ -155,7 +155,9 @@ export default function ListingCard({ listing }: ListingCardProps) {
           {/* Domain Expiry */}
           <div className="flex items-center text-sm text-gray-500 mb-4 dark:text-gray-400">
             <Calendar className="w-4 h-4 mr-1" />
-            <span>Domain expires {formatDate(listing.expiresAt)}</span>
+            <span>
+              Domain expires in {listing.expiresAt ? formatDate(listing.expiresAt) : 'Unknown'}.
+            </span>
           </div>
 
           {/* Payment Token */}

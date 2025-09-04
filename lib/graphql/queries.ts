@@ -27,9 +27,11 @@ export const MY_DOMAINS_QUERY = gql`
 `;
 
 export const GET_ACTIVE_LISTINGS_QUERY = gql`
-  query GetActiveListings($limit: Int = 10) {
+  query GetActiveListings($limit: Int = 10, $after: String, $before: String) {
     listings(
       limit: $limit
+      after: $after
+      before: $before
       where: { status: "Listed" }
       orderBy: "createdAt"
       orderDirection: "desc"
@@ -61,19 +63,27 @@ export const GET_ACTIVE_LISTINGS_QUERY = gql`
 `;
 
 export const GET_NAME_FROM_TOKEN_QUERY = gql`
-  query NameFromToken($tokenId: String!) {
-    token(tokenId: $tokenId) {
-      tokenId
-      tokenAddress
-      chain { 
-        name 
-        networkId 
-      }
-      expiresAt
-    }
+  query GetNameFromToken($tokenId: String!) {
     nameStatistics(tokenId: $tokenId) {
       name
     }
+  }
+`;
+
+export const GET_NAME_EXPIRY_QUERY = gql`
+  query GetNameExpiry($name: String!) {
+    name(name: $name) {
+      expiresAt
+      registrar { name }
+    }
+  }
+`;
+
+// New combined query for token name and expiry (ISO DateTime)
+export const GET_TOKEN_NAME_AND_EXPIRY = gql`
+  query TokenNameAndExpiry($tokenId: String!) {
+    nameStatistics(tokenId: $tokenId) { name }
+    token(tokenId: $tokenId) { tokenId expiresAt networkId }
   }
 `;
 

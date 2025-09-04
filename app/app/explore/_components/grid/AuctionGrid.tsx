@@ -1,16 +1,23 @@
 'use client'
 
 import { AuctionCard } from '@/features/auction/AuctionCard'
+import { ExplorePagination } from '../ExplorePagination'
 import type { Auction, Domain } from '@/types'
 
 export default function AuctionGrid({
   auctions,
   domainById,
   emptyLabel,
+  currentPage,
+  totalPages,
+  onPageChange,
 }: {
   auctions: Auction[]
   domainById: Map<string, Domain>
   emptyLabel: string
+  currentPage?: number
+  totalPages?: number
+  onPageChange?: (page: number) => void
 }) {
   if (!auctions.length) {
     return (
@@ -21,12 +28,24 @@ export default function AuctionGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
-      {auctions.map((a) => {
-        const d = domainById.get(a.domainId)
-        if (!d) return null
-        return <AuctionCard key={a.id} auction={a} domain={d} />
-      })}
-    </div>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+        {auctions.map((a) => {
+          const d = domainById.get(a.domainId)
+          if (!d) return null
+          return <AuctionCard key={a.id} auction={a} domain={d} />
+        })}
+      </div>
+      
+      {/* Pagination */}
+      {totalPages && totalPages > 1 && currentPage && onPageChange && (
+        <ExplorePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          className="mt-8"
+        />
+      )}
+    </>
   )
 }

@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useQuery } from '@apollo/client';
 import { graphqlService, type EnhancedDomainItem } from './services';
-import { GET_ACTIVE_LISTINGS_QUERY, GET_NAME_FROM_TOKEN_QUERY, MY_DOMAINS_QUERY, GET_ALL_ACTIVE_RENTAL_LISTINGS_QUERY, GET_LISTING_DETAILS_QUERY, GET_RENTAL_LISTINGS_BY_OWNER_QUERY, GET_USER_RENTAL_HISTORY_QUERY } from './queries';
+import { GET_ACTIVE_LISTINGS_QUERY, GET_NAME_FROM_TOKEN_QUERY, GET_NAME_EXPIRY_QUERY, GET_TOKEN_NAME_AND_EXPIRY, GET_ALL_ACTIVE_RENTAL_LISTINGS_QUERY, GET_RENTAL_LISTINGS_BY_OWNER_QUERY, GET_USER_RENTAL_HISTORY_QUERY } from './queries';
+import { toUnixSeconds, toUnixSecondsFromISO } from '@/lib/utils/expiry';
 import { listingsApolloClient, apolloClient } from './client';
-import type { GetActiveListingsResponse, GetActiveListingsVariables, Listing, NFTMetadata, NameFromTokenResponse, NameFromTokenVariables, GetAllActiveRentalListingsResponse, GetAllActiveRentalListingsVariables, GetListingDetailsResponse, GetListingDetailsVariables, GetRentalListingsByOwnerResponse, GetRentalListingsByOwnerVariables, GetUserRentalHistoryResponse, GetUserRentalHistoryVariables, RentalListingWithMetadata, RentalHistory } from './types';
+import type { GetActiveListingsResponse, GetActiveListingsVariables, Listing, NFTMetadata, NameFromTokenResponse, NameFromTokenVariables, NameExpiryResponse, NameExpiryVariables, TokenNameAndExpiryResponse, TokenNameAndExpiryVariables, GetAllActiveRentalListingsResponse, GetAllActiveRentalListingsVariables, GetRentalListingsByOwnerResponse, GetRentalListingsByOwnerVariables, GetUserRentalHistoryResponse, GetUserRentalHistoryVariables, RentalListingWithMetadata, RentalHistory } from './types';
 
 export function useMyDomains(walletAddress?: string) {
   const [domains, setDomains] = useState<EnhancedDomainItem[]>([]);
@@ -56,16 +57,28 @@ export function useMyDomains(walletAddress?: string) {
   return { domains, loading, error, refetch };
 }
 
-export function useActiveListings(limit: number = 10) {
+export function useActiveListings(limit: number = 6) {
   const [listingsWithMetadata, setListingsWithMetadata] = useState<(Listing & { metadata?: NFTMetadata })[]>([]);
   const [metadataLoading, setMetadataLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
+  // Calculate offset based on current page (for future use if needed)
+  // const offset = (currentPage - 1) * limit;
+  
   const { data, loading, error, refetch } = useQuery<GetActiveListingsResponse, GetActiveListingsVariables>(
     GET_ACTIVE_LISTINGS_QUERY,
     {
       client: listingsApolloClient,
-      variables: { limit },
-      errorPolicy: 'all'
+      variables: { limit: 100 }, // Fetch all listings initially
+      errorPolicy: 'all',
+      onCompleted: (data) => {
+        console.log('🔍 Active listings query completed:', {
+          itemsCount: data?.listings?.items?.length,
+          totalCount: data?.listings?.items?.length
+        });
+        setTotalCount(data?.listings?.items?.length || 0);
+      }
     }
   );
 
@@ -85,7 +98,8 @@ export function useActiveListings(limit: number = 10) {
         return {
           name: sld || name,
           tld: tld ? `.${tld}` : '.eth',
-          description: `Domain: ${name}`
+          description: `Domain: ${name}`,
+
         };
       } else {
         // Fallback if name not found
@@ -105,7 +119,12 @@ export function useActiveListings(limit: number = 10) {
     }
   };
 
-  // Fetch metadata for all listings
+  // Function to change page
+  const onPageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
+
+  // Fetch metadata for all listings and paginate
   useEffect(() => {
     if (!data?.listings?.items?.length) {
       setListingsWithMetadata([]);
@@ -115,30 +134,42 @@ export function useActiveListings(limit: number = 10) {
     const fetchAllMetadata = async () => {
       setMetadataLoading(true);
       try {
-        const listingsWithMeta = await Promise.all(
+        const allListingsWithMeta = await Promise.all(
           data.listings.items.map(async (listing) => {
             const metadata = await fetchNFTMetadata(listing.tokenId);
             return { ...listing, metadata };
           })
         );
-        setListingsWithMetadata(listingsWithMeta);
+        
+        // Paginate the results
+        const startIndex = (currentPage - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedListings = allListingsWithMeta.slice(startIndex, endIndex);
+        
+        setListingsWithMetadata(paginatedListings);
       } catch (error) {
         console.error('Failed to fetch metadata for listings:', error);
-        setListingsWithMetadata(data.listings.items);
+        const fallbackListings = data.listings.items.slice((currentPage - 1) * limit, currentPage * limit);
+        setListingsWithMetadata(fallbackListings.map(listing => ({ ...listing })));
       } finally {
         setMetadataLoading(false);
       }
     };
 
     fetchAllMetadata();
-  }, [data]);
+  }, [data, currentPage, limit]);
+
+  const totalPages = Math.ceil(totalCount / limit);
 
   return {
     listings: listingsWithMetadata,
     loading: loading || metadataLoading,
     error,
     refetch,
-    pageInfo: data?.listings?.pageInfo
+    currentPage,
+    totalPages,
+    totalCount,
+    onPageChange
   };
 }
 
@@ -164,94 +195,59 @@ export function useActiveRentalListings(limit: number = 50) {
     }
   );
 
-  // Function to fetch domain metadata with expires using the same approach as useMyDomains
-  const fetchDomainWithExpires = async (tokenId: string): Promise<NFTMetadata & { expiresAt?: number }> => {
+  // Function to fetch domain metadata with ISO DateTime parsing (single query approach)
+  const fetchDomainWithExpires = async (tokenId: string): Promise<NFTMetadata> => {
     try {
       console.log('🔍 Fetching domain data for tokenId:', tokenId);
       
-      // First get the domain name from token API
-      const { data } = await apolloClient.query<NameFromTokenResponse, NameFromTokenVariables>({
-        query: GET_NAME_FROM_TOKEN_QUERY,
-        variables: { tokenId },
-        errorPolicy: 'all'
+      // Single query for both name and expiry (ISO DateTime)
+      const { data } = await apolloClient.query<TokenNameAndExpiryResponse, TokenNameAndExpiryVariables>({
+        query: GET_TOKEN_NAME_AND_EXPIRY,
+        variables: { tokenId },                // tokenId harus STRING (angka sangat besar)
+        fetchPolicy: "network-only",
+        errorPolicy: "all",
       });
 
-      console.log('📊 Raw API response for tokenId', tokenId, ':', data);
-      const domainName = data?.nameStatistics?.name;
-      
-      if (domainName) {
-        // If we got a domain name, use MY_DOMAINS_QUERY approach to get expires
-        try {
-          const { data: domainData } = await apolloClient.query({
-            query: MY_DOMAINS_QUERY,
-            variables: {
-              take: 1,
-              ownedBy: [], // We don't filter by owner, just search by name
-              sortOrder: "DESC"
-            },
-            errorPolicy: 'all'
-          });
+      console.log("Token Name & Expiry Query:", JSON.stringify(data, null, 2));
 
-          // Find the domain that matches our name
-          const matchingDomain = domainData?.names?.items?.find(
-            (item: any) => item.name === domainName
-          );
+      const fullName = data?.nameStatistics?.name ?? null;
+      const expiresAtUnix = toUnixSecondsFromISO(data?.token?.expiresAt); // ✔️ aman, bukan NaN
+      const expirationISO = data?.token?.expiresAt ?? null;
+      const isExpired = expiresAtUnix != null
+        ? expiresAtUnix <= Math.floor(Date.now() / 1000)
+        : null;
 
-          if (matchingDomain?.expiresAt) {
-            const expiresAt = Number(matchingDomain.expiresAt);
-            console.log('✅ Found expires from MY_DOMAINS_QUERY:', {
-              domainName,
-              rawExpiresAt: matchingDomain.expiresAt,
-              convertedExpiresAt: expiresAt,
-              date: new Date(expiresAt * 1000).toLocaleString()
-            });
+      // pecah SLD/TLD jika ada nama
+      const [sld, tld] = fullName ? fullName.split(".") : [undefined, undefined];
 
-            const [sld, tld] = domainName.split('.');
-            return {
-              name: sld || domainName,
-              tld: tld ? `.${tld}` : '.com',
-              description: `Domain: ${domainName}`,
-              expiresAt
-            };
-          }
-        } catch (domainQueryError) {
-          console.error('Failed to fetch domain expires from MY_DOMAINS_QUERY:', domainQueryError);
-        }
-      }
-
-      // Fallback to original approach if MY_DOMAINS_QUERY fails
-      const rawExpiresAt = data?.token?.expiresAt;
-      const expiresAt = rawExpiresAt && !isNaN(Number(rawExpiresAt)) ? Number(rawExpiresAt) : 0;
-      
-      console.log('⚠️ Using fallback expires data for', domainName || tokenId, ':', { 
-        rawExpiresAt, 
-        convertedExpiresAt: expiresAt,
-        date: expiresAt ? new Date(expiresAt * 1000).toLocaleString() : 'Invalid'
+      console.log('✅ Final domain metadata:', {
+        tokenId,
+        fullName,
+        sld,
+        tld,
+        expiresAtUnix,
+        expirationISO,
+        isExpired,
+        date: expiresAtUnix ? new Date(expiresAtUnix * 1000).toLocaleString() : 'No expiry data'
       });
-      
-      if (domainName) {
-        const [sld, tld] = domainName.split('.');
-        return {
-          name: sld || domainName,
-          tld: tld ? `.${tld}` : '.eth',
-          description: `Domain: ${domainName}`,
-          expiresAt
-        };
-      } else {
-        return {
-          name: `Domain-${tokenId.slice(-8)}`,
-          tld: '.eth',
-          description: `NFT Domain with token ID: ${tokenId}`,
-          expiresAt
-        };
-      }
+
+      return {
+        name: sld ?? (fullName ?? `Domain-${tokenId.slice(-8)}`),
+        tld: tld ? `.${tld}` : ".eth",
+        description: fullName ? `Domain: ${fullName}` : `NFT Domain with token ID: ${tokenId}`,
+        expiresAt: expiresAtUnix,
+        expirationISO,
+        isExpired,
+      };
     } catch (error) {
-      console.error('Failed to fetch domain metadata:', error);
+      console.error("❌ Failed to fetch domain expiry:", error);
       return {
         name: `Unknown-${tokenId.slice(-8)}`,
-        tld: '.eth',
-        description: `Failed to fetch domain info`,
-        expiresAt: 0
+        tld: ".eth",
+        description: "Failed to fetch domain info",
+        expiresAt: null,
+        expirationISO: null,
+        isExpired: null,
       };
     }
   };
@@ -288,7 +284,7 @@ export function useActiveRentalListings(limit: number = 50) {
     };
 
     fetchAllMetadata();
-  }, [data]);
+  }, [data, fetchNFTMetadata]);
 
   return {
     rentalListings: rentalListingsWithMetadata,
