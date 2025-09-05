@@ -484,6 +484,13 @@ export const DOMAIN_AUCTION_HOUSE_ABI = [
     type: "function",
   },
   {
+    inputs: [{ internalType: "uint256", name: "listingId", type: "uint256" }],
+    name: "goLive",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
     inputs: [
       { internalType: "uint256", name: "listingId", type: "uint256" },
       { internalType: "uint256", name: "duration", type: "uint256" },
@@ -531,6 +538,13 @@ export const DOMAIN_AUCTION_HOUSE_ABI = [
       { internalType: "address", name: "", type: "address" },
     ],
     name: "listingBids",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    name: "listingDurations",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
