@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient, useAccount } from 'wagmi'
-import { parseEther, encodeAbiParameters, keccak256, parseEventLogs, decodeEventLog, decodeAbiParameters } from 'viem'
+import { parseEther, formatEther, encodeAbiParameters, keccak256, parseEventLogs, decodeEventLog, decodeAbiParameters, zeroAddress, isAddressEqual } from 'viem'
 import { CONTRACTS } from './contracts/constants'
-import { DOMAIN_AUCTION_HOUSE_ABI } from './contracts/abis'
+import { DOMAIN_AUCTION_HOUSE_ABI, SEALED_BID_AUCTION_ABI } from './contracts/abis'
 
 export interface AuctionParams {
   tokenId: bigint
@@ -125,6 +125,20 @@ export function useCreateAuction() {
       setCurrentStep('criteria')
       console.log('Step 2: Setting auction criteria for listingId:', realListingId.toString())
       
+      // For sealed bid auctions, calculate total duration from commit + reveal durations
+      let totalDuration = params.duration
+      if (params.auctionType === 'sealed') {
+        const commitSecs = params.commitDuration || 3600
+        const revealSecs = params.revealDuration || 3600
+        totalDuration = commitSecs + revealSecs
+        console.log('🔧 Sealed bid criteria: using calculated total duration:', {
+          commitDuration: commitSecs,
+          revealDuration: revealSecs,
+          totalDuration: totalDuration,
+          originalDuration: params.duration
+        })
+      }
+      
       const eligibilityData = encodeAbiParameters(
         [{ name: 'isWhitelisted', type: 'bool' }, { name: 'whitelist', type: 'address[]' }],
         [params.isWhitelisted || false, (params.whitelist || []) as `0x${string}`[]]
@@ -137,7 +151,7 @@ export function useCreateAuction() {
         args: [
           realListingId, // Use real listingId
           parseEther(params.reservePrice), // reservePrice
-          BigInt(params.duration), // duration
+          BigInt(totalDuration), // duration
           eligibilityData // eligibilityData
         ],
       })
@@ -230,12 +244,13 @@ export function useCreateAuction() {
           break
           
         case 'sealed':
+          // params.commitDuration and params.revealDuration are now in seconds (converted in form hook)
           const commitDurationSecs = params.commitDuration && params.commitDuration > 0 
             ? params.commitDuration 
             : 3600 // 1 hour default
           const revealDurationSecs = params.revealDuration && params.revealDuration > 0 
             ? params.revealDuration 
-            : 3600 // 1 hour default (changed from 30 min)
+            : 3600 // 1 hour default
           const minDepositStr = params.minimumDeposit && params.minimumDeposit !== 'undefined' && params.minimumDeposit !== '0'
             ? params.minimumDeposit 
             : '0.1' // 0.1 ETH default (as per docs)
@@ -317,13 +332,27 @@ export function useCreateAuction() {
       setCurrentStep('start')
       console.log('Step 4: Starting auction for listingId:', realListingId.toString())
       
+      // For sealed bid auctions, calculate total duration from commit + reveal durations
+      let totalDuration = params.duration
+      if (params.auctionType === 'sealed') {
+        const commitSecs = params.commitDuration || 3600
+        const revealSecs = params.revealDuration || 3600
+        totalDuration = commitSecs + revealSecs
+        console.log('🔧 Sealed bid auction: using calculated total duration:', {
+          commitDuration: commitSecs,
+          revealDuration: revealSecs,
+          totalDuration: totalDuration,
+          originalDuration: params.duration
+        })
+      }
+      
       writeStart({
         address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
         abi: DOMAIN_AUCTION_HOUSE_ABI,
         functionName: 'goLive',
         args: [
           realListingId, // Use real listingId
-          BigInt(params.duration) // duration
+          BigInt(totalDuration) // duration
         ],
       })
       
@@ -622,47 +651,163 @@ export function useDutchAuctionPurchase() {
 export function useCommitSealedBid() {
   const [commitments, setCommitments] = useState<Record<string, { bidAmount: string; salt: string }>>({})
   
-  const { placeBid, isPending, isConfirming, isSuccess, hash } = usePlaceBid()
+  const { writeContract, data: hash, isPending } = useWriteContract()
+  const publicClient = usePublicClient()
+  const { address: userAddress } = useAccount()
+
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  })
 
   const commitBid = async (listingId: bigint, bidAmount: string, deposit: string) => {
     try {
-      // Generate random salt using crypto API
-      const saltArray = new Uint8Array(32)
-      crypto.getRandomValues(saltArray)
-      const salt = `0x${Array.from(saltArray).map(b => b.toString(16).padStart(2, '0')).join('')}` as `0x${string}`
+      if (!userAddress || !publicClient) {
+        throw new Error("User wallet not connected or no public client available")
+      }
+
+      console.log("🔄 Starting sealed bid commit process (CLAUDE.md ENHANCED VERSION)...");
       
-      // Create commitment hash
-      const bidAmountWei = parseEther(bidAmount)
-      const commitment = keccak256(
+      // A. Read paymentToken from listing as per CLAUDE.md instructions
+      const listing = await publicClient.readContract({
+        address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+        abi: DOMAIN_AUCTION_HOUSE_ABI,
+        functionName: "listings",
+        args: [listingId],
+      });
+      
+      const listingArray = [...(listing as readonly any[])];
+      const paymentToken = listingArray[3] as `0x${string}`;
+      const isETHPayment = isAddressEqual(paymentToken, zeroAddress); // ⬅️ safe address comparison
+      
+      console.log("💳 Payment token info:", {
+        paymentToken,
+        isETHPayment,
+        listingId: listingId.toString()
+      });
+      
+      // 1) Phase check using utility function
+      await assertCommitPhase(publicClient, CONTRACTS.SealedBidAuction as `0x${string}`, listingId);
+      console.log("✅ Phase check passed: Auction is in COMMIT phase");
+
+      // 2) Get minDeposit from chain and validate
+      const { minDeposit } = await getSealedBidParams(
+        publicClient, 
+        CONTRACTS.DomainAuctionHouse as `0x${string}`, 
+        listingId
+      );
+      
+      const depositWei = parseEther(deposit);
+      const bidAmountWei = parseEther(bidAmount);
+      
+      if (depositWei < minDeposit) {
+        throw new Error(`Deposit too small. Min: ${minDeposit.toString()} wei (${parseFloat(deposit)} ETH < ${parseFloat(formatEther(minDeposit))} ETH)`);
+      }
+
+      console.log("💰 Deposit validation passed:", {
+        depositWei: depositWei.toString(),
+        minDeposit: minDeposit.toString(),
+        depositETH: deposit + " ETH",
+        minDepositETH: parseFloat(formatEther(minDeposit)).toFixed(6) + " ETH",
+        paymentType: isETHPayment ? 'ETH' : 'ERC20'
+      });
+
+      // B. Generate commitment hash = keccak256(abi.encode(bidWei, nonce, account)) as per CLAUDE.md
+      const nonce = BigInt(Date.now() * 1000 + Math.floor(Math.random() * 1000));
+      const commitmentHash = keccak256(
         encodeAbiParameters(
-          [{ name: 'bidAmount', type: 'uint256' }, { name: 'salt', type: 'bytes32' }],
-          [bidAmountWei, salt]
+          [{ type: "uint256" }, { type: "uint256" }, { type: "address" }],
+          [bidAmountWei, nonce, userAddress as `0x${string}`]
         )
-      )
+      );
       
-      // Store commitment locally
-      const listingKey = listingId.toString()
+      console.log("🔐 Generated commitment hash (CLAUDE.md format):", {
+        bidWei: bidAmountWei.toString(),
+        nonce: nonce.toString(),
+        account: userAddress,
+        commitmentHash
+      });
+
+      // B. Ensure data format is exactly (bytes32, bytes) with eligibility proof = "0x"
+      const commitData = encodeAbiParameters(
+        [{ type: "bytes32" }, { type: "bytes" }],
+        [commitmentHash, "0x"] // proof empty = "0x"
+      );
+      
+      const valueToSend = isETHPayment ? depositWei : BigInt(0);
+      
+      // ==== ✅ Use SIMULATION to guarantee value is sent ====
+      if (!userAddress) throw new Error("No account");
+      
+      console.log("🔍 Pre-simulation debug info:", {
+        userAddress,
+        listingId: listingId.toString(),
+        paymentToken,
+        isETHPayment,
+        depositWei: depositWei.toString(),
+        valueToSend: valueToSend.toString(),
+        contractAddress: CONTRACTS.DomainAuctionHouse,
+        commitDataLength: commitData.length
+      });
+      
+      try {
+        // (b) placeBid with request from simulation
+        console.log("🎯 Starting contract simulation...");
+        const { request } = await publicClient.simulateContract({
+          account: userAddress,
+          address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+          abi: DOMAIN_AUCTION_HOUSE_ABI,
+          functionName: "placeBid",
+          args: [listingId, depositWei, commitData],
+          value: valueToSend, // ⬅️ this ensures value doesn't get "lost"
+        });
+        
+        console.log("✅ Simulation successful!");
+        console.log("📋 Request details:", {
+          address: request.address,
+          functionName: request.functionName,
+          args: request.args?.map((arg, i) => `arg[${i}]: ${arg?.toString()}`),
+          value: request.value?.toString(),
+          expectedValue: valueToSend.toString(),
+          valuesMatch: request.value === valueToSend
+        });
+        
+        // Send transaction
+        console.log("🚀 Sending transaction with simulated request...");
+        writeContract(request);
+        console.log("✅ Transaction submitted successfully");
+        
+      } catch (simulationError) {
+        console.error("❌ Simulation failed:", simulationError);
+        console.error("📊 Simulation error details:", {
+          message: simulationError instanceof Error ? simulationError.message : 'Unknown error',
+          stack: simulationError instanceof Error ? simulationError.stack : undefined
+        });
+        throw new Error(`Transaction simulation failed: ${simulationError instanceof Error ? simulationError.message : 'Unknown error'}`);
+      }
+      
+      // 6) Save for reveal using new format
+      saveCommitLocal(listingId, { nonce, bidWei: bidAmountWei });
+      
+      // Keep backward compatibility with old format
+      const listingKey = listingId.toString();
       setCommitments(prev => ({
         ...prev,
-        [listingKey]: { bidAmount, salt }
-      }))
+        [listingKey]: { bidAmount, salt: nonce.toString() }
+      }));
       
-      // Also store in localStorage as backup
-      localStorage.setItem(`sealedBid_${listingKey}_salt`, salt)
-      localStorage.setItem(`sealedBid_${listingKey}_amount`, bidAmount)
+      localStorage.setItem(`nonce_${listingKey}`, nonce.toString());
+      localStorage.setItem(`bidAmount_${listingKey}`, bidAmountWei.toString());
       
-      // Encode commitment data
-      const commitData = encodeAbiParameters(
-        [{ name: 'commitment', type: 'bytes32' }],
-        [commitment]
-      )
-      
-      // Place bid with commitment - for sealed bid we use the deposit amount
-      await placeBid(listingId, deposit)
+      console.log("💾 Stored commitment data for reveal phase");
       
     } catch (error) {
-      console.error('Error committing sealed bid:', error)
-      throw error
+      console.error('❌ Error committing sealed bid:', error);
+      console.error('🔍 Detailed error info:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        name: error instanceof Error ? error.name : undefined,
+        stack: error instanceof Error ? error.stack?.substring(0, 500) : undefined
+      });
+      throw error;
     }
   }
 
@@ -677,7 +822,8 @@ export function useCommitSealedBid() {
 }
 
 export function useRevealSealedBid() {
-  const { data: hash, isPending } = useWriteContract()
+  const { writeContract, data: hash, isPending } = useWriteContract()
+  const publicClient = usePublicClient()
   
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -687,34 +833,84 @@ export function useRevealSealedBid() {
     try {
       const listingKey = listingId.toString()
       
-      // Retrieve stored data
-      const saltHex = localStorage.getItem(`sealedBid_${listingKey}_salt`)
-      const bidAmount = localStorage.getItem(`sealedBid_${listingKey}_amount`)
+      console.log("🔄 Starting sealed bid reveal process...")
       
-      if (!saltHex || !bidAmount) {
-        throw new Error('No sealed bid data found for this listing')
+      // Check auction phase before revealing using direct contract call
+      if (!publicClient) {
+        throw new Error('No public client available');
       }
       
-      const bidAmountWei = parseEther(bidAmount)
+      try {
+        console.log("🔍 Checking phase directly from SealedBidAuction contract...");
+        
+        const phase = await publicClient.readContract({
+          address: CONTRACTS.SealedBidAuction as `0x${string}`,
+          abi: SEALED_BID_AUCTION_ABI,
+          functionName: 'phase',
+          args: [listingId],
+        }) as number;
+
+        console.log("📊 Current phase from contract:", phase);
+
+        if (phase !== 2) {
+          const phaseNames = { 0: "NOT_STARTED", 1: "COMMIT", 2: "REVEAL", 3: "ENDED" };
+          const phaseName = phaseNames[phase as keyof typeof phaseNames] || "UNKNOWN";
+          throw new Error(`Cannot reveal: Auction is in ${phaseName} phase, expected REVEAL phase`);
+        }
+        
+        console.log("✅ Phase check passed: Auction is in REVEAL phase");
+        
+      } catch (phaseError) {
+        console.warn("Could not verify auction phase:", phaseError);
+        throw new Error(`Phase validation failed: ${phaseError instanceof Error ? phaseError.message : 'Unknown error'}`);
+      }
       
-      // TODO: Fix function name and parameters when ABI is updated
-      console.log('Reveal bid called with:', { listingId, bidAmountWei, saltHex })
+      // Retrieve stored data using documentation format
+      const storedNonce = localStorage.getItem(`nonce_${listingKey}`)
+      const storedBidAmount = localStorage.getItem(`bidAmount_${listingKey}`)
       
-      // writeContract({
-      //   address: CONTRACTS.SealedBidAuction as `0x${string}`,
-      //   abi: SEALED_BID_AUCTION_ABI,
-      //   functionName: 'revealBid', // Function name might be different in actual ABI
-      //   args: [listingId, bidAmountWei, saltHex as `0x${string}`],
-      // })
+      if (!storedNonce || !storedBidAmount) {
+        throw new Error('No sealed bid data found for this auction. You must commit before revealing.')
+      }
       
-      // Clean up local storage after revealing
+      const nonce = BigInt(storedNonce)
+      const bidAmount = BigInt(storedBidAmount)
+      
+      console.log("📝 Reveal parameters:", {
+        listingId: listingId.toString(),
+        bidAmount: bidAmount.toString(),
+        nonce: nonce.toString()
+      })
+      
+      // CORRECT FORMAT: Encode reveal data as [uint256, uint256] per documentation
+      const revealData = encodeAbiParameters(
+        [
+          { name: "bidAmount", type: "uint256" },
+          { name: "nonce", type: "uint256" }
+        ],
+        [bidAmount, nonce]
+      )
+      
+      console.log("📦 Encoded reveal data:", revealData)
+      
+      // Place reveal "bid" - no additional payment needed (amount = 0)
+      console.log("🚀 Placing reveal transaction...")
+      writeContract({
+        address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+        abi: DOMAIN_AUCTION_HOUSE_ABI,
+        functionName: "placeBid",
+        args: [listingId, BigInt(0), revealData], // 0 amount for reveal
+      })
+      
+      // Clean up stored data after successful reveal transaction
       if (isSuccess) {
-        localStorage.removeItem(`sealedBid_${listingKey}_salt`)
-        localStorage.removeItem(`sealedBid_${listingKey}_amount`)
+        localStorage.removeItem(`nonce_${listingKey}`)
+        localStorage.removeItem(`bidAmount_${listingKey}`)
+        console.log("🧹 Cleaned up stored commitment data")
       }
       
     } catch (error) {
-      console.error('Error revealing sealed bid:', error)
+      console.error('❌ Error revealing sealed bid:', error)
       throw error
     }
   }
@@ -726,4 +922,217 @@ export function useRevealSealedBid() {
     isSuccess,
     hash
   }
+}
+
+// Utility types and functions for sealed bid auctions
+export type SealedBidParams = {
+  commitDuration: bigint;
+  revealDuration: bigint;
+  minDeposit: bigint;
+};
+
+// Get sealed bid parameters from strategy data
+export async function getSealedBidParams(
+  publicClient: any,
+  auctionHouse: `0x${string}`, 
+  listingId: bigint
+): Promise<SealedBidParams> {
+  const listing = await publicClient.readContract({
+    address: auctionHouse,
+    abi: DOMAIN_AUCTION_HOUSE_ABI,
+    functionName: 'listings',
+    args: [listingId],
+  });
+  
+  const listingArray = [...(listing as readonly any[])];
+  const strategyData = listingArray[8] as `0x${string}`;
+  
+  const [commitDuration, revealDuration, minDeposit] = decodeAbiParameters(
+    [{ type: 'uint256' }, { type: 'uint256' }, { type: 'uint256' }],
+    strategyData
+  );
+  
+  return { commitDuration, revealDuration, minDeposit };
+}
+
+// Assert that auction is in commit phase
+export async function assertCommitPhase(
+  publicClient: any,
+  sealedBid: `0x${string}`, 
+  listingId: bigint
+): Promise<void> {
+  const phase = await publicClient.readContract({
+    address: sealedBid,
+    abi: SEALED_BID_AUCTION_ABI,
+    functionName: 'phase',
+    args: [listingId],
+  });
+  
+  if (Number(phase) !== 1) {
+    throw new Error('Auction not in COMMIT phase');
+  }
+}
+
+// Save commitment data for reveal phase
+function saveCommitLocal(listingId: bigint, data: { nonce: bigint; bidWei: bigint }) {
+  const key = `sealedbid:${listingId}`;
+  localStorage.setItem(key, JSON.stringify({
+    nonce: data.nonce.toString(),
+    bidWei: data.bidWei.toString()
+  }));
+}
+
+export function useGetSealedBidPhase() {
+  const publicClient = usePublicClient();
+
+  const getSealedBidPhase = async (listingId: bigint) => {
+    try {
+      if (!publicClient) {
+        console.warn("No public client available");
+        return { phase: 0, phaseDescription: "Unknown", timeRemaining: 0 };
+      }
+
+      console.log("🔍 Getting sealed bid phase for listing:", listingId.toString());
+
+      // Try to get phase directly from SealedBidAuction contract first
+      try {
+        console.log("📞 Calling phase function directly from SealedBidAuction contract...");
+        
+        const phase = await publicClient.readContract({
+          address: CONTRACTS.SealedBidAuction as `0x${string}`,
+          abi: SEALED_BID_AUCTION_ABI,
+          functionName: 'phase',
+          args: [listingId],
+        }) as number;
+
+        console.log("✅ Got phase directly from contract:", phase);
+
+        const phaseDescriptions = {
+          0: "NOT_STARTED",
+          1: "COMMIT", 
+          2: "REVEAL",
+          3: "ENDED"
+        } as const;
+
+        const phaseDescription = phaseDescriptions[phase as keyof typeof phaseDescriptions] || "UNKNOWN";
+
+        return {
+          phase,
+          phaseDescription,
+          timeRemaining: 0, // Contract doesn't provide time remaining
+          source: "contract"
+        };
+        
+      } catch (phaseError) {
+        console.warn("Could not get phase from sealed bid contract:", phaseError);
+        
+        // Fallback: Get timing info from listing data
+        const listing = await publicClient.readContract({
+          address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+          abi: DOMAIN_AUCTION_HOUSE_ABI,
+          functionName: "listings",
+          args: [listingId],
+        });
+
+        const listingArray = [...(listing as readonly any[])];
+        const startTime = listingArray[5] || BigInt(0);
+        const endTime = listingArray[6] || BigInt(0);
+        const strategy = listingArray[7];
+        const strategyData = listingArray[8];
+        const currentTime = BigInt(Math.floor(Date.now() / 1000));
+
+        console.log("📋 Listing timing info:", {
+          startTime: startTime.toString(),
+          endTime: endTime.toString(), 
+          currentTime: currentTime.toString(),
+          strategy
+        });
+
+        // If it's not a sealed bid auction, return error info
+        if (strategy !== CONTRACTS.SealedBidAuction) {
+          return {
+            phase: -1,
+            phaseDescription: "NOT_SEALED_BID_AUCTION",
+            timeRemaining: 0,
+            error: "This is not a sealed bid auction"
+          };
+        }
+
+        // Try to decode strategy data for timing calculations
+        try {
+          const decoded = decodeAbiParameters(
+            [
+              { name: "commitDuration", type: "uint256" },
+              { name: "revealDuration", type: "uint256" },
+              { name: "minDeposit", type: "uint256" },
+            ],
+            strategyData as `0x${string}`
+          );
+          
+          const [commitDuration, revealDuration] = decoded;
+          const commitEndTime = startTime + commitDuration;
+          const revealEndTime = commitEndTime + revealDuration;
+          
+          console.log("⏰ Calculated timing:", {
+            commitDuration: commitDuration.toString(),
+            revealDuration: revealDuration.toString(),
+            commitEndTime: commitEndTime.toString(),
+            revealEndTime: revealEndTime.toString()
+          });
+
+          let phase: number;
+          let phaseDescription: string;
+          let timeRemaining: number;
+          
+          if (currentTime < startTime) {
+            phase = 0;
+            phaseDescription = "NOT_STARTED";
+            timeRemaining = Number(startTime - currentTime);
+          } else if (currentTime < commitEndTime) {
+            phase = 1;
+            phaseDescription = "COMMIT";
+            timeRemaining = Number(commitEndTime - currentTime);
+          } else if (currentTime < revealEndTime) {
+            phase = 2;
+            phaseDescription = "REVEAL";
+            timeRemaining = Number(revealEndTime - currentTime);
+          } else {
+            phase = 3;
+            phaseDescription = "ENDED";
+            timeRemaining = 0;
+          }
+
+          return {
+            phase,
+            phaseDescription,
+            timeRemaining,
+            startTime: Number(startTime),
+            commitEndTime: Number(commitEndTime),
+            revealEndTime: Number(revealEndTime),
+            currentTime: Number(currentTime)
+          };
+        } catch (decodeError) {
+          console.warn("Could not decode strategy data:", decodeError);
+          return {
+            phase: 0,
+            phaseDescription: "DECODE_ERROR",
+            timeRemaining: 0,
+            error: "Cannot decode sealed bid auction configuration"
+          };
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error getting sealed bid phase:", error);
+      return {
+        phase: -1,
+        phaseDescription: "ERROR",
+        timeRemaining: 0,
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    }
+  };
+
+  return {
+    getSealedBidPhase,
+  };
 }

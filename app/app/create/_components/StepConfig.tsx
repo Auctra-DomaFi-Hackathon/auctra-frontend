@@ -101,6 +101,9 @@ export default function StepConfig({
                 value={String(formData.commitWindow ?? '')}
                 onChange={(e) => setField('commitWindow', e.target.value)}
                 error={errors.commitWindow}
+                hint="Minimum 5 minutes (0.083 hours), Maximum 7 days (168 hours)"
+                step="0.1"
+                min="0.083"
               />
               <Field
                 id="reveal-window"
@@ -109,27 +112,65 @@ export default function StepConfig({
                 value={String(formData.revealWindow ?? '')}
                 onChange={(e) => setField('revealWindow', e.target.value)}
                 error={errors.revealWindow}
+                hint="Minimum 5 minutes (0.083 hours), Maximum 7 days (168 hours)"
+                step="0.1"
+                min="0.083"
               />
             </TwoCols>
+            {formData.commitWindow && formData.revealWindow && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <div className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  Total Auction Duration: {(Number(formData.commitWindow) + Number(formData.revealWindow)).toFixed(1)} hours
+                </div>
+                <div className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                  Commit Phase: {Number(formData.commitWindow).toFixed(1)}h → Reveal Phase: {Number(formData.revealWindow).toFixed(1)}h
+                </div>
+                {formData.startTime && (
+                  <div className="mt-2 space-y-1">
+                    <div className="text-xs text-green-600 dark:text-green-400 font-medium">
+                      ✓ Start Time: {new Date(formData.startTime).toLocaleString('id-ID', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric', 
+                        hour: '2-digit', 
+                        minute: '2-digit'
+                      })}
+                    </div>
+                    <div className="text-xs text-green-600 dark:text-green-400 font-medium">
+                      ✓ End Time: {new Date(new Date(formData.startTime).getTime() + (Number(formData.commitWindow) + Number(formData.revealWindow)) * 60 * 60 * 1000).toLocaleString('id-ID', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric', 
+                        hour: '2-digit', 
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
 
         <TwoCols>
           <Field
             id="start-time"
-            label="Start Time"
+            label={formData.auctionType === 'sealed' ? 'Start Time WIB (Auto-set)' : 'Start Time'}
             type="datetime-local"
             value={formData.startTime || nowISO}
             onChange={(e) => setField('startTime', e.target.value)}
             error={errors.startTime}
+            hint={formData.auctionType === 'sealed' ? 'Automatically set to current WIB time + 5 minutes' : undefined}
           />
           <Field
             id="end-time"
-            label="End Time"
+            label={formData.auctionType === 'sealed' ? 'End Time (Auto-calculated)' : 'End Time'}
             type="datetime-local"
             value={formData.endTime}
             onChange={(e) => setField('endTime', e.target.value)}
             error={errors.endTime}
+            // disabled={formData.auctionType === 'sealed'}
+            hint={formData.auctionType === 'sealed' ? 'Calculated from Start Time + Total Duration' : undefined}
           />
         </TwoCols>
 
@@ -137,7 +178,17 @@ export default function StepConfig({
           <Button variant="outline" onClick={back}>
             Back
           </Button>
-          <Button onClick={() => next('reserve')}>Next: Reserve Price</Button>
+          <Button 
+            onClick={() => next('reserve')}
+            disabled={
+              (formData.auctionType === 'sealed' && 
+                (!formData.commitWindow || !formData.revealWindow || 
+                 Number(formData.commitWindow) < 0.083 || Number(formData.revealWindow) < 0.083 ||
+                 !formData.startTime))
+            }
+          >
+            Next: Reserve Price
+          </Button>
         </div>
       </CardContent>
     </Card>

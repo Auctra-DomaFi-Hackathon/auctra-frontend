@@ -1,300 +1,586 @@
-'use client'
+"use client";
 
-import Image from 'next/image'
-import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { formatEther } from 'ethers'
-import { usePlaceBid, useDutchAuctionPurchase, useCommitSealedBid } from '@/hooks/useAuction'
-import { getStrategyName } from '@/lib/utils/strategy'
-import { formatTransactionError } from '@/lib/utils/auction'
-import BidSuccessDialog from './BidSuccessDialog'
-import type { Listing, NFTMetadata } from '@/lib/graphql/types'
+import Image from "next/image";
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { formatEther } from "ethers";
+import { formatEther as formatEtherViem, isAddressEqual, zeroAddress } from "viem";
+import { usePublicClient } from "wagmi";
+import {
+  usePlaceBid,
+  useDutchAuctionPurchase,
+  useCommitSealedBid,
+  useGetSealedBidPhase,
+  getSealedBidParams,
+  type SealedBidParams,
+} from "@/hooks/useAuction";
+import { CONTRACTS } from "@/hooks/contracts/constants";
+import { getStrategyName } from "@/lib/utils/strategy";
+import { formatTransactionError } from "@/lib/utils/auction";
+import BidSuccessDialog from "./BidSuccessDialog";
+import type { Listing, NFTMetadata } from "@/lib/graphql/types";
 
 interface BidDialogProps {
-  isOpen: boolean
-  onClose: (forceReset?: boolean) => void
-  listing: (Listing & { metadata?: NFTMetadata }) | null
+  isOpen: boolean;
+  onClose: (forceReset?: boolean) => void;
+  listing: (Listing & { metadata?: NFTMetadata }) | null;
 }
 
 function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
-  const [bidAmount, setBidAmount] = useState('')
-  const [depositAmount, setDepositAmount] = useState('') // For sealed bid
-  const [error, setError] = useState('')
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
-  const [successBidAmount, setSuccessBidAmount] = useState('')
-  const [successBidType, setSuccessBidType] = useState<'bid' | 'purchase' | 'commit'>('bid')
-  const [lastProcessedHash, setLastProcessedHash] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false) // Local loading state for immediate feedback
-  const [inlineSuccessShown, setInlineSuccessShown] = useState(false) // Track if inline success was shown
-  
+  const [bidAmount, setBidAmount] = useState("");
+  const [depositAmount, setDepositAmount] = useState(""); // For sealed bid
+  const [error, setError] = useState("");
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successBidAmount, setSuccessBidAmount] = useState("");
+  const [successBidType, setSuccessBidType] = useState<
+    "bid" | "purchase" | "commit"
+  >("bid");
+  const [isSubmitting, setIsSubmitting] = useState(false); // Local loading state for immediate feedback
+
   // Manual transaction tracking - independent of wagmi state
   const [manualTransactionStates, setManualTransactionStates] = useState<{
     [key: string]: {
-      isSuccess: boolean
-      hash: string
-      bidAmount: string
-      bidType: string
-      timestamp: number
-    }
-  }>({})
-  
+      isSuccess: boolean;
+      hash: string;
+      bidAmount: string;
+      bidType: string;
+      timestamp: number;
+    };
+  }>({});
+
   // Generate unique key for each bid attempt
-  const [currentBidKey, setCurrentBidKey] = useState<string | null>(null)
+  const [currentBidKey, setCurrentBidKey] = useState<string | null>(null);
 
   // Hooks for different auction types
-  const { placeBidEnglish, isPending: englishPending, isSuccess: englishSuccess, hash: englishHash } = usePlaceBid()
-  const { purchaseDutchAuction, isPending: dutchPending, isSuccess: dutchSuccess, hash: dutchHash } = useDutchAuctionPurchase()
-  const { commitBid, isPending: sealedPending, isSuccess: sealedSuccess, hash: sealedHash } = useCommitSealedBid()
+  const {
+    placeBidEnglish,
+    isPending: englishPending,
+    isSuccess: englishSuccess,
+    hash: englishHash,
+  } = usePlaceBid();
+  const {
+    purchaseDutchAuction,
+    isPending: dutchPending,
+    isSuccess: dutchSuccess,
+    hash: dutchHash,
+  } = useDutchAuctionPurchase();
+  const {
+    commitBid,
+    isPending: sealedPending,
+    isSuccess: sealedSuccess,
+    hash: sealedHash,
+  } = useCommitSealedBid();
+  const { getSealedBidPhase } = useGetSealedBidPhase();
+  const publicClient = usePublicClient();
+
+  // Sealed bid specific state
+  const [sealedBidPhase, setSealedBidPhase] = useState<{
+    phase: number;
+    phaseDescription: string;
+    timeRemaining: number;
+    error?: string;
+  } | null>(null);
+
+  const [sealedBidParams, setSealedBidParams] =
+    useState<SealedBidParams | null>(null);
+  const [minDepositError, setMinDepositError] = useState<string | null>(null);
+
+  // Payment token state for CLAUDE.md implementation
+  const [paymentTokenInfo, setPaymentTokenInfo] = useState<{
+    paymentToken: `0x${string}`;
+    isETH: boolean;
+    symbol: string;
+  } | null>(null);
 
   // Handle success states
-  const isLoading = englishPending || dutchPending || sealedPending
-  const isSuccessful = englishSuccess || dutchSuccess || sealedSuccess
-  const successHash = englishSuccess ? englishHash : dutchSuccess ? dutchHash : sealedSuccess ? sealedHash : undefined
+  const isLoading = englishPending || dutchPending || sealedPending;
+  const isSuccessful = englishSuccess || dutchSuccess || sealedSuccess;
+  const successHash = englishSuccess
+    ? englishHash
+    : dutchSuccess
+    ? dutchHash
+    : sealedSuccess
+    ? sealedHash
+    : undefined;
 
   // Get strategy info
-  const strategyName = listing ? getStrategyName(listing.strategy) : ''
-  const isEnglish = strategyName === 'English Auction'
-  const isDutch = strategyName === 'Dutch Auction'
-  const isSealed = strategyName === 'Sealed Bid Auction'
-  const isStrategySet = listing?.strategy && listing.strategy !== '0x0000000000000000000000000000000000000000'
+  const strategyName = listing ? getStrategyName(listing.strategy) : "";
+  const isEnglish = strategyName === "English Auction";
+  const isDutch = strategyName === "Dutch Auction";
+  const isSealed = strategyName === "Sealed Bid Auction";
+  const isStrategySet =
+    listing?.strategy &&
+    listing.strategy !== "0x0000000000000000000000000000000000000000";
 
   // Track wagmi success states and convert to manual tracking
   useEffect(() => {
-    console.log('🔍 Wagmi State Check:', {
+    console.log("🔍 Wagmi State Check:", {
       isSuccessful,
       isLoading,
       successHash,
       currentBidKey,
-      manualStates: Object.keys(manualTransactionStates)
-    })
+      manualStates: Object.keys(manualTransactionStates),
+    });
 
     // Convert wagmi success to manual tracking
     if (isSuccessful && !isLoading && successHash && currentBidKey) {
-      const existingState = manualTransactionStates[currentBidKey]
-      
+      const existingState = manualTransactionStates[currentBidKey];
+
       if (!existingState || !existingState.isSuccess) {
-        console.log('✅ Recording new successful transaction:', currentBidKey)
-        
+        console.log("✅ Recording new successful transaction:", currentBidKey);
+
         const newState = {
           isSuccess: true,
           hash: successHash,
           bidAmount: bidAmount || depositAmount,
-          bidType: isDutch ? 'purchase' : isSealed ? 'commit' : 'bid',
-          timestamp: Date.now()
-        }
-        
-        setManualTransactionStates(prev => ({
+          bidType: isDutch ? "purchase" : isSealed ? "commit" : "bid",
+          timestamp: Date.now(),
+        };
+
+        setManualTransactionStates((prev) => ({
           ...prev,
-          [currentBidKey]: newState
-        }))
-        
+          [currentBidKey]: newState,
+        }));
+
         // Clear any previous success state before showing new one
-        setShowSuccessDialog(false)
+        setShowSuccessDialog(false);
         setTimeout(() => {
-          console.log('✅ Showing success dialog for:', currentBidKey)
-          setShowSuccessDialog(true)
-          setSuccessBidAmount(newState.bidAmount)
-          setSuccessBidType(newState.bidType as 'bid' | 'purchase' | 'commit')
-        }, 100)
+          console.log("✅ Showing success dialog for:", currentBidKey);
+          setShowSuccessDialog(true);
+          setSuccessBidAmount(newState.bidAmount);
+          setSuccessBidType(newState.bidType as "bid" | "purchase" | "commit");
+        }, 100);
       }
     }
-  }, [isSuccessful, isLoading, successHash, currentBidKey, bidAmount, depositAmount, isDutch, isSealed])
+  }, [
+    isSuccessful,
+    isLoading,
+    successHash,
+    currentBidKey,
+    bidAmount,
+    depositAmount,
+    isDutch,
+    isSealed,
+    manualTransactionStates,
+  ]);
 
   // Show success dialog based on manual tracking instead of wagmi state
   useEffect(() => {
-    if (!currentBidKey) return
-    
-    const currentState = manualTransactionStates[currentBidKey]
-    console.log('🎭 Manual State Check:', { currentBidKey, currentState, showSuccessDialog })
-    
-    if (currentState && currentState.isSuccess && !showSuccessDialog) {
-      console.log('✅ Showing success dialog from manual tracking')
-      setShowSuccessDialog(true)
-      setSuccessBidAmount(currentState.bidAmount)
-      setSuccessBidType(currentState.bidType as 'bid' | 'purchase' | 'commit')
-    }
-  }, [currentBidKey, manualTransactionStates, showSuccessDialog])
+    if (!currentBidKey) return;
 
-  // Clear wagmi states when needed
-  const clearWagmiStates = () => {
-    console.log('🧹 Attempting to clear wagmi states')
-    // Note: We can't directly clear wagmi states, but we can work around them
-    // by ensuring our manual tracking takes precedence
-  }
+    const currentState = manualTransactionStates[currentBidKey];
+    console.log("🎭 Manual State Check:", {
+      currentBidKey,
+      currentState,
+      showSuccessDialog,
+    });
+
+    if (currentState && currentState.isSuccess && !showSuccessDialog) {
+      console.log("✅ Showing success dialog from manual tracking");
+      setShowSuccessDialog(true);
+      setSuccessBidAmount(currentState.bidAmount);
+      setSuccessBidType(currentState.bidType as "bid" | "purchase" | "commit");
+    }
+  }, [currentBidKey, manualTransactionStates, showSuccessDialog]);
 
   // Reset function to clear all state
   const resetDialogState = () => {
-    console.log('🔄 Resetting all dialog state')
-    setBidAmount('')
-    setDepositAmount('')
-    setError('')
-    setShowSuccessDialog(false)
-    setSuccessBidAmount('')
-    setIsSubmitting(false)
-    setInlineSuccessShown(false)
-    setCurrentBidKey(null)
-    
+    console.log("🔄 Resetting all dialog state");
+    setBidAmount("");
+    setDepositAmount("");
+    setError("");
+    setShowSuccessDialog(false);
+    setSuccessBidAmount("");
+    setIsSubmitting(false);
+    setCurrentBidKey(null);
+
     // Clean up old manual transaction states (keep only recent ones)
-    const now = Date.now()
-    setManualTransactionStates(prev => {
-      const filtered: typeof prev = {}
+    const now = Date.now();
+    setManualTransactionStates((prev) => {
+      const filtered: typeof prev = {};
       Object.entries(prev).forEach(([key, state]) => {
         // Keep states from last 5 minutes only
         if (now - state.timestamp < 5 * 60 * 1000) {
-          filtered[key] = state
+          filtered[key] = state;
         }
-      })
-      return filtered
-    })
-  }
+      });
+      return filtered;
+    });
+  };
 
   // Handle dialog open/close state
   useEffect(() => {
     if (isOpen) {
       // Reset state when dialog opens to ensure clean start
-      console.log('🚪 Dialog opened, ensuring clean state')
-      setShowSuccessDialog(false)
-      setSuccessBidAmount('')
-      setSuccessBidType('bid')
-      setError('')
-      setCurrentBidKey(null)
+      console.log("🚪 Dialog opened, ensuring clean state");
+      setShowSuccessDialog(false);
+      setSuccessBidAmount("");
+      setSuccessBidType("bid");
+      setError("");
+      setCurrentBidKey(null);
     } else {
       // Also reset when dialog closes
-      console.log('🔄 Dialog closed, resetting state')
-      resetDialogState()
-      // Clear processed hash after dialog closes to allow fresh bids
-      setTimeout(() => {
-        setLastProcessedHash(null)
-      }, 1000)
+      console.log("🔄 Dialog closed, resetting state");
+      resetDialogState();
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   // Reset submitting state when transaction completes or fails
   useEffect(() => {
     if (!isLoading && (isSuccessful || error)) {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }, [isLoading, isSuccessful, error])
+  }, [isLoading, isSuccessful, error]);
 
   // Auto-clear old manual states periodically
   useEffect(() => {
     const interval = setInterval(() => {
-      const now = Date.now()
-      setManualTransactionStates(prev => {
-        const filtered: typeof prev = {}
+      const now = Date.now();
+      setManualTransactionStates((prev) => {
+        const filtered: typeof prev = {};
         Object.entries(prev).forEach(([key, state]) => {
           // Keep states from last 10 minutes
           if (now - state.timestamp < 10 * 60 * 1000) {
-            filtered[key] = state
+            filtered[key] = state;
           }
-        })
-        return Object.keys(filtered).length !== Object.keys(prev).length ? filtered : prev
-      })
-    }, 60000) // Run every minute
-    
-    return () => clearInterval(interval)
-  }, [])
+        });
+        return Object.keys(filtered).length !== Object.keys(prev).length
+          ? filtered
+          : prev;
+      });
+    }, 60000); // Run every minute
 
+    return () => clearInterval(interval);
+  }, []);
 
-  if (!listing) return null
+  // Fetch payment token info and sealed bid parameters when dialog opens
+  useEffect(() => {
+    const fetchContractData = async () => {
+      if (listing && isOpen && publicClient) {
+        try {
+          console.log("🔍 Fetching contract data for listing:", listing.id);
+
+          // A. Read paymentToken from listing as per CLAUDE.md instructions
+          const listingData = await publicClient.readContract({
+            address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+            abi: [
+              {
+                inputs: [{ type: "uint256", name: "listingId" }],
+                name: "listings",
+                outputs: [
+                  { type: "address", name: "seller" },
+                  { type: "address", name: "nft" },
+                  { type: "uint256", name: "tokenId" },
+                  { type: "address", name: "paymentToken" },
+                  { type: "uint256", name: "reservePrice" },
+                  { type: "uint256", name: "startTime" },
+                  { type: "uint256", name: "endTime" },
+                  { type: "address", name: "strategy" },
+                  { type: "bytes", name: "strategyData" },
+                ],
+                stateMutability: "view",
+                type: "function",
+              },
+            ],
+            functionName: "listings",
+            args: [BigInt(listing.id)],
+          });
+
+          const listingArray = [...(listingData as readonly any[])];
+          const paymentToken = listingArray[3] as `0x${string}`;
+          const isETHPayment = isAddressEqual(paymentToken, zeroAddress); // ⬅️ safe address comparison
+
+          // Set payment token info
+          setPaymentTokenInfo({
+            paymentToken,
+            isETH: isETHPayment,
+            symbol: isETHPayment ? "ETH" : "ERC20", // TODO: fetch actual symbol for ERC20 tokens
+          });
+
+          console.log("💳 Payment token info:", {
+            paymentToken,
+            isETH: isETHPayment,
+            listingId: listing.id,
+          });
+
+          // If it's a sealed bid auction, also fetch sealed bid phase and parameters
+          if (isSealed) {
+            try {
+              const phaseInfo = await getSealedBidPhase(BigInt(listing.id));
+              console.log("📊 Phase info:", phaseInfo);
+              setSealedBidPhase(phaseInfo);
+
+              // Fetch sealed bid parameters
+              console.log("💰 Fetching sealed bid parameters...");
+              const params = await getSealedBidParams(
+                publicClient,
+                CONTRACTS.DomainAuctionHouse as `0x${string}`,
+                BigInt(listing.id)
+              );
+
+              console.log("✅ Sealed bid params:", {
+                minDeposit: params.minDeposit.toString(),
+                minDepositETH: formatEtherViem(params.minDeposit),
+                commitDuration: params.commitDuration.toString(),
+                revealDuration: params.revealDuration.toString(),
+              });
+
+              setSealedBidParams(params);
+              setMinDepositError(null);
+            } catch (sealedError) {
+              console.error("❌ Error fetching sealed bid data:", sealedError);
+              setSealedBidPhase({
+                phase: -1,
+                phaseDescription: "ERROR",
+                timeRemaining: 0,
+                error:
+                  sealedError instanceof Error
+                    ? sealedError.message
+                    : "Unknown error",
+              });
+              setMinDepositError("Failed to fetch sealed bid parameters");
+            }
+          }
+        } catch (error) {
+          console.error("❌ Error fetching contract data:", error);
+
+          if (isSealed) {
+            setSealedBidPhase({
+              phase: -1,
+              phaseDescription: "ERROR",
+              timeRemaining: 0,
+              error: error instanceof Error ? error.message : "Unknown error",
+            });
+            setMinDepositError("Failed to fetch contract parameters");
+          }
+        }
+      } else {
+        // Reset state when dialog closes or listing changes
+        setPaymentTokenInfo(null);
+        setSealedBidPhase(null);
+        setSealedBidParams(null);
+        setMinDepositError(null);
+      }
+    };
+
+    // Add delay to reduce immediate RPC calls when dialog opens
+    const timeoutId = setTimeout(fetchContractData, 500);
+    return () => clearTimeout(timeoutId);
+  }, [listing, isOpen, isSealed, getSealedBidPhase, publicClient]);
+
+  if (!listing) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setIsSubmitting(true)
+    e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
 
     // Generate unique key for this bid attempt
-    const bidKey = `bid_${listing.id}_${Date.now()}_${Math.random().toString(36).substring(2)}`
-    setCurrentBidKey(bidKey)
-    
+    const bidKey = `bid_${listing.id}_${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2)}`;
+    setCurrentBidKey(bidKey);
+
     // Force clear any previous success states and data when starting new bid
-    console.log('🚀 Starting new bid with key:', bidKey)
-    setShowSuccessDialog(false)
-    setSuccessBidAmount('')
-    setSuccessBidType('bid')
-    
+    console.log("🚀 Starting new bid with key:", bidKey);
+    setShowSuccessDialog(false);
+    setSuccessBidAmount("");
+    setSuccessBidType("bid");
+
     // Clear old manual states that might interfere
-    setManualTransactionStates(prev => {
-      const filtered: typeof prev = {}
+    setManualTransactionStates((prev) => {
+      const filtered: typeof prev = {};
       Object.entries(prev).forEach(([key, state]) => {
         // Only keep very recent states (last 2 minutes)
         if (Date.now() - state.timestamp < 2 * 60 * 1000) {
-          filtered[key] = state
+          filtered[key] = state;
         }
-      })
-      return filtered
-    })
-    
+      });
+      return filtered;
+    });
+
     if (!isStrategySet) {
-      setError('Strategy not set yet. Cannot place bid.')
-      setIsSubmitting(false)
-      return
+      setError("Strategy not set yet. Cannot place bid.");
+      setIsSubmitting(false);
+      return;
     }
 
     try {
-      const listingId = BigInt(listing.id)
+      const listingId = BigInt(listing.id);
 
       if (isEnglish) {
         if (!bidAmount || parseFloat(bidAmount) <= 0) {
-          setError('Please enter a valid bid amount')
-          setIsSubmitting(false)
-          return
+          setError("Please enter a valid bid amount");
+          setIsSubmitting(false);
+          return;
         }
-        await placeBidEnglish(listingId, bidAmount)
-        
+        await placeBidEnglish(listingId, bidAmount);
       } else if (isDutch) {
         // For Dutch auction, we need current price
         if (!bidAmount || parseFloat(bidAmount) <= 0) {
-          setError('Please enter current price amount')
-          setIsSubmitting(false)
-          return
+          setError("Please enter current price amount");
+          setIsSubmitting(false);
+          return;
         }
-        await purchaseDutchAuction(listingId, bidAmount)
-        
+        await purchaseDutchAuction(listingId, bidAmount);
       } else if (isSealed) {
         if (!bidAmount || parseFloat(bidAmount) <= 0) {
-          setError('Please enter a valid bid amount')
-          setIsSubmitting(false)
-          return
+          setError("Please enter a valid bid amount");
+          setIsSubmitting(false);
+          return;
         }
         if (!depositAmount || parseFloat(depositAmount) <= 0) {
-          setError('Please enter a valid deposit amount')
-          setIsSubmitting(false)
-          return
+          setError("Please enter a valid deposit amount");
+          setIsSubmitting(false);
+          return;
         }
-        await commitBid(listingId, bidAmount, depositAmount)
+
+        const minimumDepositETH = 0.0001;
+        const bidAmountFloat = parseFloat(bidAmount);
+        const depositAmountFloat = parseFloat(depositAmount);
+
+        console.log("🔍 Sealed bid validation:", {
+          bidAmount,
+          depositAmount,
+          bidAmountFloat,
+          depositAmountFloat,
+          minimumDepositETH,
+          reservePrice: listing.reservePrice,
+        });
+
+        if (depositAmountFloat < minimumDepositETH) {
+          setError(
+            `Deposit amount must be at least ${minimumDepositETH} ETH to cover gas fees and contract requirements`
+          );
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Ensure deposit is reasonable compared to bid amount
+        if (depositAmountFloat > bidAmountFloat) {
+          setError("Deposit amount cannot be higher than your bid amount");
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Use fallback minimum deposit
+        const minDeposit = 0.001; // 0.001 ETH minimum
+        const tokenSymbol = paymentTokenInfo?.symbol || "ETH";
+
+        if (depositAmountFloat < minDeposit) {
+          setError(
+            `Deposit amount must be at least ${minDeposit} ${tokenSymbol}`
+          );
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Additional validation: ensure bid is meaningful
+        if (bidAmountFloat <= minDeposit) {
+          setError(
+            `Hidden bid amount should be higher than ${minDeposit} ${tokenSymbol}`
+          );
+          setIsSubmitting(false);
+          return;
+        }
+
+        console.log("✅ Sealed bid validation passed, calling commitBid...");
+
+        // Enhanced debug logging before transaction
+        console.log("🚀 SEALED BID COMMIT - Transaction Debug Info:", {
+          listingId: listingId.toString(),
+          bidAmount: bidAmount + " ETH",
+          depositAmount: depositAmount + " ETH",
+          contractAddresses: {
+            auctionHouse: CONTRACTS.DomainAuctionHouse,
+            sealedBidStrategy: CONTRACTS.SealedBidAuction,
+          },
+          validationChecks: {
+            bidAboveDeposit: parseFloat(bidAmount) > parseFloat(depositAmount),
+          },
+        });
+
+        console.log("🎯 All checks passed, executing commitBid...");
+        await commitBid(listingId, bidAmount, depositAmount);
       }
-      
+
       // Don't reset isSubmitting here, let it be handled by loading states
     } catch (error: any) {
-      const formattedError = formatTransactionError(error)
-      setError(formattedError)
-      setIsSubmitting(false)
+      console.error("❌ Transaction error:", error);
+
+      let formattedError = formatTransactionError(error);
+
+      // Enhanced error handling for sealed bid auctions
+      if (isSealed) {
+        const errorMessage = error?.message || error?.reason || "";
+        console.log("🔍 Analyzing sealed bid error:", {
+          fullError: error,
+          message: errorMessage,
+          cause: error?.cause,
+          name: error?.name
+        });
+        
+        if (errorMessage.includes("CommitmentNotFound")) {
+          formattedError =
+            "No commitment found. Please ensure you are in the commit phase and using the correct data format.";
+        } else if (errorMessage.includes("AuctionNotInCommitPhase")) {
+          formattedError =
+            "Auction is not in commit phase. Wait for commit phase to start.";
+        } else if (errorMessage.includes("InsufficientDeposit")) {
+          formattedError =
+            "Deposit amount is too low. Please increase your deposit amount.";
+        } else if (errorMessage.includes("AlreadyCommitted")) {
+          formattedError =
+            "You have already placed a commitment for this auction.";
+        } else if (errorMessage.includes("InvalidCommitment")) {
+          formattedError = "Invalid commitment hash. Please try again.";
+        } else if (errorMessage.includes("InvalidBid")) {
+          formattedError =
+            "Invalid bid: The transaction value doesn't match the deposit amount. This usually means the ETH value wasn't sent correctly.";
+        } else if (errorMessage.includes("simulation failed")) {
+          formattedError =
+            "Transaction simulation failed: " + errorMessage + ". Check console for details.";
+        } else if (errorMessage.includes("User rejected")) {
+          formattedError = "Transaction was rejected in wallet.";
+        }
+      }
+
+      setError(formattedError);
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const formatPrice = (priceWei: string) => {
     try {
-      return `${parseFloat(formatEther(priceWei)).toLocaleString()} ETH`
+      return `${parseFloat(formatEther(priceWei)).toLocaleString()} ETH`;
     } catch {
-      return `${priceWei} wei`
+      return `${priceWei} wei`;
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {isDutch ? 'Purchase' : 'Place Bid'}
-            <Badge 
-              variant={isStrategySet ? "default" : "outline"} 
-              className={isStrategySet ? "bg-purple-100 text-purple-700" : "text-gray-500"}
+            {isDutch ? "Purchase" : "Place Bid"}
+            <Badge
+              variant={isStrategySet ? "default" : "outline"}
+              className={
+                isStrategySet
+                  ? "bg-purple-100 text-purple-700"
+                  : "text-gray-500"
+              }
             >
               {strategyName}
             </Badge>
@@ -306,15 +592,18 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="font-medium">
-                {listing.metadata?.name || `Token #${listing.tokenId.slice(-8)}`}
+                {listing.metadata?.name ||
+                  `Token #${listing.tokenId.slice(-8)}`}
                 <span className="text-sm font-normal text-gray-500 ml-1">
-                  {listing.metadata?.tld || '.eth'}
+                  {listing.metadata?.tld || ".eth"}
                 </span>
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Reserve Price:</span>
-              <span className="font-medium">{formatPrice(listing.reservePrice)}</span>
+              <span className="font-medium">
+                {formatPrice(listing.reservePrice)}
+              </span>
             </div>
           </div>
 
@@ -331,9 +620,18 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
               {/* English Auction */}
               {isEnglish && (
                 <div className="space-y-2">
-                  <Label htmlFor="bidAmount" className="flex items-center gap-2">
-                    Your Bid Amount (ETH)
-                    <Image src="/images/logo/domaLogo.svg" alt="Doma" className="h-4 w-4" width={20} height={20}/>
+                  <Label
+                    htmlFor="bidAmount"
+                    className="flex items-center gap-2"
+                  >
+                    Your Bid Amount ({paymentTokenInfo?.symbol || "ETH"})
+                    <Image
+                      src="/images/logo/domaLogo.svg"
+                      alt="Doma"
+                      className="h-4 w-4"
+                      width={20}
+                      height={20}
+                    />
                   </Label>
                   <Input
                     id="bidAmount"
@@ -343,17 +641,20 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                     placeholder="0.0001"
                     value={bidAmount}
                     onChange={(e) => {
-                      setBidAmount(e.target.value)
+                      setBidAmount(e.target.value);
                       // Clear success dialog when user starts typing new amount
                       if (showSuccessDialog) {
-                        console.log('🔄 User typing new bid - clearing success dialog')
-                        setShowSuccessDialog(false)
+                        console.log(
+                          "🔄 User typing new bid - clearing success dialog"
+                        );
+                        setShowSuccessDialog(false);
                       }
                     }}
                     disabled={isLoading}
                   />
                   <p className="text-xs text-gray-500">
-                    Enter your bid amount. Must be higher than current highest bid.
+                    Enter your bid amount. Must be higher than current highest
+                    bid.
                   </p>
                 </div>
               )}
@@ -361,9 +662,18 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
               {/* Dutch Auction */}
               {isDutch && (
                 <div className="space-y-2">
-                  <Label htmlFor="bidAmount" className="flex items-center gap-2">
-                    Current Price (ETH)
-                    <img src="/images/logo/domaLogo.svg" alt="Doma" className="h-4 w-4" />
+                  <Label
+                    htmlFor="bidAmount"
+                    className="flex items-center gap-2"
+                  >
+                    Current Price ({paymentTokenInfo?.symbol || "ETH"})
+                    <Image
+                      src="/images/logo/domaLogo.svg"
+                      alt="Doma"
+                      className="h-4 w-4"
+                      width={18}
+                      height={18}
+                    />
                   </Label>
                   <Input
                     id="bidAmount"
@@ -373,11 +683,13 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                     placeholder="0.0001"
                     value={bidAmount}
                     onChange={(e) => {
-                      setBidAmount(e.target.value)
+                      setBidAmount(e.target.value);
                       // Clear success dialog when user starts typing new amount
                       if (showSuccessDialog) {
-                        console.log('🔄 User typing new bid - clearing success dialog')
-                        setShowSuccessDialog(false)
+                        console.log(
+                          "🔄 User typing new bid - clearing success dialog"
+                        );
+                        setShowSuccessDialog(false);
                       }
                     }}
                     disabled={isLoading}
@@ -391,49 +703,166 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
               {/* Sealed Bid Auction */}
               {isSealed && (
                 <div className="space-y-4">
+                  {/* Show phase status */}
+                  {sealedBidPhase && (
+                    <div className="flex items-center gap-2 p-3 rounded-lg border bg-gray-50 dark:bg-gray-900">
+                      <div className="flex-shrink-0">
+                        {sealedBidPhase.phase === 1 && "🔒"}
+                        {sealedBidPhase.phase === 2 && "👁️"}
+                        {sealedBidPhase.phase === 3 && "✅"}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">
+                          {sealedBidPhase.phase === 1 && "Commit Phase"}
+                          {sealedBidPhase.phase === 2 && "Reveal Phase"}
+                          {sealedBidPhase.phase === 3 && "Auction Ended"}
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                          {sealedBidPhase.phase === 1 && "Place your sealed bids now"}
+                          {sealedBidPhase.phase === 2 && "Bidders must reveal their bids"}
+                          {sealedBidPhase.phase === 3 && "Auction has concluded"}
+                        </div>
+                      </div>
+                      <Badge variant={
+                        sealedBidPhase.phase === 1 ? "default" : 
+                        sealedBidPhase.phase === 2 ? "secondary" : 
+                        "outline"
+                      }>
+                        Phase {sealedBidPhase.phase}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Show reveal phase message */}
+                  {sealedBidPhase && sealedBidPhase.phase === 2 && (
+                    <div className="flex items-center gap-2 text-blue-600 text-sm bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800">
+                      <div className="flex-shrink-0">ℹ️</div>
+                      <div className="flex-1">
+                        <div className="font-medium">
+                          Auction is in Reveal Phase
+                        </div>
+                        <div className="text-xs mt-1 text-blue-600 dark:text-blue-400">
+                          Bidding is closed. Bidders must now reveal their sealed bids to determine the winner.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Show ended phase message */}
+                  {sealedBidPhase && sealedBidPhase.phase === 3 && (
+                    <div className="flex items-center gap-2 text-gray-600 text-sm bg-gray-50 dark:bg-gray-900/20 p-3 rounded border border-gray-200 dark:border-gray-800">
+                      <div className="flex-shrink-0">🏁</div>
+                      <div className="flex-1">
+                        <div className="font-medium">
+                          Auction Has Ended
+                        </div>
+                        <div className="text-xs mt-1 text-gray-600 dark:text-gray-400">
+                          This auction has concluded. No more bids can be placed.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Show less intrusive error message */}
+                  {minDepositError && !sealedBidParams && (
+                    <div className="flex items-center gap-2 text-amber-600 text-sm bg-amber-50 dark:bg-amber-900/20 p-2 rounded border border-amber-200 dark:border-amber-800">
+                      <div className="flex-shrink-0">⚠️</div>
+                      <div className="flex-1">
+                        <div className="font-medium">
+                          Unable to fetch contract parameters
+                        </div>
+                        <div className="text-xs mt-1 text-amber-600 dark:text-amber-400">
+                          {minDepositError}. Using fallback values - please
+                          verify on chain.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
-                    <Label htmlFor="bidAmount" className="flex items-center gap-2">
-                      Hidden Bid Amount (ETH)
-                      <img src="/images/logo/domaLogo.svg" alt="Doma" className="h-4 w-4" />
+                    <Label
+                      htmlFor="bidAmount"
+                      className="flex items-center gap-2"
+                    >
+                      Hidden Bid Amount ({paymentTokenInfo?.symbol || "ETH"})
+                      <Image
+                        src="/images/logo/domaLogo.svg"
+                        alt="Doma"
+                        className="h-4 w-4"
+                        width={18}
+                        height={18}
+                      />
                     </Label>
                     <Input
                       id="bidAmount"
                       type="number"
                       step="0.00001"
-                      min="0.00001"
+                      min={
+                        sealedBidParams
+                          ? formatEtherViem(sealedBidParams.minDeposit)
+                          : "0.00001"
+                      }
                       placeholder="0.001"
                       value={bidAmount}
                       onChange={(e) => {
-                        setBidAmount(e.target.value)
+                        setBidAmount(e.target.value);
                         // Clear success dialog when user starts typing new amount
                         if (showSuccessDialog) {
-                          console.log('🔄 User typing new bid - clearing success dialog')
-                          setShowSuccessDialog(false)
+                          console.log(
+                            "🔄 User typing new bid - clearing success dialog"
+                          );
+                          setShowSuccessDialog(false);
                         }
                       }}
-                      disabled={isLoading}
+                      disabled={isLoading || (sealedBidPhase?.phase !== 1)}
                     />
                     <p className="text-xs text-gray-500">
                       Your actual bid amount (kept secret until reveal phase).
+                      {sealedBidPhase?.phase !== 1 && " Bidding is only allowed during commit phase."}
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="depositAmount" className="flex items-center gap-2">
-                      Deposit Amount (ETH)
-                      <img src="/images/logo/domaLogo.svg" alt="Doma" className="h-4 w-4" />
+                    <Label
+                      htmlFor="depositAmount"
+                      className="flex items-center gap-2"
+                    >
+                      Deposit Amount ({paymentTokenInfo?.symbol || "ETH"})
+                      <Image
+                        src="/images/logo/domaLogo.svg"
+                        alt="Doma"
+                        className="h-4 w-4"
+                        width={18}
+                        height={18}
+                      />
                     </Label>
                     <Input
                       id="depositAmount"
                       type="number"
                       step="0.00001"
-                      min="0.00001"
-                      placeholder="0.0001"
+                      min={
+                        sealedBidParams
+                          ? formatEtherViem(sealedBidParams.minDeposit)
+                          : "0.0001"
+                      }
+                      placeholder={
+                        sealedBidParams
+                          ? formatEtherViem(sealedBidParams.minDeposit)
+                          : "0.0001"
+                      }
                       value={depositAmount}
                       onChange={(e) => setDepositAmount(e.target.value)}
-                      disabled={isLoading}
+                      disabled={isLoading || (sealedBidPhase?.phase !== 1)}
                     />
                     <p className="text-xs text-gray-500">
-                      Minimum deposit to commit your bid. Refunded if you dont win.
+                      Minimum deposit:{" "}
+                      {sealedBidParams
+                        ? formatEtherViem(sealedBidParams.minDeposit)
+                        : minDepositError
+                        ? "0.0001 (fallback)"
+                        : "Loading..."}{" "}
+                      {paymentTokenInfo?.symbol || "ETH"}. Refunded if you
+                      don&apos;t win.
+                      {sealedBidPhase?.phase !== 1 && " Deposits are only accepted during commit phase."}
                     </p>
                   </div>
                 </div>
@@ -449,7 +878,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={onClose}
+                  onClick={() => onClose()}
                   disabled={isSubmitting || isLoading}
                   className="flex-1"
                 >
@@ -457,82 +886,106 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={(isSubmitting || isLoading) || !bidAmount || (isSealed && !depositAmount)}
+                  disabled={
+                    (isSubmitting || isLoading) || 
+                    !bidAmount || 
+                    (isSealed && (
+                      !depositAmount || 
+                      (sealedBidPhase?.phase !== 1) ||
+                      // Only enforce contract minDeposit if we have the parameters
+                      (sealedBidParams && parseFloat(depositAmount || '0') < parseFloat(formatEtherViem(sealedBidParams.minDeposit))) ||
+                      // If we don't have params but have an error, enforce fallback minimum
+                      (!sealedBidParams && !!minDepositError && parseFloat(depositAmount || '0') < 0.0001)
+                    ))
+                  }
                   className="flex-1 relative"
                 >
-                  {(isSubmitting || isLoading) ? (
+                  {isSubmitting || isLoading ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                      {isSubmitting && !isLoading ? 'Confirming...' : 'Processing...'}
+                      {isSubmitting && !isLoading
+                        ? "Confirming..."
+                        : "Processing..."}
                     </div>
+                  ) : isDutch ? (
+                    "Purchase Now"
+                  ) : isSealed ? (
+                    sealedBidPhase?.phase === 2 ? "Auction in Reveal Phase" :
+                    sealedBidPhase?.phase === 3 ? "Auction Ended" :
+                    sealedBidPhase?.phase === 1 ? "Commit Bid" : "Commit Bid"
                   ) : (
-                    isDutch ? 'Purchase Now' : isSealed ? 'Commit Bid' : 'Place Bid'
+                    "Place Bid"
                   )}
                 </Button>
               </div>
             </form>
           )}
-
         </div>
       </DialogContent>
 
-      {/* Success Dialog with key-based reset */}
-      {console.log('🎭 Rendering BidSuccessDialog:', { showSuccessDialog, successHash, isSuccessful })}
       <BidSuccessDialog
-        key={currentBidKey || 'default'} // Force remount with new key
+        key={currentBidKey || "default"} // Force remount with new key
         isOpen={showSuccessDialog}
         onClose={() => {
-          console.log('🚪 Closing BidSuccessDialog - complete state reset')
-          setShowSuccessDialog(false)
-          setSuccessBidAmount('')
-          setSuccessBidType('bid')
-          
+          console.log("🚪 Closing BidSuccessDialog - complete state reset");
+          setShowSuccessDialog(false);
+          setSuccessBidAmount("");
+          setSuccessBidType("bid");
+
           // Clear current bid key to prevent re-showing
-          setCurrentBidKey(null)
-          
+          setCurrentBidKey(null);
+
           // Clean manual states to prevent reappearance
-          setManualTransactionStates({})
-          
+          setManualTransactionStates({});
+
           // Force component reset to clear all wagmi states
-          onClose(true) // Pass true to trigger force reset
+          onClose(true); // Pass true to trigger force reset
         }}
         listing={listing}
-        transactionHash={currentBidKey ? manualTransactionStates[currentBidKey]?.hash || successHash : successHash}
+        transactionHash={
+          currentBidKey
+            ? manualTransactionStates[currentBidKey]?.hash || successHash
+            : successHash
+        }
         bidAmount={successBidAmount || bidAmount || depositAmount}
         bidType={successBidType}
       />
     </Dialog>
-  )
+  );
 }
 
 // Main interface without forceReset parameter for external usage
 interface MainBidDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  listing: (Listing & { metadata?: NFTMetadata }) | null
+  isOpen: boolean;
+  onClose: () => void;
+  listing: (Listing & { metadata?: NFTMetadata }) | null;
 }
 
 // Wrapper component with key-based reset mechanism
-export default function BidDialog({ isOpen, onClose, listing }: MainBidDialogProps) {
-  const [componentKey, setComponentKey] = useState(0)
-  
+export default function BidDialog({
+  isOpen,
+  onClose,
+  listing,
+}: MainBidDialogProps) {
+  const [componentKey, setComponentKey] = useState(0);
+
   // Force remount component when success dialog is closed to reset all wagmi states
   const handleForceReset = () => {
-    console.log('🔄 Force resetting BidDialog component')
-    setComponentKey(prev => prev + 1)
-  }
-  
+    console.log("🔄 Force resetting BidDialog component");
+    setComponentKey((prev) => prev + 1);
+  };
+
   return (
     <BidDialogInner
       key={componentKey}
       isOpen={isOpen}
       onClose={(forceReset?: boolean) => {
         if (forceReset) {
-          handleForceReset()
+          handleForceReset();
         }
-        onClose()
+        onClose();
       }}
       listing={listing}
     />
-  )
+  );
 }

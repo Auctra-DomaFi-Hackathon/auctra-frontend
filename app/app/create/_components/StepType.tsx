@@ -49,7 +49,7 @@ export default function StepType({
           <OptionBlock
             id="sealed"
             value="sealed"
-            title="Sealed Bid"
+            title="Sealed Bid Auction"
             desc="Bidders commit secret bids, reveal later. Highest valid bid wins."
             selected={formData.auctionType === 'sealed'}
             onClick={(value) => setField('auctionType', value)}

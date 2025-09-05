@@ -180,20 +180,16 @@ export default function SecondaryNavbar() {
     setOpenDropdownIndex(null);
   };
 
-  const handleWalletEnter = () => {
-    setIsDropdownOpen(true);
+  const handleWalletClick = () => {
+    setIsDropdownOpen(!isDropdownOpen);
   };
 
-  const handleWalletLeave = () => {
-    setTimeout(() => setIsDropdownOpen(false), 50);
+  const handleConnectClick = () => {
+    setIsConnectModalOpen(!isConnectModalOpen);
   };
 
-  const handleConnectEnter = () => {
-    setIsConnectModalOpen(true);
-  };
-
-  const handleConnectLeave = () => {
-    setTimeout(() => setIsConnectModalOpen(false), 50);
+  const handleConnectModalClose = () => {
+    setIsConnectModalOpen(false);
   };
 
   // Handle connection state changes and network switching
@@ -254,12 +250,18 @@ export default function SecondaryNavbar() {
     }
   }, [isPending, isSwitchingChain, isConnecting]);
 
-  // Handle click outside to close dropdowns
+  // Handle click outside to close dropdowns and modals
   useEffect(() => {
     const handleDocumentClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest('.dropdown-container')) {
         setOpenDropdownIndex(null);
+      }
+      if (!target.closest('.connect-modal-container')) {
+        setIsConnectModalOpen(false);
+      }
+      if (!target.closest('.wallet-dropdown-container')) {
+        setIsDropdownOpen(false);
       }
     };
 
@@ -446,8 +448,6 @@ export default function SecondaryNavbar() {
             {isConnected ? (
               <div 
                 className="relative wallet-dropdown-container"
-                onMouseEnter={handleWalletEnter}
-                onMouseLeave={handleWalletLeave}
               >
                 {/* Check if on wrong network */}
                 {chain && chain.id !== domaTestnet.id ? (
@@ -476,6 +476,7 @@ export default function SecondaryNavbar() {
                     variant="outline"
                     size="sm"
                     className="border-green-200 hover:text-green-500 bg-green-50 text-green-700 hover:bg-green-100 flex items-center gap-2 min-w-fit"
+                    onClick={handleWalletClick}
                   >
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <div className="flex flex-col items-start text-xs">
@@ -494,8 +495,6 @@ export default function SecondaryNavbar() {
                 {isDropdownOpen && (
                   <div 
                     className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-[60]"
-                    onMouseEnter={handleWalletEnter}
-                    onMouseLeave={handleWalletLeave}
                   >
                     {/* Header */}
                     <div className={`p-4 border-b border-gray-100 ${
@@ -643,14 +642,13 @@ export default function SecondaryNavbar() {
             ) : (
               <div 
                 className="relative connect-modal-container"
-                onMouseEnter={handleConnectEnter}
-                onMouseLeave={handleConnectLeave}
               >
                 <Button
                   variant="outline"
                   size="sm"
                   className="border-blue-200 text-blue-700 hover:bg-blue-50 flex items-center gap-2 hover:text-blue-500"
                   disabled={isPending || isConnecting || isSwitchingChain}
+                  onClick={handleConnectClick}
                 >
                   <Wallet className="w-4 h-4" />
                   {isPending 
@@ -665,8 +663,6 @@ export default function SecondaryNavbar() {
                 {isConnectModalOpen && (
                   <div 
                     className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-[60]"
-                    onMouseEnter={handleConnectEnter}
-                    onMouseLeave={handleConnectLeave}
                   >
                     {/* Header */}
                     <div className="p-3 border-b border-gray-100">
@@ -686,6 +682,7 @@ export default function SecondaryNavbar() {
                           onClick={(e) => {
                             e.stopPropagation();
                             handleConnect(connector);
+                            handleConnectModalClose();
                           }}
                           disabled={isPending || isConnecting || isSwitchingChain}
                           className="w-full flex items-center gap-3 p-2.5 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"

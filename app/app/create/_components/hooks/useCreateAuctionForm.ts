@@ -102,6 +102,59 @@ export function useCreateAuctionForm() {
     return () => clearTimeout(timer)
   }, [])
 
+  // Auto-set start time and default durations when auction type changes to sealed
+  useEffect(() => {
+    if (formData.auctionType === 'sealed') {
+      // Always set start time to current WIB time when switching to sealed bid
+      const now = new Date()
+      // Convert to WIB timezone (UTC+7)
+      const wibTime = new Date(now.getTime() + (7 * 60 * 60 * 1000))
+      // Add 5 minutes buffer to allow for form completion and transaction processing
+      wibTime.setMinutes(wibTime.getMinutes() + 5)
+      const startTimeISO = wibTime.toISOString().slice(0, 16)
+      setField('startTime', startTimeISO)
+      console.log('🕒 Auto-set start time for sealed bid auction (WIB):', startTimeISO, 'WIB time:', wibTime.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))
+      
+      // Set default commit window if not set
+      if (!formData.commitWindow) {
+        setField('commitWindow', 1) // 1 hour default
+        console.log('⏱️ Auto-set default commit window: 1 hour')
+      }
+      
+      // Set default reveal window if not set  
+      if (!formData.revealWindow) {
+        setField('revealWindow', 1) // 1 hour default
+        console.log('⏱️ Auto-set default reveal window: 1 hour')
+      }
+      
+      // Set default minimum bid if not set
+      if (!formData.minBid) {
+        setField('minBid', '0.0001') // 0.0001 ETH default
+        console.log('💰 Auto-set default minimum bid: 0.0001 ETH')
+      }
+    }
+  }, [formData.auctionType])
+
+  // Auto-calculate end time when start time or durations change for sealed bid auctions
+  useEffect(() => {
+    if (formData.auctionType === 'sealed' && formData.startTime) {
+      const commitHours = parseNumericValue(formData.commitWindow || '')
+      const revealHours = parseNumericValue(formData.revealWindow || '')
+      
+      if (commitHours > 0 && revealHours > 0) {
+        const startTime = new Date(formData.startTime)
+        const totalHours = commitHours + revealHours
+        const calculatedEndTime = new Date(startTime.getTime() + (totalHours * 60 * 60 * 1000))
+        const endTimeISO = calculatedEndTime.toISOString().slice(0, 16)
+        
+        if (formData.endTime !== endTimeISO) {
+          setField('endTime', endTimeISO)
+          console.log('🧮 Auto-calculated end time:', endTimeISO, `(+${totalHours.toFixed(1)}h)`)
+        }
+      }
+    }
+  }, [formData.auctionType, formData.startTime, formData.commitWindow, formData.revealWindow])
+
   // Handle approval errors - if approval fails, try to continue anyway
   useEffect(() => {
     if (approvalError && busy) {
@@ -154,12 +207,20 @@ export function useCreateAuctionForm() {
         incrementBps: formData.minIncrement ? Math.floor(formData.minIncrement * 100) : 500,
         antiSnipingEnabled: true,
         isLinear: true,
-        commitDuration: formData.commitWindow && formData.commitWindow > 0 ? formData.commitWindow : 3600,
-        revealDuration: formData.revealWindow && formData.revealWindow > 0 ? formData.revealWindow : 1800,
+        commitDuration: formData.commitWindow && formData.commitWindow > 0 ? Math.max(Math.floor(formData.commitWindow * 3600), 300) : 3600,
+        revealDuration: formData.revealWindow && formData.revealWindow > 0 ? Math.max(Math.floor(formData.revealWindow * 3600), 300) : 3600,
         minimumDeposit: formData.minBid && parseNumericValue(formData.minBid) > 0 ? formData.minBid.toString() : '0.01',
         isWhitelisted: false,
         whitelist: []
       }
+      
+      console.log('🔧 Sealed bid durations (converted to seconds):', {
+        commitDurationHours: formData.commitWindow,
+        revealDurationHours: formData.revealWindow,
+        commitDurationSeconds: formData.commitWindow && formData.commitWindow > 0 ? Math.max(Math.floor(formData.commitWindow * 3600), 300) : 3600,
+        revealDurationSeconds: formData.revealWindow && formData.revealWindow > 0 ? Math.max(Math.floor(formData.revealWindow * 3600), 300) : 3600,
+        totalDurationSeconds: duration
+      })
       
       const timer = setTimeout(() => {
         if (busy && listingId) {
@@ -232,7 +293,6 @@ export function useCreateAuctionForm() {
   }
   
   // Allow string input for decimal values, convert to number only when needed
-  const toNumericValue = (v: string) => v  // Keep as string during input
   const parseNumericValue = (v: string | number): number => {
     if (typeof v === 'number') return v
     if (v === '' || isNaN(Number(v))) return 0
@@ -365,9 +425,20 @@ export function useCreateAuctionForm() {
 
     if (step === 'config') {
       if (!formData.startTime) e.startTime = 'Start time is required.'
-      if (!formData.endTime) e.endTime = 'End time is required.'
-      if (formData.startTime && formData.endTime && new Date(formData.endTime) <= new Date(formData.startTime)) {
-        e.endTime = 'End time must be after start time.'
+      
+      // For sealed bid auctions, end time is auto-calculated, just validate start time
+      if (formData.auctionType === 'sealed') {
+        // End time validation not needed since it's auto-calculated
+        // Start time validation still needed
+        if (formData.startTime && new Date(formData.startTime) <= new Date()) {
+          e.startTime = 'Start time must be in the future.'
+        }
+      } else {
+        // For other auction types, validate end time manually
+        if (!formData.endTime) e.endTime = 'End time is required.'
+        if (formData.startTime && formData.endTime && new Date(formData.endTime) <= new Date(formData.startTime)) {
+          e.endTime = 'End time must be after start time.'
+        }
       }
 
       if (formData.auctionType === 'english') {
@@ -386,9 +457,34 @@ export function useCreateAuctionForm() {
 
       if (formData.auctionType === 'sealed') {
         const minBid = parseNumericValue(formData.minBid || '')
+        const commitHours = parseNumericValue(formData.commitWindow || '')
+        const revealHours = parseNumericValue(formData.revealWindow || '')
+        
         if (!formData.minBid || minBid <= 0) e.minBid = 'Minimum bid must be > 0.'
-        if (!formData.commitWindow || formData.commitWindow <= 0) e.commitWindow = 'Commit window must be > 0.'
-        if (!formData.revealWindow || formData.revealWindow <= 0) e.revealWindow = 'Reveal window must be > 0.'
+        
+        // Validate commit window
+        if (!formData.commitWindow || commitHours <= 0) {
+          e.commitWindow = 'Commit window must be > 0 hours.'
+        } else if (commitHours < 0.083) { // Less than 5 minutes (0.083 hours)
+          e.commitWindow = 'Commit window must be at least 5 minutes (0.083 hours).'
+        } else if (commitHours > 168) { // More than 7 days
+          e.commitWindow = 'Commit window cannot exceed 7 days (168 hours).'
+        }
+        
+        // Validate reveal window  
+        if (!formData.revealWindow || revealHours <= 0) {
+          e.revealWindow = 'Reveal window must be > 0 hours.'
+        } else if (revealHours < 0.083) { // Less than 5 minutes
+          e.revealWindow = 'Reveal window must be at least 5 minutes (0.083 hours).'
+        } else if (revealHours > 168) { // More than 7 days
+          e.revealWindow = 'Reveal window cannot exceed 7 days (168 hours).'
+        }
+        
+        // Validate total duration
+        const totalHours = commitHours + revealHours
+        if (totalHours > 720) { // More than 30 days
+          e.commitWindow = 'Combined commit + reveal duration cannot exceed 30 days.'
+        }
       }
     }
 
@@ -424,13 +520,20 @@ export function useCreateAuctionForm() {
         incrementBps: formData.minIncrement ? Math.floor(formData.minIncrement * 100) : 500,
         antiSnipingEnabled: true,
         isLinear: true,
-        commitDuration: formData.commitWindow && formData.commitWindow > 0 ? formData.commitWindow : 3600,
-        revealDuration: formData.revealWindow && formData.revealWindow > 0 ? formData.revealWindow : 1800,
+        commitDuration: formData.commitWindow && formData.commitWindow > 0 ? Math.max(Math.floor(formData.commitWindow * 3600), 300) : 3600,
+        revealDuration: formData.revealWindow && formData.revealWindow > 0 ? Math.max(Math.floor(formData.revealWindow * 3600), 300) : 3600,
         minimumDeposit: formData.minBid && parseNumericValue(formData.minBid) > 0 ? formData.minBid.toString() : '0.01',
         isWhitelisted: false,
         whitelist: []
       }
 
+      console.log('🔧 Sealed bid durations (converted to seconds):', {
+        commitDurationHours: formData.commitWindow,
+        revealDurationHours: formData.revealWindow,
+        commitDurationSeconds: formData.commitWindow && formData.commitWindow > 0 ? Math.max(Math.floor(formData.commitWindow * 3600), 300) : 3600,
+        revealDurationSeconds: formData.revealWindow && formData.revealWindow > 0 ? Math.max(Math.floor(formData.revealWindow * 3600), 300) : 3600,
+        totalDurationSeconds: duration
+      })
       console.log('Creating auction with params:', auctionParams)
       
       // Start with listing - this will trigger listingId extraction via useEffect

@@ -12,7 +12,7 @@ interface BidSuccessDialogProps {
   listing: (Listing & { metadata?: NFTMetadata }) | null;
   transactionHash: string | undefined;
   bidAmount: string;
-  bidType: "bid" | "purchase" | "commit";
+  bidType: "bid" | "purchase" | "commit" | "reveal";
 }
 
 export default function BidSuccessDialog({
@@ -48,15 +48,20 @@ export default function BidSuccessDialog({
     bidType === "purchase"
       ? "Purchase Successful"
       : bidType === "commit"
-      ? "Bid Committed"
-      : "Bid Placed";
+      ? "Commitment Successful"
+      : bidType === "reveal"
+      ? "Bid Revealed Successfully"
+      : "Bid Successful";
+
 
   const sub =
     bidType === "purchase"
       ? "You purchased this domain at the current Dutch price."
       : bidType === "commit"
       ? "Your sealed bid has been committed. Remember to reveal it later."
-      : "Your bid is on-chain. We’ll notify you if someone outbids you.";
+      : bidType === "reveal"
+      ? "Your bid has been revealed and is now competing to win the auction."
+      : "Your bid is on-chain. We'll notify you if someone outbids you.";
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

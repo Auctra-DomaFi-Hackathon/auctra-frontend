@@ -160,9 +160,9 @@ export function useDashboardData() {
             tld: tldValue,
             type: shortType as AuctionType,
             state: auction.status === "Listed" ? "LIVE" : 
-                   auction.status === "Sold" ? "ENDED" : "SCHEDULED" as AuctionState,
+                   auction.status === "Sold" ? "ENDED" : "ENDED" as AuctionState,
             timeLeft: auction.status === "Listed" ? "Active" : 
-                     auction.status === "Sold" ? "Ended" : "Scheduled",
+                     auction.status === "Sold" ? "Ended" : "ENDED",
             top: winningBid ? `${winningBid} ETH` : `${reservePrice} ETH`,
             createdAt: createdDate,
           };

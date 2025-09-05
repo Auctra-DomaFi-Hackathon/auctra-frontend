@@ -98,7 +98,7 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
                   dir={aSort.dir}
                   className="text-right w-24"
                 >
-                  Top Bid/Price
+                  Reserve Price
                 </SortHead>
                 {/* <th className="text-right px-4 py-2">Actions</th> */}
               </TableRow>
