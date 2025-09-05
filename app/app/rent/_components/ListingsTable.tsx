@@ -16,7 +16,7 @@ import { MoreVertical, Pause, Play, Edit, Trash2, Plus, Calendar, DollarSign } f
 import { useRentalListingsByOwner } from "@/lib/graphql/hooks";
 import { RentalListingWithMetadata } from "@/lib/graphql/types";
 import { ListingWithMeta } from "@/lib/rental/types";
-import { formatUSD, formatDate, formatTimeLeft, getDaysLeft } from "@/lib/rental/format";
+import { formatUSD, getDaysLeft } from "@/lib/rental/format";
 import { useState } from "react";
 import EditTermsDialog from "./EditTermsDialog";
 import ExtendDialog from "./ExtendDialog";
@@ -30,7 +30,7 @@ const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMet
     domain: rentalListing.metadata?.name || `Domain-${rentalListing.tokenId.slice(-8)}`,
     tld: rentalListing.metadata?.tld || '.eth',
     verified: false,
-    expiresAt: 0, // We don't have domain expiry info from rental listing
+    expiresAt: rentalListing.metadata?.expiresAt || 0, // Get domain expiry from tokenId metadata
     listing: {
       nft: rentalListing.nft as `0x${string}`,
       tokenId: BigInt(rentalListing.tokenId),
@@ -167,12 +167,12 @@ export default function ListingsTable() {
               <TableHeader>
                 <TableRow className="dark:border-gray-700">
                   <TableHead className="dark:text-gray-300">Domain</TableHead>
+                  <TableHead className="dark:text-gray-300">TLD</TableHead>
                   <TableHead className="dark:text-gray-300">Token</TableHead>
                   <TableHead className="dark:text-gray-300">Price/Day</TableHead>
                   <TableHead className="dark:text-gray-300">Deposit</TableHead>
                   <TableHead className="dark:text-gray-300">Period</TableHead>
                   <TableHead className="dark:text-gray-300">Status</TableHead>
-                  <TableHead className="dark:text-gray-300">Expires</TableHead>
                   <TableHead className="w-[100px] dark:text-gray-300">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -190,8 +190,13 @@ export default function ListingsTable() {
                       <TableCell className="font-medium dark:text-white">
                         {listing.domain}
                       </TableCell>
-                      <TableCell className="font-mono text-sm dark:text-gray-300">
-                        {listing.listing.tokenId.toString()}
+                      <TableCell className="text-sm dark:text-gray-300">
+                        {listing.tld}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs dark:text-gray-300">
+                        {listing.listing.tokenId.toString().length > 16 
+                          ? `${listing.listing.tokenId.toString().slice(0, 8)}...${listing.listing.tokenId.toString().slice(-8)}`
+                          : listing.listing.tokenId.toString()}
                       </TableCell>
                       <TableCell className="dark:text-gray-300">
                         {formatUSD(listing.listing.pricePerDay)}
@@ -200,19 +205,10 @@ export default function ListingsTable() {
                         {formatUSD(listing.listing.securityDeposit)}
                       </TableCell>
                       <TableCell className="dark:text-gray-300">
-                        {listing.listing.minDays}-{listing.listing.maxDays}d
+                        {listing.listing.minDays}-{listing.listing.maxDays} days
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(listing)}
-                      </TableCell>
-                      <TableCell>
-                        {isRented ? (
-                          <span className="text-sm dark:text-gray-300">
-                            {formatDate(listing.rental!.expires)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 dark:text-gray-500">-</span>
-                        )}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -236,7 +232,13 @@ export default function ListingsTable() {
                               )}
                             </DropdownMenuItem>
                             
-                            <DropdownMenuItem onClick={() => setEditingListing(listing.id)}>
+                            <DropdownMenuItem onClick={() => {
+                              toast({
+                                title: "Coming Soon!",
+                                description: "Edit terms functionality will be available soon",
+                                variant: "default",
+                              });
+                            }}>
                               <Edit className="w-4 h-4 mr-2" />
                               Edit Terms
                             </DropdownMenuItem>

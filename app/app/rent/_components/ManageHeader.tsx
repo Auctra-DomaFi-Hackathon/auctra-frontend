@@ -1,11 +1,46 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { useManageRentals } from "@/lib/rental/hooks";
+import { useRentalListingsByOwner, useUserRentalHistory } from "@/lib/graphql/hooks";
 import { formatUSD } from "@/lib/rental/format";
+import { useAccount } from "wagmi";
+import { useMemo } from "react";
 
 export default function ManageHeader() {
-  const { stats, loading } = useManageRentals();
+  const { address } = useAccount();
+  const { rentalListings, loading: listingsLoading } = useRentalListingsByOwner(address, 50);
+  const { rentalHistory, loading: historyLoading } = useUserRentalHistory(address, 50);
+  
+  const loading = listingsLoading || historyLoading;
+
+  // Calculate statistics from real data
+  const stats = useMemo(() => {
+    const totalListings = rentalListings.length;
+    
+    // Active listings: all listings that are active and not paused
+    const activeListings = rentalListings.filter(listing => 
+      listing.active && !listing.paused
+    ).length;
+    
+    // Currently rented: Based on the context, this should represent domains the user has rented out
+    // Since we don't have current rental status in the listings data, we'll use rental history
+    // to approximate domains that have been rented out (this is an approximation)
+    const currentlyRented = rentalHistory.filter(rental => 
+      rental.eventType.toLowerCase() === 'rented'
+    ).length;
+    
+    // Total deposits locked: sum of all security deposits from active listings
+    const totalDepositsLocked = rentalListings
+      .filter(listing => listing.active && !listing.paused)
+      .reduce((sum, listing) => sum + BigInt(listing.securityDeposit || 0), BigInt(0));
+
+    return {
+      totalListings,
+      activeListings,
+      rentedListings: currentlyRented,
+      totalDepositsLocked,
+    };
+  }, [rentalListings, rentalHistory]);
 
   if (loading) {
     return (
@@ -26,22 +61,22 @@ export default function ManageHeader() {
     {
       label: "Total Listings",
       value: stats.totalListings,
-      color: "text-gray-900 dark:text-white",
+      color: "text-black dark:text-white",
     },
     {
       label: "Active Listings",
       value: stats.activeListings,
-      color: "text-blue-600 dark:text-blue-400",
+      color: "text-black dark:text-white",
     },
     {
       label: "Currently Rented",
       value: stats.rentedListings,
-      color: "text-green-600 dark:text-green-400",
+      color: "text-black dark:text-white",
     },
     {
       label: "Deposits Locked",
       value: formatUSD(stats.totalDepositsLocked),
-      color: "text-purple-600 dark:text-purple-400",
+      color: "text-black dark:text-white",
     },
   ];
 

@@ -7,9 +7,9 @@ import ListingCard from "./ListingCard";
 import LoadingSkeleton from "./LoadingSkeleton";
 import EmptyState from "./EmptyState";
 import { ExplorePagination } from "../../explore/_components/ExplorePagination";
-import { useExploreRentals } from "@/lib/rental/hooks";
+import { useRentalFilters } from "@/lib/rental/filterContext";
 import { useMemo } from "react";
-import { formatEther } from "ethers";
+import { formatUSD } from "@/lib/rental/format";
 
 // Adapter function to convert GraphQL rental listing to expected format
 const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMetadata): ListingWithMeta => {
@@ -46,7 +46,7 @@ const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMet
 
 export default function ListingsGrid() {
   const { rentalListings, loading, error, currentPage, totalPages, onPageChange } = useActiveRentalListings(6);
-  const { filters } = useExploreRentals();
+  const { filters } = useRentalFilters();
 
   // Convert GraphQL rental listings to the expected format
   const adaptedListings = rentalListings.map(adaptRentalListingToListingWithMeta);
@@ -68,12 +68,12 @@ export default function ListingsGrid() {
       filtered = filtered.filter(item => item.tld === filters.tld);
     }
 
-    // Apply price filters (convert from ETH to USD for comparison)
+    // Apply price filters (prices are in USDC with 6 decimals)
     if (filters.minPrice !== undefined) {
       filtered = filtered.filter(item => {
         try {
-          const priceEth = parseFloat(formatEther(item.listing.pricePerDay));
-          return priceEth >= filters.minPrice!;
+          const priceUSDC = Number(item.listing.pricePerDay) / 1_000_000; // Convert from 6-decimal USDC to dollars
+          return priceUSDC >= filters.minPrice!;
         } catch {
           return true;
         }
@@ -83,8 +83,8 @@ export default function ListingsGrid() {
     if (filters.maxPrice !== undefined) {
       filtered = filtered.filter(item => {
         try {
-          const priceEth = parseFloat(formatEther(item.listing.pricePerDay));
-          return priceEth <= filters.maxPrice!;
+          const priceUSDC = Number(item.listing.pricePerDay) / 1_000_000; // Convert from 6-decimal USDC to dollars
+          return priceUSDC <= filters.maxPrice!;
         } catch {
           return true;
         }
@@ -99,8 +99,8 @@ export default function ListingsGrid() {
       switch (filters.sort) {
         case "price":
           try {
-            aValue = parseFloat(formatEther(a.listing.pricePerDay));
-            bValue = parseFloat(formatEther(b.listing.pricePerDay));
+            aValue = Number(a.listing.pricePerDay) / 1_000_000; // Convert from 6-decimal USDC to dollars
+            bValue = Number(b.listing.pricePerDay) / 1_000_000; // Convert from 6-decimal USDC to dollars
           } catch {
             aValue = 0;
             bValue = 0;

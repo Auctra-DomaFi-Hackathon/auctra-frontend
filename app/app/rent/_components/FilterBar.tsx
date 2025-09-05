@@ -4,12 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search, Filter, X } from "lucide-react";
-import { useExploreRentals } from "@/lib/rental/hooks";
 import { useActiveRentalListings } from "@/lib/graphql/hooks";
+import { useRentalFilters } from "@/lib/rental/filterContext";
 import { useMemo } from "react";
 
 export default function FilterBar() {
-  const { filters, setFilters } = useExploreRentals();
+  const { filters, setFilters } = useRentalFilters();
   const { rentalListings } = useActiveRentalListings(100); // Get more listings to extract TLDs
   
   // Extract unique TLDs from actual rental listings
@@ -20,6 +20,10 @@ export default function FilterBar() {
         tlds.add(listing.metadata.tld);
       }
     });
+    // If no TLDs found from metadata, add common ones as fallback
+    if (tlds.size === 0) {
+      return ['.ai', '.io', '.football', '.com'];
+    }
     return Array.from(tlds).sort();
   }, [rentalListings]);
 
@@ -40,8 +44,30 @@ export default function FilterBar() {
     }));
   };
 
-  const handlePriceRangeChange = (min?: number, max?: number) => {
-    setFilters(prev => ({ ...prev, minPrice: min, maxPrice: max }));
+  const handleMinPriceChange = (value: string) => {
+    // Allow empty string, numbers, and decimals including 0.0
+    if (value === "") {
+      setFilters(prev => ({ ...prev, minPrice: undefined }));
+    } else {
+      const numValue = parseFloat(value);
+      // Allow 0 and positive numbers, including decimals
+      if (!isNaN(numValue) && numValue >= 0) {
+        setFilters(prev => ({ ...prev, minPrice: numValue }));
+      }
+    }
+  };
+
+  const handleMaxPriceChange = (value: string) => {
+    // Allow empty string, numbers, and decimals including 0.0
+    if (value === "") {
+      setFilters(prev => ({ ...prev, maxPrice: undefined }));
+    } else {
+      const numValue = parseFloat(value);
+      // Allow 0 and positive numbers, including decimals
+      if (!isNaN(numValue) && numValue >= 0) {
+        setFilters(prev => ({ ...prev, maxPrice: numValue }));
+      }
+    }
   };
 
   const clearFilters = () => {
@@ -89,30 +115,24 @@ export default function FilterBar() {
         </div>
 
         {/* Price Range */}
-        <div className="flex gap-2">
+        <div className="md:col-span-2 flex gap-2">
           <Input
             type="number"
-            placeholder="Min ETH"
-            value={filters.minPrice || ""}
-            onChange={(e) => handlePriceRangeChange(
-              e.target.value ? parseFloat(e.target.value) : undefined,
-              filters.maxPrice
-            )}
+            placeholder="Min USDC"
+            value={filters.minPrice !== undefined ? filters.minPrice.toString() : ""}
+            onChange={(e) => handleMinPriceChange(e.target.value)}
             className="text-sm"
             min="0"
-            step="0.0001"
+            step="0.01"
           />
           <Input
             type="number"
-            placeholder="Max ETH"
-            value={filters.maxPrice || ""}
-            onChange={(e) => handlePriceRangeChange(
-              filters.minPrice,
-              e.target.value ? parseFloat(e.target.value) : undefined
-            )}
+            placeholder="Max USDC"
+            value={filters.maxPrice !== undefined ? filters.maxPrice.toString() : ""}
+            onChange={(e) => handleMaxPriceChange(e.target.value)}
             className="text-sm"
             min="0"
-            step="0.0001"
+            step="0.01"
           />
         </div>
 

@@ -11,20 +11,50 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, Clock, ExternalLink } from "lucide-react";
+import { DollarSign, Clock, ExternalLink } from "lucide-react";
 import { useUserRentalHistory } from "@/lib/graphql/hooks";
 import { formatDate } from "@/lib/rental/format";
 import { useAccount } from "wagmi";
 
 export default function MyRentalsTable() {
   const { address } = useAccount();
-  const { 
+  const {
     userRentalProfile,
-    rentalHistory, 
+    rentalHistory,
     depositRecords,
     loading,
     totalRentals,
   } = useUserRentalHistory(address, 50);
+
+  // Calculate active rentals by counting unique domains with "Rented" as the latest event
+  const calculateActiveRentals = () => {
+    if (!rentalHistory.length) return 0;
+
+    const domainEvents = new Map();
+
+    // Group events by tokenId and find the latest event for each domain
+    rentalHistory.forEach((rental) => {
+      const currentEvent = domainEvents.get(rental.tokenId);
+      if (
+        !currentEvent ||
+        parseInt(rental.timestamp) > parseInt(currentEvent.timestamp)
+      ) {
+        domainEvents.set(rental.tokenId, rental);
+      }
+    });
+
+    // Count domains where the latest event is "rented"
+    let activeCount = 0;
+    domainEvents.forEach((rental) => {
+      if (rental.eventType.toLowerCase() === "rented") {
+        activeCount++;
+      }
+    });
+
+    return activeCount;
+  };
+
+  const activeRentals = calculateActiveRentals();
 
   const formatPrice = (priceString: string) => {
     const price = BigInt(priceString);
@@ -32,18 +62,65 @@ export default function MyRentalsTable() {
     return `$${dollars.toLocaleString()}`;
   };
 
+  // Calculate total spent and total deposits from rental history details
+  const calculateTotals = () => {
+    if (!rentalHistory.length) return { totalSpent: 0, totalDeposits: 0 };
+
+    let totalSpent = 0;
+    let totalDeposits = 0;
+
+    rentalHistory.forEach((rental) => {
+      if (rental.data && typeof rental.data === "object") {
+        // Extract totalPaid from data
+        if (rental.data.totalPaid) {
+          const paidAmount = Number(BigInt(rental.data.totalPaid)) / 1_000_000;
+          totalSpent += paidAmount;
+        }
+        // Extract deposit from data
+        if (rental.data.deposit) {
+          const depositAmount = Number(BigInt(rental.data.deposit)) / 1_000_000;
+          totalDeposits += depositAmount;
+        }
+      }
+    });
+
+    return { totalSpent, totalDeposits };
+  };
+
+  const { totalSpent, totalDeposits } = calculateTotals();
+
   const formatEventType = (eventType: string) => {
     switch (eventType.toLowerCase()) {
-      case 'rented':
-        return { text: 'Rented', color: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800' };
-      case 'extended':
-        return { text: 'Extended', color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800' };
-      case 'ended':
-        return { text: 'Ended', color: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800' };
-      case 'expired':
-        return { text: 'Expired', color: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800' };
+      case "rented":
+        return {
+          text: "Rented",
+          color:
+            "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
+        };
+      case "extended":
+        return {
+          text: "Extended",
+          color:
+            "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
+        };
+      case "ended":
+        return {
+          text: "Ended",
+          color:
+            "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800",
+        };
+      case "expired":
+        return {
+          text: "Expired",
+          color:
+            "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
+        };
       default:
-        return { text: eventType, color: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800' };
+        return {
+          text: eventType,
+          color:
+            "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800",
+        };
     }
   };
 
@@ -56,7 +133,10 @@ export default function MyRentalsTable() {
         <CardContent>
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              <div
+                key={i}
+                className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+              ></div>
             ))}
           </div>
         </CardContent>
@@ -93,7 +173,8 @@ export default function MyRentalsTable() {
             No rental history
           </h3>
           <p className="text-gray-500 dark:text-gray-400 mb-6">
-            You haven't rented any domains yet. Start browsing available domains to rent.
+            You haven&apos;t rented any domains yet. Start browsing available
+            domains to rent.
           </p>
         </CardContent>
       </Card>
@@ -111,28 +192,36 @@ export default function MyRentalsTable() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {userRentalProfile.totalRentals}
+                <div className="text-2xl font-bold text-black dark:text-white">
+                  {totalRentals}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Rentals</div>
+                <div className="text-sm text-black dark:text-white">
+                  Total Rentals
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {formatPrice(userRentalProfile.totalSpent)}
+                <div className="text-2xl font-bold text-black dark:text-white">
+                  ${totalSpent.toLocaleString()}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Spent</div>
+                <div className="text-sm text-black dark:text-white">
+                  Total Spent
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                  {userRentalProfile.activeRentals}
+                <div className="text-2xl font-bold text-black dark:text-white">
+                  {activeRentals}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Active Rentals</div>
+                <div className="text-sm text-black dark:text-white">
+                  Active Rentals
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                  {formatPrice(userRentalProfile.totalDeposits)}
+                <div className="text-2xl font-bold text-black dark:text-white">
+                  ${totalDeposits.toLocaleString()}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Deposits</div>
+                <div className="text-sm text-black dark:text-white">
+                  Total Deposits
+                </div>
               </div>
             </div>
           </CardContent>
@@ -142,7 +231,9 @@ export default function MyRentalsTable() {
       {/* Rental History Table */}
       <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-blue-100 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="dark:text-white">Rental History ({totalRentals})</CardTitle>
+          <CardTitle className="dark:text-white">
+            Rental History ({totalRentals})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -165,7 +256,8 @@ export default function MyRentalsTable() {
                       <TableCell className="font-medium dark:text-white">
                         <div>
                           <div className="font-semibold">
-                            {rental.metadata?.name || `Domain-${rental.tokenId.slice(-8)}`}
+                            {rental.metadata?.name ||
+                              `Domain-${rental.tokenId.slice(-8)}`}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                             #{rental.tokenId.slice(-8)}
@@ -185,11 +277,21 @@ export default function MyRentalsTable() {
                       </TableCell>
                       <TableCell className="dark:text-gray-300">
                         <div className="text-xs space-y-1">
-                          {rental.data && typeof rental.data === 'object' && (
+                          {rental.data && typeof rental.data === "object" && (
                             <>
-                              {rental.data.days && <div>Duration: {rental.data.days} days</div>}
-                              {rental.data.totalPaid && <div>Paid: {formatPrice(rental.data.totalPaid)}</div>}
-                              {rental.data.deposit && <div>Deposit: {formatPrice(rental.data.deposit)}</div>}
+                              {rental.data.days && (
+                                <div>Duration: {rental.data.days} days</div>
+                              )}
+                              {rental.data.totalPaid && (
+                                <div>
+                                  Paid: {formatPrice(rental.data.totalPaid)}
+                                </div>
+                              )}
+                              {rental.data.deposit && (
+                                <div>
+                                  Deposit: {formatPrice(rental.data.deposit)}
+                                </div>
+                              )}
                             </>
                           )}
                         </div>
@@ -199,7 +301,12 @@ export default function MyRentalsTable() {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            window.open(`https://explorer-testnet.doma.xyz/tx/${rental.id.split('-')[0]}`, '_blank');
+                            window.open(
+                              `https://explorer-testnet.doma.xyz/tx/${
+                                rental.id.split("-")[0]
+                              }`,
+                              "_blank"
+                            );
                           }}
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -225,11 +332,17 @@ export default function MyRentalsTable() {
               <Table>
                 <TableHeader>
                   <TableRow className="dark:border-gray-700">
-                    <TableHead className="dark:text-gray-300">Listing ID</TableHead>
+                    <TableHead className="dark:text-gray-300">
+                      Listing ID
+                    </TableHead>
                     <TableHead className="dark:text-gray-300">Amount</TableHead>
                     <TableHead className="dark:text-gray-300">Status</TableHead>
-                    <TableHead className="dark:text-gray-300">Locked Date</TableHead>
-                    <TableHead className="dark:text-gray-300">Claimed Date</TableHead>
+                    <TableHead className="dark:text-gray-300">
+                      Locked Date
+                    </TableHead>
+                    <TableHead className="dark:text-gray-300">
+                      Claimed Date
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -242,21 +355,24 @@ export default function MyRentalsTable() {
                         {formatPrice(deposit.amount)}
                       </TableCell>
                       <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={deposit.claimed 
-                            ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-                            : "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+                        <Badge
+                          variant="outline"
+                          className={
+                            deposit.claimed
+                              ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                              : "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
                           }
                         >
-                          {deposit.claimed ? 'Claimed' : 'Locked'}
+                          {deposit.claimed ? "Claimed" : "Locked"}
                         </Badge>
                       </TableCell>
                       <TableCell className="dark:text-gray-300">
                         {formatDate(parseInt(deposit.lockedAt))}
                       </TableCell>
                       <TableCell className="dark:text-gray-300">
-                        {deposit.claimedAt ? formatDate(parseInt(deposit.claimedAt)) : '-'}
+                        {deposit.claimedAt
+                          ? formatDate(parseInt(deposit.claimedAt))
+                          : "-"}
                       </TableCell>
                     </TableRow>
                   ))}

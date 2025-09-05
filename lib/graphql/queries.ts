@@ -251,6 +251,8 @@ export const GET_RENTAL_LISTINGS_BY_OWNER_QUERY = gql`
         paymentToken
         active
         paused
+        minDays
+        maxDays
         updatedAt
       }
     }

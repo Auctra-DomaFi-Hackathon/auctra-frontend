@@ -39,7 +39,7 @@ export function DomainCard({ domain, className = "" }: DomainCardProps) {
           <div>
             <h3 className="text-xl font-semibold mb-1">{domain.name}</h3>
             <div className="flex items-center space-x-2">
-              <Badge variant={statusColors[domain.status]}>
+              <Badge variant={domain.status ? statusColors[domain.status] || 'outline' : 'outline'}>
                 {domain.status}
               </Badge>
               {domain.dnsVerified && (
@@ -72,7 +72,7 @@ export function DomainCard({ domain, className = "" }: DomainCardProps) {
           </div>
           <div>
             <div className="text-sm text-muted-foreground">Renewal Cost</div>
-            <div className="font-semibold">{formatCurrency(domain.renewalCostUsd)}</div>
+            <div className="font-semibold">{formatCurrency(domain.renewalCostUsd || 0)}</div>
           </div>
         </div>
 
@@ -81,19 +81,19 @@ export function DomainCard({ domain, className = "" }: DomainCardProps) {
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium">Oracle Reserve</span>
             <Badge variant="outline" className="text-xs">
-              {Math.round(domain.oracleConfidence * 100)}% confidence
+              {Math.round((domain.oracleConfidence || 0) * 100)}% confidence
             </Badge>
           </div>
           <div className="text-lg font-bold text-primary">
-            {formatCurrency(domain.oracleReserveUsd)}
+            {formatCurrency(domain.oracleReserveUsd || 0)}
           </div>
           <div className="text-sm text-muted-foreground mt-1">
-            Fair Value: {formatCurrency(domain.fairValueBandUsd.min)} - {formatCurrency(domain.fairValueBandUsd.max)}
+            Fair Value: {formatCurrency(domain.fairValueBandUsd?.min || 0)} - {formatCurrency(domain.fairValueBandUsd?.max || 0)}
           </div>
         </div>
 
         {/* Expiry Info */}
-        {domain.status === 'expiring' && (
+        {domain.status === 'expiring' && domain.expiresAt && (
           <div className="text-sm text-muted-foreground">
             Expires: {new Date(domain.expiresAt).toLocaleDateString()}
           </div>

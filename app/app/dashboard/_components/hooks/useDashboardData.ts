@@ -101,6 +101,29 @@ export function useDashboardData() {
   // Determine global loading state
   const isLoading = domainsLoading || auctionsLoading || bidsLoading;
 
+  // Helper function to format ETH values
+  const formatETH = (weiValue: string): string => {
+    if (!weiValue || weiValue === '0') return '0';
+    
+    const ethValue = parseFloat(weiValue) / 1e18;
+    
+    // If the value is 0, return '0'
+    if (ethValue === 0) return '0';
+    
+    // For very small values, show with more decimal places instead of exponential
+    if (ethValue < 0.000001) {
+      return ethValue.toFixed(8).replace(/\.?0+$/, '');
+    } else if (ethValue < 0.0001) {
+      return ethValue.toFixed(6).replace(/\.?0+$/, '');
+    } else if (ethValue < 0.001) {
+      return ethValue.toFixed(5).replace(/\.?0+$/, '');
+    } else if (ethValue < 1) {
+      return ethValue.toFixed(4).replace(/\.?0+$/, '');
+    } else {
+      return ethValue.toFixed(4).replace(/\.?0+$/, '');
+    }
+  };
+
   // Transform GraphQL auctions to AuctionRow format
   const realAuctions = React.useMemo((): AuctionRow[] | undefined => {
     console.log("useDashboardData - processing auctions:", graphqlAuctions);
@@ -112,11 +135,9 @@ export function useDashboardData() {
     if (address) {
       if (graphqlAuctions && graphqlAuctions.length > 0) {
         const transformed = graphqlAuctions.map((auction: any) => {
-          // Convert wei to ETH for prices
-          const reservePrice = auction.reservePrice ? 
-            (parseFloat(auction.reservePrice) / 1e18).toFixed(4) : '0';
-          const winningBid = auction.winningBid ? 
-            (parseFloat(auction.winningBid) / 1e18).toFixed(4) : null;
+          // Convert wei to ETH for prices using the new formatter
+          const reservePrice = formatETH(auction.reservePrice || '0');
+          const winningBid = auction.winningBid ? formatETH(auction.winningBid) : null;
 
           // Get proper domain name and TLD from metadata
           const domainName = auction.metadata?.name || `Token #${auction.tokenId.slice(-8)}`;
@@ -175,9 +196,8 @@ export function useDashboardData() {
     if (address) {
       if (graphqlBids && graphqlBids.length > 0) {
         const transformed = graphqlBids.map((bid: any) => {
-          // Convert wei to ETH for bid amount
-          const bidAmount = bid.amount ? 
-            (parseFloat(bid.amount) / 1e18).toFixed(4) : '0';
+          // Convert wei to ETH for bid amount using the formatter
+          const bidAmount = formatETH(bid.amount || '0');
 
           return {
             id: bid.id,
