@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, CheckCircle, Copy } from "lucide-react";
 import { useState } from "react";
@@ -29,221 +24,200 @@ export default function BidSuccessDialog({
   bidType,
 }: BidSuccessDialogProps) {
   const [copied, setCopied] = useState(false);
-
-  console.log('🎉 BidSuccessDialog props:', {
-    isOpen,
-    listing: listing?.id,
-    transactionHash,
-    bidAmount,
-    bidType
-  });
-
-  if (!listing) {
-    console.log('❌ BidSuccessDialog: Missing listing');
-    return null;
-  }
-
-  if (!transactionHash) {
-    console.log('⏳ BidSuccessDialog: Waiting for transaction hash...');
-    // Show loading state instead of returning null
-  }
+  if (!listing) return null;
 
   const copyTransactionHash = async () => {
     if (!transactionHash) return;
-    
     try {
       await navigator.clipboard.writeText(transactionHash);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error("Failed to copy transaction hash:", error);
-    }
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
   };
 
   const openBlockExplorer = () => {
     if (!transactionHash) return;
-    
-    // Doma Testnet explorer
-    const explorerUrl = `https://explorer-testnet.doma.xyz/tx/${transactionHash}`;
-    console.log('🔗 Opening explorer:', explorerUrl);
-    window.open(explorerUrl, "_blank", "noopener,noreferrer");
+    window.open(
+      `https://explorer-testnet.doma.xyz/tx/${transactionHash}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
-  const getBidTypeText = () => {
-    switch (bidType) {
-      case "purchase":
-        return "Purchase Successful!";
-      case "commit":
-        return "Bid Committed!";
-      default:
-        return "Bid Placed Successfully!";
-    }
-  };
+  const title =
+    bidType === "purchase"
+      ? "Purchase Successful"
+      : bidType === "commit"
+      ? "Bid Committed"
+      : "Bid Placed";
 
-  const getBidTypeDescription = () => {
-    switch (bidType) {
-      case "purchase":
-        return "You have successfully purchased this domain at the current Dutch auction price.";
-      case "commit":
-        return "Your sealed bid has been committed. Remember to reveal it during the reveal phase.";
-      default:
-        return "Your bid has been placed successfully. You will be notified if you are outbid.";
-    }
-  };
+  const sub =
+    bidType === "purchase"
+      ? "You purchased this domain at the current Dutch price."
+      : bidType === "commit"
+      ? "Your sealed bid has been committed. Remember to reveal it later."
+      : "Your bid is on-chain. We’ll notify you if someone outbids you.";
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      console.log('🎭 Dialog onOpenChange:', open)
-      if (!open) {
-        onClose()
-      }
-    }}>
-      <DialogContent 
-        className="sm:max-w-lg p-0 gap-0 border-0 shadow-2xl bg-white sm:rounded-2xl overflow-hidden"
-        onPointerDownOutside={() => {
-          // Prevent closing when clicking outside if we want to control it manually
-          console.log('🎭 Pointer down outside')
-        }}
-        onEscapeKeyDown={() => {
-          // Allow escape key to close
-          console.log('🎭 Escape key pressed')
-        }}
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        className="
+          p-0 overflow-hidden bg-white border border-slate-200/70 shadow-xl
+          rounded-xl sm:rounded-2xl
+          /* lebar responsif */
+          w-[min(92vw,36rem)]
+          /* tinggi aman + scroll */
+          max-h-[85vh] overflow-y-auto
+        "
       >
-          
-          {/* Blue Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6 text-white text-center relative overflow-hidden">
-            {/* Background pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-4 left-8 w-2 h-2 bg-white rounded-full animate-pulse"></div>
-              <div className="absolute top-8 right-12 w-1.5 h-1.5 bg-white rounded-full animate-pulse delay-100"></div>
-              <div className="absolute bottom-6 left-16 w-1 h-1 bg-white rounded-full animate-pulse delay-200"></div>
-            </div>
-            
-            <div className="relative z-10">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                <CheckCircle className="h-10 w-10 text-white" />
+        {/* Header */}
+        <div className="px-5 sm:px-6 pt-5 sm:pt-6 pb-4">
+          <div className="mx-auto mb-3 h-11 w-11 sm:h-12 sm:w-12 rounded-full bg-blue-50 flex items-center justify-center">
+            <CheckCircle className="h-6 w-6 sm:h-7 sm:w-7 text-blue-600" />
+          </div>
+          <div className="text-center">
+            <h2 className="text-base sm:text-xl font-semibold text-slate-900">{title}</h2>
+            <p className="mt-1 text-xs sm:text-sm text-slate-600">{sub}</p>
+          </div>
+        </div>
+
+        <div className="h-px bg-slate-200/80" />
+
+        {/* Body */}
+        <div className="px-5 sm:px-6 py-5 space-y-5">
+          {/* Domain & Amount */}
+          <div className="rounded-xl border border-slate-200 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                  Domain
+                </p>
+                <p className="truncate font-medium text-slate-900">
+                  {listing.metadata?.name || `Token #${listing.tokenId.slice(-8)}`}
+                  <span className="text-blue-600">
+                    {listing.metadata?.tld || ".eth"}
+                  </span>
+                </p>
               </div>
-              <h2 className="text-2xl font-bold mb-2">
-                🎉 {getBidTypeText()}
-              </h2>
-              <p className="text-white/90 text-sm">
-                Your transaction has been confirmed on the blockchain
-              </p>
+              <div className="text-right shrink-0">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                  {bidType === "purchase" ? "Price" : "Bid"}
+                </p>
+                <p className="font-semibold text-slate-900 text-sm sm:text-base">
+                  {bidAmount} ETH
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <InfoItem label="Listing ID" value={`#${listing.id}`} />
+              <InfoItem
+                label="Auction"
+                value={
+                  bidType === "purchase"
+                    ? "Dutch Auction"
+                    : bidType === "commit"
+                    ? "Sealed Bid Auction"
+                    : "English Auction"
+                }
+              />
             </div>
           </div>
 
-          {/* Content */}
-          <div className="px-8 py-6 space-y-5">
-            
-            {/* Domain Info Card */}
-            <div className="bg-gradient-to-r from-blue-50 to-white border border-blue-200 rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold text-lg text-blue-900">
-                    {listing.metadata?.name || `Token #${listing.tokenId.slice(-8)}`}
-                    <span className="text-blue-600 font-medium">
-                      {listing.metadata?.tld || ".eth"}
-                    </span>
-                  </h3>
-                  <p className="text-sm text-blue-700">Domain Name</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-xl text-blue-900">{bidAmount} ETH</p>
-                  <p className="text-sm text-blue-600">{bidType === 'purchase' ? 'Purchase Price' : 'Bid Amount'}</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 pt-3 border-t border-blue-200">
-                <div>
-                  <p className="text-xs text-blue-600 uppercase tracking-wide">Listing ID</p>
-                  <p className="font-semibold text-blue-900">#{listing.id}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-blue-600 uppercase tracking-wide">Auction Type</p>
-                  <p className="font-semibold text-blue-900 capitalize">
-                    {bidType === 'purchase' ? 'Dutch Auction' : bidType === 'commit' ? 'Sealed Bid' : 'English Auction'}
-                  </p>
-                </div>
-              </div>
-            </div>
+          {/* Tx Details */}
+          <div>
+            <p className="mb-2 text-[11px] uppercase tracking-wide text-slate-500">
+              Transaction
+            </p>
 
-            {/* Transaction Details */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-blue-900 flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                Transaction Details
-              </h4>
-              
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-blue-800">Transaction Hash</span>
-                  {transactionHash && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={copyTransactionHash}
-                        className="h-8 w-8 p-0 hover:bg-blue-100 transition-colors"
-                        title={copied ? "Copied!" : "Copy hash"}
-                      >
-                        {copied ? (
-                          <CheckCircle className="h-4 w-4 text-blue-600" />
-                        ) : (
-                          <Copy className="h-4 w-4 text-blue-700" />
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => openBlockExplorer()}
-                        className="h-8 w-8 p-0 hover:bg-blue-100 transition-colors"
-                        title="View on explorer"
-                      >
-                        <ExternalLink className="h-4 w-4 text-blue-700" />
-                      </Button>
-                    </div>
-                  )}
+            <div className="rounded-lg border border-slate-200">
+              <div className="flex items-center justify-between px-3 py-2">
+                <span className="text-xs font-medium text-slate-700">
+                  Transaction Hash
+                </span>
+
+                <div className="flex gap-1.5">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    onClick={copyTransactionHash}
+                    disabled={!transactionHash}
+                    title={copied ? "Copied" : "Copy"}
+                  >
+                    {copied ? (
+                      <CheckCircle className="h-4 w-4 text-blue-600" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-slate-600" />
+                    )}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    onClick={openBlockExplorer}
+                    disabled={!transactionHash}
+                    title="View on explorer"
+                  >
+                    <ExternalLink className="h-4 w-4 text-slate-600" />
+                  </Button>
                 </div>
+              </div>
+
+              <div className="px-3 pb-3">
                 {transactionHash ? (
-                  <code className="text-xs text-blue-800 bg-white px-3 py-2 rounded-lg border border-blue-200 block break-all">
+                  <code
+                    className="
+                      block rounded-md border border-slate-200 bg-white
+                      px-2.5 py-2 text-[11px] text-slate-800 font-mono
+                      overflow-x-auto break-all
+                    "
+                  >
                     {transactionHash}
                   </code>
                 ) : (
-                  <div className="bg-white px-3 py-2 rounded-lg border border-blue-200 flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin"></div>
-                    <span className="text-xs text-blue-700">Generating transaction hash...</span>
+                  <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-2">
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
+                    <span className="text-[11px] text-slate-600">Waiting for hash…</span>
                   </div>
                 )}
               </div>
             </div>
-
-            {/* Success Message */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <p className="text-sm text-blue-800 text-center leading-relaxed">
-                {getBidTypeDescription()}
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => openBlockExplorer()}
-                disabled={!transactionHash}
-                className="flex-1 flex items-center justify-center gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ExternalLink className="h-4 w-4" />
-                {transactionHash ? 'View on Doma Explorer' : 'Explorer (Waiting...)'}
-              </Button>
-              <Button 
-                onClick={onClose}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all duration-200 shadow-md"
-              >
-                Great, Thanks! 🚀
-              </Button>
-            </div>
           </div>
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
+            <Button
+              variant="outline"
+              onClick={openBlockExplorer}
+              disabled={!transactionHash}
+              className="w-full sm:flex-1 border-slate-300 text-slate-700 hover:bg-slate-50
+              hover:text-gray-900"
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Explorer
+            </Button>
+            <Button
+              onClick={onClose}
+              className="w-full sm:flex-1 bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Close
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** ——— Subcomponent ——— */
+function InfoItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[11px] uppercase tracking-wide text-slate-500">
+        {label}
+      </p>
+      <p className="truncate text-sm font-medium text-slate-900">{value}</p>
+    </div>
   );
 }
