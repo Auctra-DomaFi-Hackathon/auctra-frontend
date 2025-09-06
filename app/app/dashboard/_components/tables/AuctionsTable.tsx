@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Box } from "lucide-react";
+import { BadgeMinus } from "lucide-react";
 import SortHead from "./SortHead";
 import StatusChip from "./StatusChip";
 import SkeletonRows from "./SkeletonRows";
@@ -204,7 +204,7 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
                             <Loader2 className="w-3 h-3 animate-spin" />
                           ) : (
                             "End Auction"
-                          )}
+                          )} <BadgeMinus className="inline-block text-red-600" />
                         </Button>
                       ) : (
                         <span className="text-sm text-gray-400 dark:text-gray-500">

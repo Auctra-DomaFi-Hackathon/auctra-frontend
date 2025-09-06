@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Timer, Globe } from "lucide-react";
+import { Timer, Globe, Gavel } from "lucide-react";
 import usdcLogo from "../../../../../public/images/LogoCoin/usd-coin-usdc-logo.png";
 import { useAccount } from "wagmi";
 import { useMyDomains, useMyAuctions, useMyBids } from "@/lib/graphql";
@@ -314,7 +314,12 @@ export function useDashboardData() {
   }, [query, realDomains]);
 
   const kpis = [
-    { label: "Earnings", value: "$0", delta: 0, icon: usdcLogo },
+    { 
+      label: "My Bids", 
+      value: realBids ? String(realBids.length) : "0", 
+      delta: 0, 
+      icon: Gavel 
+    },
     {
       label: "Active Auctions",
       value: realAuctions ? String(realAuctions.filter((a) => a.state === "LIVE").length) : "0",

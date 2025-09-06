@@ -259,6 +259,22 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
     }
   }, [isLoading, isSuccessful, error]);
 
+  // Additional effect to handle transaction rejections and timeout scenarios
+  useEffect(() => {
+    if (isSubmitting) {
+      // If user is still in submitting state but wagmi hooks are no longer pending,
+      // reset the submitting state after a brief delay
+      const timeout = setTimeout(() => {
+        if (!englishPending && !dutchPending && !sealedPending) {
+          console.log("🔄 Timeout: Resetting isSubmitting state after wagmi hooks reset");
+          setIsSubmitting(false);
+        }
+      }, 1000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [isSubmitting, englishPending, dutchPending, sealedPending]);
+
   // Auto-clear old manual states periodically
   useEffect(() => {
     const interval = setInterval(() => {
@@ -649,9 +665,22 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
             "Transaction simulation failed: " +
             errorMessage +
             ". Check console for details.";
-        } else if (errorMessage.includes("User rejected")) {
+        } else if (errorMessage.includes("User rejected") || 
+                   errorMessage.includes("user rejected") || 
+                   errorMessage.includes("rejected the request") ||
+                   errorMessage.includes("User denied")) {
           formattedError = "Transaction was rejected in wallet.";
         }
+      }
+
+      // General error handling for all auction types
+      const errorMessage = error?.message || error?.reason || "";
+      if (errorMessage.includes("User rejected") || 
+          errorMessage.includes("user rejected") || 
+          errorMessage.includes("rejected the request") ||
+          errorMessage.includes("User denied")) {
+        formattedError = "Transaction was rejected in wallet.";
+        console.log("🚫 Transaction rejected by user");
       }
 
       setError(formattedError);

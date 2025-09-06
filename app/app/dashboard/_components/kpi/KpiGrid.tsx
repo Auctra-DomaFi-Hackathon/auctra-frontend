@@ -3,7 +3,7 @@
 import React from 'react'
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
-import { TrendingUp, Timer, Globe } from 'lucide-react'
+import { TrendingUp, Timer, Globe, Gavel } from 'lucide-react'
 import {ChartLineUp} from "@phosphor-icons/react";
 import { cn } from '@/lib/utils'
 import { fmtDelta } from '../hooks/useSearch'
@@ -26,6 +26,9 @@ export default function KpiGrid({
               <div className="h-5 w-5 flex items-center justify-center">
                 {(() => {
                   // Handle specific icons by label
+                  if (label === 'My Bids') {
+                    return <Gavel className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
+                  }
                   if (label === 'Active Auctions') {
                     return <Timer className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
                   }
