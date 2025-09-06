@@ -32,40 +32,53 @@ export default function AuctionDetailsDialog({
   listingId,
 }: AuctionDetailsDialogProps) {
   const [isBidDialogOpen, setIsBidDialogOpen] = useState(false);
-  const [auctionTimes, setAuctionTimes] = useState<{startTime: number, endTime: number} | null>(null);
-  const { listing, highestBid, allBids, loading, error } = useAuctionDetails(listingId);
+  const [auctionTimes, setAuctionTimes] = useState<{
+    startTime: number;
+    endTime: number;
+  } | null>(null);
+  const [auctionStatus, setAuctionStatus] = useState<number | null>(null); // 1 = live, 2 = ended
+  const { listing, highestBid, allBids, loading, error } =
+    useAuctionDetails(listingId);
   const publicClient = usePublicClient();
 
-  // Fetch auction times from contract - same as ListingGrid
+  // Fetch auction times and status from contract
   useEffect(() => {
-    const fetchAuctionTimes = async () => {
+    const fetchAuctionData = async () => {
       if (!publicClient || !listingId) return;
-      
+
       try {
-        console.log(`🔍 Fetching auction times for listing ${listingId} from contract`);
-        
-        const listingData = await publicClient.readContract({
+        console.log(
+          `🔍 Fetching auction data for listing ${listingId} from contract`
+        );
+
+        const listingData = (await publicClient.readContract({
           address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
           abi: DOMAIN_AUCTION_HOUSE_ABI,
-          functionName: 'listings',
+          functionName: "listings",
           args: [BigInt(listingId)],
-        }) as readonly any[];
+        })) as readonly any[];
 
         const startTime = Number(listingData[5]); // startTime is at index 5
         const endTime = Number(listingData[6]); // endTime is at index 6
+        const status = Number(listingData[10]); // status is at index 10 (1 = live, 2 = ended)
 
-        console.log(`⏰ Auction times for ${listingId}:`, {
+        console.log(`⏰ Auction data for ${listingId}:`, {
           startTime: new Date(startTime * 1000).toLocaleString(),
-          endTime: new Date(endTime * 1000).toLocaleString()
+          endTime: new Date(endTime * 1000).toLocaleString(),
+          status: status === 1 ? "LIVE" : status === 2 ? "ENDED" : "UNKNOWN",
         });
 
         setAuctionTimes({ startTime, endTime });
+        setAuctionStatus(status);
       } catch (error) {
-        console.error(`Failed to get auction times for listing ${listingId}:`, error);
+        console.error(
+          `Failed to get auction data for listing ${listingId}:`,
+          error
+        );
       }
     };
 
-    fetchAuctionTimes();
+    fetchAuctionData();
   }, [listingId, publicClient]);
 
   if (loading) {
@@ -74,7 +87,9 @@ export default function AuctionDetailsDialog({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <div className="flex justify-center items-center h-64">
             <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-            <span className="ml-3 text-gray-600">Loading auction details...</span>
+            <span className="ml-3 text-gray-600">
+              Loading auction details...
+            </span>
           </div>
         </DialogContent>
       </Dialog>
@@ -88,7 +103,9 @@ export default function AuctionDetailsDialog({
           <div className="text-center py-8">
             <div className="text-red-500 text-lg mb-2">⚠️ Error</div>
             <p className="text-gray-600">Failed to load auction details</p>
-            <Button onClick={onClose} className="mt-4">Close</Button>
+            <Button onClick={onClose} className="mt-4">
+              Close
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -105,7 +122,9 @@ export default function AuctionDetailsDialog({
       } else if (ethValue < 1) {
         return `${ethValue.toFixed(4)} ETH`;
       } else {
-        return `${ethValue.toLocaleString(undefined, { maximumFractionDigits: 4 })} ETH`;
+        return `${ethValue.toLocaleString(undefined, {
+          maximumFractionDigits: 4,
+        })} ETH`;
       }
     } catch {
       return `${priceWei} wei`;
@@ -122,6 +141,35 @@ export default function AuctionDetailsDialog({
 
   const strategyName = getStrategyName(listing.strategy);
   const currentPrice = highestBid?.amount || listing.reservePrice;
+
+  // Get status info based on contract status
+  const getStatusInfo = () => {
+    if (auctionStatus === 1) {
+      return {
+        text: "LIVE",
+        className: "bg-green-100 text-green-700 border-green-200",
+      };
+    } else if (auctionStatus === 2) {
+      return {
+        text: "ENDED",
+        className: "bg-red-100 text-red-700 border-red-200",
+      };
+    } else {
+      // Fallback to GraphQL status if contract status not available
+      return listing.status === "Listed"
+        ? {
+            text: "LIVE",
+            className: "bg-green-100 text-green-700 border-green-200",
+          }
+        : {
+            text: "ENDED",
+            className: "bg-red-100 text-red-700 border-red-200",
+          };
+    }
+  };
+
+  const statusInfo = getStatusInfo();
+  const isAuctionEnded = auctionStatus === 2;
 
   // Convert to compatible format for BidDialog
   const listingForDialog: Listing & { metadata?: NFTMetadata } = {
@@ -155,13 +203,16 @@ export default function AuctionDetailsDialog({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Auction Info */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-              <h3 className="text-lg font-semibold text-blue-900 mb-4">Auction Info</h3>
-              
+              <h3 className="text-lg font-semibold text-blue-900 mb-4">
+                Auction Info
+              </h3>
+
               {/* Domain Name */}
               <div className="mb-4">
                 <div className="text-sm text-gray-600 mb-1">Domain</div>
                 <div className="font-bold text-xl text-blue-800">
-                  {listing.metadata?.name || `Token #${listing.tokenId.slice(-8)}`}
+                  {listing.metadata?.name ||
+                    `Token #${listing.tokenId.slice(-8)}`}
                   <span className="text-gray-500 text-sm ml-1">
                     {listing.metadata?.tld || ".eth"}
                   </span>
@@ -171,16 +222,8 @@ export default function AuctionDetailsDialog({
               {/* Status */}
               <div className="mb-4">
                 <div className="text-sm text-gray-600 mb-1">Status</div>
-                <Badge 
-                  className={`${
-                    listing.status === 'Listed' 
-                      ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200  ' 
-                      : listing.status === 'Sold'
-                      ? 'bg-blue-100 text-blue-700 border-blue-200'
-                      : 'bg-gray-100 text-gray-700 border-gray-200'
-                  }`}
-                >
-                  🔴 {listing.status}
+                <Badge className={statusInfo.className}>
+                  {statusInfo.text === "LIVE" ? "🟢" : "🔴"} {statusInfo.text}
                 </Badge>
               </div>
 
@@ -224,7 +267,9 @@ export default function AuctionDetailsDialog({
                 <div className="space-y-2">
                   {listing.startTime !== "0" && (
                     <div>
-                      <div className="text-sm text-gray-600">Auction Start:</div>
+                      <div className="text-sm text-gray-600">
+                        Auction Start:
+                      </div>
                       <div className="text-sm text-gray-800">
                         {formatTimestamp(listing.startTime)}
                       </div>
@@ -243,12 +288,24 @@ export default function AuctionDetailsDialog({
 
               {/* Action Buttons */}
               <div className="mt-6 space-y-3">
+                {isAuctionEnded && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-700">
+                      ⚠️ This auction has ended. Bidding is no longer available.
+                    </p>
+                  </div>
+                )}
                 <Button
-                  onClick={() => setIsBidDialogOpen(true)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  disabled={listing.status !== 'Listed'}
+                  onClick={() => {
+                    setIsBidDialogOpen(true);
+                  }}
+                  className="text-xs w-full bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  disabled={isAuctionEnded}
                 >
-                  {strategyName === "Dutch Auction" ? "Purchase Now" : "Place Bid"}
+                  {strategyName === "Dutch Auction"
+                    ? "Purchase Now"
+                    : "Place Bid"}
+                  {isAuctionEnded && " (Auction Ended)"}
                 </Button>
                 <Button
                   onClick={onClose}
@@ -264,36 +321,50 @@ export default function AuctionDetailsDialog({
             <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
               <div className="text-center">
                 <div className="w-48 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                  <Image src="/images/logo/doma-logo-2.jpg" alt="NFT Preview" width={150} height={100} className="rounded-full" />
+                  <Image
+                    src="/images/logo/doma-logo-2.jpg"
+                    alt="NFT Preview"
+                    width={150}
+                    height={100}
+                    className="rounded-full"
+                  />
                 </div>
                 <div className="text-sm text-gray-600">NFT Preview</div>
-                <div className="text-xs text-gray-500 mt-1 mb-4">Token ID: {listing.tokenId.slice(-12)}</div>
-                
+                <div className="text-xs text-gray-500 mt-1 mb-4">
+                  Token ID: {listing.tokenId.slice(-12)}
+                </div>
+
                 {/* Auction Start and End Times - ListingGrid Style */}
                 {auctionTimes && (
                   <div className="space-y-1 mb-4">
                     <div className="flex justify-between text-xs text-gray-500">
                       <span>Auction Start:</span>
                       <span>
-                        {new Date(auctionTimes.startTime * 1000).toLocaleString('id-ID', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        {new Date(auctionTimes.startTime * 1000).toLocaleString(
+                          "id-ID",
+                          {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
                       </span>
                     </div>
                     <div className="flex justify-between text-xs text-gray-500">
                       <span>Auction End:</span>
                       <span>
-                        {new Date(auctionTimes.endTime * 1000).toLocaleString('id-ID', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        {new Date(auctionTimes.endTime * 1000).toLocaleString(
+                          "id-ID",
+                          {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
                       </span>
                     </div>
                   </div>
@@ -301,9 +372,7 @@ export default function AuctionDetailsDialog({
 
                 {/* Chain - ListingGrid Style */}
                 <div className="flex justify-between items-center text-xs text-gray-500">
-                  <span className="font-bold text-blue-800">
-                    Chain
-                  </span>
+                  <span className="font-bold text-blue-800">Chain</span>
                   <div className="flex items-center gap-1">
                     <Image
                       src="/images/logo/domaLogo.svg"
@@ -319,13 +388,17 @@ export default function AuctionDetailsDialog({
 
             {/* Right Column - Bid History */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-              <h3 className="text-lg font-semibold text-blue-900 mb-4">Bid History</h3>
-              
+              <h3 className="text-lg font-semibold text-blue-900 mb-4">
+                Bid History
+              </h3>
+
               {allBids.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <div className="text-2xl mb-2">📭</div>
                   <div className="text-sm">No bids yet</div>
-                  <div className="text-xs mt-1">Be the first to place a bid!</div>
+                  <div className="text-xs mt-1">
+                    Be the first to place a bid!
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -365,7 +438,7 @@ export default function AuctionDetailsDialog({
                       </div>
                       {bid.transactionHash && (
                         <div className="text-xs mt-1 font-mono">
-                          <Link 
+                          <Link
                             href={`https://explorer-testnet.doma.xyz/tx/${bid.transactionHash}`}
                             target="_blank"
                             rel="noopener noreferrer"

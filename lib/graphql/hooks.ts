@@ -85,7 +85,7 @@ export function useActiveListings(limit: number = 6) {
   );
 
   // Function to fetch domain metadata with ISO DateTime parsing (single query approach)
-  const fetchNFTMetadata = async (tokenId: string): Promise<NFTMetadata> => {
+  const fetchNFTMetadata = useCallback(async (tokenId: string): Promise<NFTMetadata> => {
     try {
       console.log('🔍 Fetching domain data for tokenId:', tokenId);
       
@@ -139,7 +139,7 @@ export function useActiveListings(limit: number = 6) {
         isExpired: null,
       };
     }
-  };
+  }, []);
 
   // Function to change page
   const onPageChange = useCallback((page: number) => {
@@ -156,30 +156,40 @@ export function useActiveListings(limit: number = 6) {
     const fetchAllMetadata = async () => {
       setMetadataLoading(true);
       try {
-        const allListingsWithMeta = await Promise.all(
+        console.log('🔄 Fetching metadata for all listings:', data.listings.items.length);
+        
+        // Fetch metadata for ALL listings (not paginated)
+        const allListingsWithMeta = await Promise.allSettled(
           data.listings.items.map(async (listing) => {
-            const metadata = await fetchNFTMetadata(listing.tokenId);
-            return { ...listing, metadata };
+            try {
+              const metadata = await fetchNFTMetadata(listing.tokenId);
+              return { ...listing, metadata };
+            } catch (error) {
+              console.warn(`Failed to fetch metadata for token ${listing.tokenId}:`, error);
+              return { ...listing, metadata: null };
+            }
           })
         );
         
-        // Paginate the results
-        const startIndex = (currentPage - 1) * limit;
-        const endIndex = startIndex + limit;
-        const paginatedListings = allListingsWithMeta.slice(startIndex, endIndex);
+        // Extract successful results
+        const successfulResults = allListingsWithMeta
+          .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
+          .map(result => result.value);
         
-        setListingsWithMetadata(paginatedListings);
+        console.log('✅ Successfully processed all listings:', successfulResults.length);
+        // Return ALL listings with metadata, no pagination here
+        setListingsWithMetadata(successfulResults);
       } catch (error) {
         console.error('Failed to fetch metadata for listings:', error);
-        const fallbackListings = data.listings.items.slice((currentPage - 1) * limit, currentPage * limit);
-        setListingsWithMetadata(fallbackListings.map(listing => ({ ...listing })));
+        // Fallback: return all listings without metadata
+        setListingsWithMetadata(data.listings.items.map(listing => ({ ...listing })));
       } finally {
         setMetadataLoading(false);
       }
     };
 
     fetchAllMetadata();
-  }, [data, currentPage, limit]);
+  }, [data, fetchNFTMetadata]); // Removed currentPage and limit dependencies
 
   const totalPages = Math.ceil(totalCount / limit);
 

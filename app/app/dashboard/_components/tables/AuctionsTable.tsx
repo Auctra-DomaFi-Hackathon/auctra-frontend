@@ -20,17 +20,20 @@ import { CurrencyEth } from "@phosphor-icons/react/dist/icons/CurrencyEth";
 import Image from "next/image";
 import { useEndAuction } from "@/hooks/useEndAuction";
 import EndAuctionSuccessDialog from "@/components/auction/EndAuctionSuccessDialog";
+import EndAuctionConfirmDialog from "@/components/auction/EndAuctionConfirmDialog";
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { useAtom } from "jotai";
+import { openEndAuctionSuccessAtom } from "@/atoms/transactions";
 
 export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
   const aSort = useSort(rows);
   const { endAuction, getAuctionState, resetAuctionState } = useEndAuction();
-  const [successDialog, setSuccessDialog] = useState<{
-    open: boolean;
-    hash?: `0x${string}`;
-    domain?: string;
-  }>({ open: false });
+  const [, openSuccessDialog] = useAtom(openEndAuctionSuccessAtom);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    auction: AuctionRow | null;
+  }>({ isOpen: false, auction: null });
 
   // Monitor all auctions for success state
   useEffect(() => {
@@ -38,16 +41,31 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
 
     rows.forEach((row) => {
       const state = getAuctionState(row.listingId);
-      if (state.isSuccess && state.hash && !successDialog.open) {
-        setSuccessDialog({
-          open: true,
+      if (state.isSuccess && state.hash) {
+        openSuccessDialog({
           hash: state.hash,
           domain: `${row.domain}${row.tld}`,
         });
         resetAuctionState(row.listingId);
       }
     });
-  }, [rows, getAuctionState, resetAuctionState, successDialog.open]);
+  }, [rows, getAuctionState, resetAuctionState, openSuccessDialog]);
+
+  const handleEndAuctionClick = (auction: AuctionRow) => {
+    setConfirmDialog({ isOpen: true, auction });
+  };
+
+  const handleConfirmEndAuction = () => {
+    if (confirmDialog.auction) {
+      endAuction(confirmDialog.auction.listingId).catch((error) => {
+        console.error("Failed to end auction:", error);
+      });
+    }
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setConfirmDialog({ isOpen: false, auction: null });
+  };
 
   return (
     <Card className="border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
@@ -192,11 +210,7 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            endAuction(r.listingId).catch((error) => {
-                              console.error("Failed to end auction:", error);
-                            });
-                          }}
+                          onClick={() => handleEndAuctionClick(r)}
                           disabled={getAuctionState(r.listingId).isLoading}
                           className="h-8 px-3"
                         >
@@ -220,14 +234,17 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
         </div>
       </CardContent>
 
-      {successDialog.open && successDialog.hash && successDialog.domain && (
-        <EndAuctionSuccessDialog
-          open={successDialog.open}
-          onOpenChange={(open) => setSuccessDialog({ open })}
-          transactionHash={successDialog.hash}
-          domain={successDialog.domain}
-        />
-      )}
+      <EndAuctionSuccessDialog />
+      
+      {/* Confirmation Dialog */}
+      <EndAuctionConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={handleCloseConfirmDialog}
+        onConfirm={handleConfirmEndAuction}
+        domain={confirmDialog.auction?.domain || ""}
+        tld={confirmDialog.auction?.tld || ""}
+        isLoading={confirmDialog.auction ? getAuctionState(confirmDialog.auction.listingId).isLoading : false}
+      />
     </Card>
   );
 }

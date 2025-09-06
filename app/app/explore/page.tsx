@@ -8,16 +8,32 @@ import LoadingGrid from './_components/LoadingGrid'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { useExploreData } from './_components/hooks/useExploreData'
 
-// Lazy load heavy components
+// Lazy load heavy components with better loading states
 const FilterSidebar = dynamic(() => import('./_components/sidebar/FilterSidebar'), {
-  loading: () => <div className="w-full lg:w-80 h-96 bg-gray-50 dark:bg-gray-800 animate-pulse rounded-lg border border-gray-200 dark:border-gray-700"></div>
+  loading: () => <FilterSidebarSkeleton />,
+  ssr: false // Prevent SSR for better performance
 })
 const AuctionGrid = dynamic(() => import('./_components/grid/AuctionGrid'), {
-  loading: () => <LoadingGrid count={4} />
+  loading: () => <LoadingGrid count={6} />,
+  ssr: false
 })
-const ListingGrid = dynamic(() => import('./_components/grid/ListingGrid'), {
-  loading: () => <LoadingGrid count={4} />
+// Use InfiniteListingGrid for better UX
+const InfiniteListingGrid = dynamic(() => import('./_components/InfiniteListingGrid'), {
+  loading: () => <LoadingGrid count={6} />,
+  ssr: false
 })
+
+// Skeleton component for filter sidebar
+function FilterSidebarSkeleton() {
+  return (
+    <div className="w-full lg:w-80 space-y-4">
+      <div className="h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-lg" />
+      <div className="h-32 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-lg" />
+      <div className="h-24 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-lg" />
+      <div className="h-20 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-lg" />
+    </div>
+  )
+}
 
 export default function ExplorePage() {
   const {
@@ -39,14 +55,40 @@ export default function ExplorePage() {
     onListingsPageChange,
     onAuctionPageChange,
     currentPage,
+    // Add new methods for infinite scroll
+    fetchMoreListings,
+    currentPrices,
+    auctionTimes,
+    isDataReady
   } = useExploreData()
-
+  
+  // Show initial loading state with better skeleton
   if (loading) {
     return (
       <div className="container mx-auto px-4 sm:px-6 py-8">
-        <LoadingGrid count={8} />
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+          <FilterSidebarSkeleton />
+          <div className="flex-1">
+            <div className="h-16 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-lg mb-6" />
+            <LoadingGrid count={6} />
+          </div>
+        </div>
       </div>
     )
+  }
+
+  // Debug information (remove in production)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 Explore page debug info:', {
+      loading,
+      listingsCount: listings?.length || 0,
+      listingsError,
+      filteredListingsCount: listings?.length || 0,
+      tab,
+      searchQuery,
+      selectedTLDs,
+      selectedTypes
+    });
   }
 
   return (
@@ -54,7 +96,7 @@ export default function ExplorePage() {
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Left Filter Panel */}
         <aside className="w-full lg:w-80 lg:flex-shrink-0 space-y-6 order-2 lg:order-1">
-          <Suspense fallback={<div className="w-full lg:w-80 h-96 bg-gray-50 dark:bg-gray-800 animate-pulse rounded-lg border border-gray-200 dark:border-gray-700"></div>}>
+          <Suspense fallback={<FilterSidebarSkeleton />}>
             <FilterSidebar
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -81,7 +123,7 @@ export default function ExplorePage() {
             <StatusTabs tab={tab} setTab={setTab} counts={counts} />
             {(['liquidation'] as const).map((s) => (
               <TabsContent key={s} value={s}>
-                <Suspense fallback={<LoadingGrid count={4} />}>
+                <Suspense fallback={<LoadingGrid count={6} />}>
                   <AuctionGrid
                     auctions={byStatus[s]?.items || []}
                     domainById={domainById}
@@ -94,21 +136,29 @@ export default function ExplorePage() {
               </TabsContent>
             ))}
             <TabsContent value="listings">
-              <Suspense fallback={<LoadingGrid count={4} />}>
+              <Suspense fallback={<LoadingGrid count={6} />}>
                 {listingsError ? (
                   <div className="text-center py-12 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
-                    <p className="text-red-600 dark:text-red-400">
+                    <p className="text-red-600 dark:text-red-400 mb-4">
                       Failed to load listings: {listingsError.message}
                     </p>
+                    <button 
+                      onClick={() => window.location.reload()} 
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    >
+                      Retry
+                    </button>
                   </div>
-                ) : (
-                  <ListingGrid
-                    listings={listings || []}
-                    emptyLabel="No active listings found."
-                    currentPage={listingsPage}
-                    totalPages={listingsTotalPages}
-                    onPageChange={onListingsPageChange}
+                ) : isDataReady ? (
+                  <InfiniteListingGrid
+                    fetchListings={fetchMoreListings}
+                    emptyLabel="No active listings found. Try adjusting your filters or check back later."
+                    currentPrices={currentPrices || {}}
+                    auctionTimes={auctionTimes || {}}
+                    cacheKey={`listings-${searchQuery}-${selectedTLDs.join(',')}-${selectedTypes.join(',')}-${sortBy}`}
                   />
+                ) : (
+                  <LoadingGrid count={6} />
                 )}
               </Suspense>
             </TabsContent>

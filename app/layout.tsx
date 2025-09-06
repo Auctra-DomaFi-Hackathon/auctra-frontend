@@ -3,11 +3,11 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from '@/components/ui/toaster'
 import NavbarSwitcher from '@/components/navbar/NavbarSwitcher'
-import CardNav from '@/components/common/CardNav'
 import { Footer } from '@/components/common/Footer'
 import { Web3Provider } from '@/components/providers/WagmiProvider'
 import { ThemeProvider } from '@/contexts/ThemeContext'
-import Link from 'next/link'
+import JotaiProvider from '@/components/providers/JotaiProvider'
+import RentDomainPopup from '@/app/app/rent/_components/RentDomainPopup'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -81,8 +81,9 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
         <ThemeProvider>
-          <Web3Provider>
-            <div className="min-h-screen flex flex-col relative bg-white dark:bg-gray-900 transition-colors duration-300">
+          <JotaiProvider>
+            <Web3Provider>
+              <div className="min-h-screen flex flex-col relative bg-white dark:bg-gray-900 transition-colors duration-300">
               <NavbarSwitcher 
                 cardNavProps={{
                   logo: "/images/logo/auctraLogo.png",
@@ -97,10 +98,12 @@ export default function RootLayout({
               <main className="flex-1 pt-20">
                 {children}
               </main>
-              <Footer />
-            </div>
-            <Toaster />
-          </Web3Provider>
+                <Footer />
+              </div>
+              <Toaster />
+              <RentDomainPopup />
+            </Web3Provider>
+          </JotaiProvider>
         </ThemeProvider>
       </body>
     </html>

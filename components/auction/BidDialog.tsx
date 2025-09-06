@@ -31,6 +31,8 @@ import { formatTransactionError } from "@/lib/utils/auction";
 import BidSuccessDialog from "./BidSuccessDialog";
 import type { Listing, NFTMetadata } from "@/lib/graphql/types";
 import { DOMAIN_AUCTION_HOUSE_ABI } from "@/hooks";
+import { useAtom } from "jotai";
+import { bidSubmissionLoadingAtom } from "@/atoms/loading";
 
 interface BidDialogProps {
   isOpen: boolean;
@@ -48,7 +50,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
   const [successBidType, setSuccessBidType] = useState<
     "bid" | "purchase" | "commit"
   >("bid");
-  const [isSubmitting, setIsSubmitting] = useState(false); // Local loading state for immediate feedback
+  const [isSubmitting, setIsSubmitting] = useAtom(bidSubmissionLoadingAtom);
 
   // Manual transaction tracking - independent of wagmi state
   const [manualTransactionStates, setManualTransactionStates] = useState<{

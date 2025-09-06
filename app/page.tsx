@@ -6,15 +6,12 @@ import { Features } from '@/components/sections/Features'
 import { HowItWorks } from '@/components/sections/HowItWorks'
 import { CTASection } from '@/components/sections/CTASection'
 import { domainsService, auctionsService } from '@/lib/services'
-import { useUserStore } from '@/lib/store'
-import { ArrowRight, TrendingUp, Users, DollarSign } from 'lucide-react'
 import type { Domain, Auction } from '@/types'
 
 export default function HomePage() {
   const [domains, setDomains] = useState<Domain[]>([])
   const [auctions, setAuctions] = useState<Auction[]>([])
   const [loading, setLoading] = useState(true)
-  const { fetchUser } = useUserStore()
 
   useEffect(() => {
     const loadData = async () => {
@@ -33,8 +30,7 @@ export default function HomePage() {
     }
 
     loadData()
-    fetchUser()
-  }, [fetchUser])
+  }, [])
 
   const activeAuctions = auctions
     .filter(auction => auction.status === 'active')

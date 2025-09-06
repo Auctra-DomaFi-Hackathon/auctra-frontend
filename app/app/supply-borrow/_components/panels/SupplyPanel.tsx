@@ -300,7 +300,6 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
                     height={10}
                     className="rounded-full"
                   />
-                  USDC
                 </span>
               </div>
               <div className="relative">
@@ -422,7 +421,6 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
                     height={10}
                     className="rounded-full"
                   />
-                  USDC
                 </span>
               </div>
               <div className="relative">
@@ -529,7 +527,6 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
               </span>
               <span className="font-medium flex items-center gap-1 text-gray-900 dark:text-white">
                 <span>{getUserSuppliedAmount()}</span>
-                USDC
                 <Image
                   src="/images/LogoCoin/usd-coin-usdc-logo.png"
                   alt="USDC"

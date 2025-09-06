@@ -42,8 +42,9 @@ export default function StepReserve({
           step="0.00001"
           min="0.00001"
           placeholder="0.0001"
-          showDomaLogo={true}
+          showEthlogo={true}
         />
+
 
         <div className="flex items-center gap-3">
           <Button variant="outline" onClick={handleSuggestReserve}>

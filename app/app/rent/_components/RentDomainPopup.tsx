@@ -17,14 +17,19 @@ import { useRentDomain, RentalCostBreakdown } from "@/hooks/useRentDomain";
 import { useToast } from "@/hooks/use-toast";
 import { Info, BadgeInfo, Clock, CheckCircle, Loader2, ExternalLink, AlertCircle, Wallet } from "lucide-react";
 import { useAccount } from "wagmi";
+import { useAtom } from "jotai";
+import { rentDialogAtom, closeRentDialogAtom } from "@/atoms/rentals";
 
-interface RentDomainPopupProps {
-  listing: ListingWithMeta;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-export default function RentDomainPopup({ listing, open, onOpenChange }: RentDomainPopupProps) {
+export default function RentDomainPopup() {
+  const [rentDialogState] = useAtom(rentDialogAtom);
+  const [, closeRentDialog] = useAtom(closeRentDialogAtom);
+  
+  const { open, listing } = rentDialogState;
+  
+  // Early return if no listing
+  if (!listing) {
+    return null;
+  }
   const [days, setDays] = useState(listing.listing.minDays);
   const [costBreakdown, setCostBreakdown] = useState<RentalCostBreakdown | null>(null);
   const [currentStep, setCurrentStep] = useState<1 | 2>(1); // Step 1: Approve USDC, Step 2: Rent Domain
@@ -109,10 +114,10 @@ export default function RentDomainPopup({ listing, open, onOpenChange }: RentDom
         ),
         duration: 15000, // Extended duration so user can click the link
       });
-      onOpenChange(false);
+      closeRentDialog();
       // Remove the page reload - let user manually refresh if needed
     }
-  }, [isConfirmed, currentAction, listing.domain, listing.tld, days, hash, toast, onOpenChange]);
+  }, [isConfirmed, currentAction, listing.domain, listing.tld, days, hash, toast, closeRentDialog]);
 
   // Handle errors
   useEffect(() => {
@@ -172,12 +177,12 @@ export default function RentDomainPopup({ listing, open, onOpenChange }: RentDom
   const handleClose = () => {
     resetAction();
     setCurrentStep(1);
-    onOpenChange(false);
+    closeRentDialog();
   };
 
   if (!address) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={() => closeRentDialog()}>
         <DialogContent className="sm:max-w-md dark:bg-gray-800 dark:border-gray-700">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -190,7 +195,7 @@ export default function RentDomainPopup({ listing, open, onOpenChange }: RentDom
               Please connect your wallet to rent this domain.
             </p>
           </div>
-          <Button onClick={() => onOpenChange(false)} className="w-full">
+          <Button onClick={() => closeRentDialog()} className="w-full">
             Close
           </Button>
         </DialogContent>
@@ -200,7 +205,7 @@ export default function RentDomainPopup({ listing, open, onOpenChange }: RentDom
 
   if (!costBreakdown) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={() => closeRentDialog()}>
         <DialogContent className="sm:max-w-md dark:bg-gray-800 dark:border-gray-700">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white">

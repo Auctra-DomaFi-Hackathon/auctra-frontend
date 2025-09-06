@@ -89,6 +89,9 @@ importers:
       gsap:
         specifier: ^3.13.0
         version: 3.13.0
+      jotai:
+        specifier: ^2.13.1
+        version: 2.13.1(@babel/core@7.28.3)(@babel/template@7.27.2)(@types/react@18.3.23)(react@18.3.1)
       js-sha3:
         specifier: ^0.9.3
         version: 0.9.3
@@ -131,9 +134,6 @@ importers:
       wagmi:
         specifier: ^2.16.4
         version: 2.16.4(@tanstack/query-core@5.85.3)(@tanstack/react-query@5.85.3(react@18.3.1))(@types/react@18.3.23)(bufferutil@4.0.9)(immer@10.1.1)(react@18.3.1)(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.34.0(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.22.4))(zod@3.22.4)
-      zustand:
-        specifier: ^4.4.1
-        version: 4.5.7(@types/react@18.3.23)(immer@10.1.1)(react@18.3.1)
     devDependencies:
       '@testing-library/jest-dom':
         specifier: ^6.1.4
@@ -3353,6 +3353,24 @@ packages:
   jiti@1.21.7:
     resolution: {integrity: sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==}
     hasBin: true
+
+  jotai@2.13.1:
+    resolution: {integrity: sha512-cRsw6kFeGC9Z/D3egVKrTXRweycZ4z/k7i2MrfCzPYsL9SIWcPXTyqv258/+Ay8VUEcihNiE/coBLE6Kic6b8A==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@babel/core': '>=7.0.0'
+      '@babel/template': '>=7.0.0'
+      '@types/react': '>=17.0.0'
+      react: '>=17.0.0'
+    peerDependenciesMeta:
+      '@babel/core':
+        optional: true
+      '@babel/template':
+        optional: true
+      '@types/react':
+        optional: true
+      react:
+        optional: true
 
   js-sha3@0.9.3:
     resolution: {integrity: sha512-BcJPCQeLg6WjEx3FE591wVAevlli8lxsxm9/FzV4HXkV49TmBH38Yvrpce6fjbADGMKFrBMGTqrVz3qPIZ88Gg==}
@@ -9374,6 +9392,13 @@ snapshots:
       '@pkgjs/parseargs': 0.11.0
 
   jiti@1.21.7: {}
+
+  jotai@2.13.1(@babel/core@7.28.3)(@babel/template@7.27.2)(@types/react@18.3.23)(react@18.3.1):
+    optionalDependencies:
+      '@babel/core': 7.28.3
+      '@babel/template': 7.27.2
+      '@types/react': 18.3.23
+      react: 18.3.1
 
   js-sha3@0.9.3: {}
 

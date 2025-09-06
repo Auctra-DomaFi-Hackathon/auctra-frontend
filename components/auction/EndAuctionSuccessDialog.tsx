@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useAtom } from "jotai";
 import {
   Dialog,
   DialogContent,
@@ -9,24 +10,19 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ExternalLink } from "lucide-react";
+import { endAuctionSuccessAtom, closeEndAuctionSuccessAtom } from "@/atoms/transactions";
 
-interface EndAuctionSuccessDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  transactionHash: `0x${string}`;
-  domain: string;
-}
+export default function EndAuctionSuccessDialog() {
+  const [successState] = useAtom(endAuctionSuccessAtom);
+  const [, closeSuccess] = useAtom(closeEndAuctionSuccessAtom);
 
-export default function EndAuctionSuccessDialog({
-  open,
-  onOpenChange,
-  transactionHash,
-  domain,
-}: EndAuctionSuccessDialogProps) {
-  const explorerUrl = `https://explorer-testnet.doma.xyz/tx/${transactionHash}`;
+  if (!successState.open || !successState.hash || !successState.domain) {
+    return null;
+  }
+  const explorerUrl = `https://explorer-testnet.doma.xyz/tx/${successState.hash}`;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={successState.open} onOpenChange={() => closeSuccess()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center justify-center mb-4">
@@ -42,7 +38,7 @@ export default function EndAuctionSuccessDialog({
         <div className="space-y-4">
           <div className="text-center">
             <p className="text-gray-600 dark:text-gray-400">
-              The auction for <span className="font-semibold text-gray-900 dark:text-white">{domain}</span> has been ended successfully.
+              The auction for <span className="font-semibold text-gray-900 dark:text-white">{successState.domain}</span> has been ended successfully.
             </p>
           </div>
 
@@ -56,7 +52,7 @@ export default function EndAuctionSuccessDialog({
                 onClick={() => window.open(explorerUrl, '_blank')}
               >
                 <span className="mr-1">
-                  {transactionHash.slice(0, 6)}...{transactionHash.slice(-4)}
+                  {successState.hash.slice(0, 6)}...{successState.hash.slice(-4)}
                 </span>
                 <ExternalLink className="w-3 h-3" />
               </Button>
@@ -73,7 +69,7 @@ export default function EndAuctionSuccessDialog({
               View Transaction
             </Button>
             <Button
-              onClick={() => onOpenChange(false)}
+              onClick={() => closeSuccess()}
               className="flex-1"
             >
               Done

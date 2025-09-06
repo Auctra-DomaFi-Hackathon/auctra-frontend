@@ -26,6 +26,7 @@ import {
   parseUSDC,
   formatAPR,
   formatHealthFactor,
+  calculateCurrentDebt,
 } from "@/hooks/useLendingPool";
 import { useAccount } from "wagmi";
 import { toast } from "@/hooks/use-toast";
@@ -53,6 +54,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
     userPosition,
     usdcBalance,
     usdcAllowance,
+    userTotalDebt,
     approveUSDC,
     depositCollateral,
     withdrawCollateral,
@@ -89,6 +91,21 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
   // Define computed values first
   const hasCollateral = userPosition.collateral.active;
   const hasDebt = userPosition.debt.principal > BigInt(0);
+
+  // Get the real current debt amount
+  const getCurrentDebt = () => {
+    // Use userTotalDebt if available (from contract call), otherwise calculate
+    if (userTotalDebt && userTotalDebt > BigInt(0)) {
+      return userTotalDebt;
+    }
+
+    // Fallback to calculated debt
+    return calculateCurrentDebt(
+      userPosition.debt.principal,
+      userPosition.debt.lastAccrued,
+      poolData.aprBps
+    );
+  };
 
   // Function to fetch NFT metadata from tokenId using Doma API
   const fetchNFTMetadata = async (tokenId: string): Promise<NFTMetadata> => {
@@ -181,6 +198,8 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
         case "approve-usdc":
           title = "USDC Approval Successful";
           description = "Successfully approved USDC spending";
+          // Reset needsApproval after successful USDC approval
+          setNeedsApproval(false);
           break;
         case "borrow":
           title = "USDC Borrow Successful";
@@ -256,10 +275,15 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
 
   const handleMaxRepay = () => {
     if (userPosition.debt.principal && typeof usdcBalance === "bigint") {
+      // Get the real current debt amount
+      const currentDebt = getCurrentDebt();
+
+      // Add buffer (0.5 USDC) to handle any remaining debt due to precision issues
+      const buffer = parseUSDC("0.5");
+      const debtWithBuffer = currentDebt + buffer;
+
       const maxRepay =
-        userPosition.debt.principal < usdcBalance
-          ? userPosition.debt.principal
-          : usdcBalance;
+        debtWithBuffer < usdcBalance ? debtWithBuffer : usdcBalance;
       setRepayAmount(formatUSDC(maxRepay));
     }
   };
@@ -388,10 +412,13 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 dark:text-white text-xl">
-             <Globe className=" text-blue-600 dark:text-gray-400" />
+            <Globe className=" text-blue-600 dark:text-gray-400" />
             Borrow USDC with Domain Collateral
           </CardTitle>
-          <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800">
+          <Badge
+            variant="secondary"
+            className="bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800"
+          >
             <TrendingDown className="h-3 w-3 mr-1" />
             {getBorrowAPR()} APR
           </Badge>
@@ -399,7 +426,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
       </CardHeader>
 
       <CardContent className="p-6 pt-0">
-                {/* Collateral Status */}
+        {/* Collateral Status */}
         {!hasCollateral ? (
           <div className="mb-6">
             <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/20 dark:border-amber-800">
@@ -584,11 +611,10 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                       <Image
                         src="/images/LogoCoin/usd-coin-usdc-logo.png"
                         alt="USDC"
-                        width={10}
+                        width={12}
                         height={10}
                         className="rounded-full"
                       />
-                      USDC
                     </span>
                   </div>
                   <div className="relative">
@@ -616,7 +642,6 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                           height={12}
                           className="rounded-full"
                         />
-                        USDC
                       </span>
                     </div>
                   </div>
@@ -625,13 +650,17 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                 {borrowAmount && (
                   <div className="p-3 bg-blue-50 rounded-lg dark:bg-blue-900/20 dark:border dark:border-blue-800">
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600 dark:text-gray-400">Borrow APR</span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Borrow APR
+                      </span>
                       <span className="font-medium text-blue-600 dark:text-blue-400">
                         {getBorrowAPR()}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">New Health Factor</span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        New Health Factor
+                      </span>
                       <span
                         className={`font-medium ${getHealthFactorColor(
                           calculateNewHealthFactor()
@@ -661,15 +690,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                   ) : (
                     <>
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Borrow
-                      <Image
-                        src="/images/LogoCoin/usd-coin-usdc-logo.png"
-                        alt="USDC"
-                        width={14}
-                        height={14}
-                        className="rounded-full mx-1"
-                      />
-                      USDC
+                      Borrow USDC
                     </>
                   )}
                 </Button>
@@ -683,7 +704,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                       Repay Amount
                     </label>
                     <span className="text-xs text-gray-500 flex items-center gap-1 dark:text-gray-400">
-                      Debt: {formatUSDC(userPosition.debt.principal)}
+                      Debt: {formatUSDC(getCurrentDebt())}
                       <Image
                         src="/images/LogoCoin/usd-coin-usdc-logo.png"
                         alt="USDC"
@@ -691,7 +712,6 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                         height={10}
                         className="rounded-full"
                       />
-                      USDC
                     </span>
                   </div>
                   <div className="relative">
@@ -779,15 +799,7 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                     ) : (
                       <>
                         <ArrowRight className="h-4 w-4 mr-2" />
-                        Repay
-                        <Image
-                          src="/images/LogoCoin/usd-coin-usdc-logo.png"
-                          alt="USDC"
-                          width={14}
-                          height={14}
-                          className="rounded-full mx-1"
-                        />
-                        USDC
+                        Repay USDC
                       </>
                     )}
                   </Button>
@@ -802,7 +814,9 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
         {/* Pool Stats */}
         <div className="grid grid-cols-2 gap-4">
           <div className="text-center">
-            <div className="text-sm text-gray-500 mb-1 dark:text-gray-400">Total Borrowed</div>
+            <div className="text-sm text-gray-500 mb-1 dark:text-gray-400">
+              Total Borrowed
+            </div>
             <div className="font-semibold flex items-center justify-center gap-1 dark:text-white">
               <span>{formatUSDC(poolData.totalDebt)}</span>
               USDC
@@ -816,7 +830,9 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
             </div>
           </div>
           <div className="text-center">
-            <div className="text-sm text-gray-500 mb-1 dark:text-gray-400">LTV Ratio</div>
+            <div className="text-sm text-gray-500 mb-1 dark:text-gray-400">
+              LTV Ratio
+            </div>
             <div className="font-semibold dark:text-white">
               {(poolData.ltvBps / 100).toFixed(0)}%
             </div>
@@ -832,15 +848,19 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
             </h4>
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Collateral Value</span>
+                <span className="text-gray-600 dark:text-gray-400">
+                  Collateral Value
+                </span>
                 <span className="font-medium dark:text-white">
                   ${formatUSDC(userPosition.collateral.valueUsd6)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Borrowed Amount</span>
+                <span className="text-gray-600 dark:text-gray-400">
+                  Borrowed Amount
+                </span>
                 <span className="font-medium flex items-center gap-1 dark:text-white">
-                  <span>{formatUSDC(userPosition.debt.principal)}</span>
+                  <span>{formatUSDC(getCurrentDebt())}</span>
                   USDC
                   <Image
                     src="/images/LogoCoin/usd-coin-usdc-logo.png"
@@ -852,7 +872,9 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Health Factor</span>
+                <span className="text-gray-600 dark:text-gray-400">
+                  Health Factor
+                </span>
                 <span
                   className={`font-medium ${getHealthFactorColor(
                     userPosition.healthFactor
@@ -862,7 +884,9 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Max Borrowable</span>
+                <span className="text-gray-600 dark:text-gray-400">
+                  Max Borrowable
+                </span>
                 <span className="font-medium flex items-center gap-1 dark:text-white">
                   <span>{formatUSDC(userPosition.maxBorrowable)}</span>
                   USDC

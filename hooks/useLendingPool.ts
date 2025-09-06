@@ -142,6 +142,14 @@ export function useLendingPool() {
     args: address ? [address, CONTRACTS.DomainLendingPool] : undefined,
   })
 
+  // Try to get user's real total debt (if such function exists)
+  const { data: userTotalDebt } = useReadContract({
+    address: CONTRACTS.DomainLendingPool as `0x${string}`,
+    abi: DOMAIN_LENDING_POOL_ABI,
+    functionName: 'totalDebt',
+    args: address ? [address] : undefined,
+  })
+
   // Aggregate loading state for pool data
   const isLoadingPoolData = isLoadingTotalAssets || isLoadingTotalDebt || isLoadingExchangeRate || 
     isLoadingCurrentRate || isLoadingUtilization || isLoadingLtv || isLoadingLiqThreshold || isLoadingApr
@@ -261,6 +269,7 @@ export function useLendingPool() {
     userPosition,
     usdcBalance: (usdcBalance as bigint) || BigInt(0),
     usdcAllowance: (usdcAllowance as bigint) || BigInt(0),
+    userTotalDebt: (userTotalDebt as bigint) || BigInt(0),
     
     // Loading states
     isLoadingPoolData,
@@ -302,4 +311,25 @@ export const formatAPR = (bps: number) => {
 export const formatHealthFactor = (healthFactor: bigint) => {
   if (healthFactor === BigInt(0)) return '∞'
   return (Number(healthFactor) / 1e18).toFixed(2)
+}
+
+// Calculate current debt with accrued interest
+export const calculateCurrentDebt = (
+  principal: bigint,
+  lastAccruedTimestamp: bigint,
+  aprBps: number
+): bigint => {
+  if (principal === BigInt(0)) return BigInt(0)
+  
+  const currentTimestamp = BigInt(Math.floor(Date.now() / 1000))
+  const timeElapsed = currentTimestamp - lastAccruedTimestamp
+  
+  if (timeElapsed <= BigInt(0)) return principal
+  
+  // Calculate accrued interest: principal * (apr / 10000) * (timeElapsed / 31536000)
+  // 31536000 = seconds in a year
+  const secondsInYear = BigInt(31536000)
+  const interest = (principal * BigInt(aprBps) * timeElapsed) / (BigInt(10000) * secondsInYear)
+  
+  return principal + interest
 }

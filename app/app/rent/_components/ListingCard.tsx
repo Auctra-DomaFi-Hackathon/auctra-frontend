@@ -1,21 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Shield } from "lucide-react";
-import RentDomainPopup from "./RentDomainPopup";
 import { ListingWithMeta } from "@/lib/rental/types";
 import { formatUSD, formatDate, getDaysLeft } from "@/lib/rental/format";
+import { useAtom } from "jotai";
+import { openRentDialogAtom } from "@/atoms/rentals";
 
 interface ListingCardProps {
   listing: ListingWithMeta;
 }
 
 export default function ListingCard({ listing }: ListingCardProps) {
-  const [showRentDialog, setShowRentDialog] = useState(false);
+  const [, openRentDialog] = useAtom(openRentDialogAtom);
 
   const isRented = !!listing.rental;
   const isPaused = listing.listing.paused;
@@ -153,7 +152,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
 
         <CardFooter className="p-4 pt-0 sm:p-5">
           <Button
-            onClick={() => setShowRentDialog(true)}
+            onClick={() => openRentDialog(listing)}
             disabled={!isAvailable}
             className={`h-9 w-full rounded-lg text-[13px] ${
               isAvailable
@@ -166,14 +165,6 @@ export default function ListingCard({ listing }: ListingCardProps) {
           </Button>
         </CardFooter>
       </Card>
-
-      {showRentDialog && isAvailable && (
-        <RentDomainPopup
-          listing={listing}
-          open={showRentDialog}
-          onOpenChange={setShowRentDialog}
-        />
-      )}
     </>
   );
 }

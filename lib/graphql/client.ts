@@ -23,7 +23,7 @@ export const apolloClient = new ApolloClient({
 
 // Listings GraphQL client
 const listingsHttpLink = createHttpLink({ 
-  uri: process.env.NEXT_PUBLIC_LISTINGS_GRAPHQL_ENDPOINT || 'http://localhost:42069/graphql'
+  uri: process.env.NEXT_PUBLIC_LISTINGS_GRAPHQL_ENDPOINT || 'https://api-testnet.doma.xyz/graphql'
 });
 
 export const listingsApolloClient = new ApolloClient({

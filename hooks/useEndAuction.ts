@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { DOMAIN_AUCTION_HOUSE_ABI } from './contracts/abis';
+import { CONTRACTS } from './contracts/constants'
 
-const DOMAIN_AUCTION_HOUSE_ADDRESS = "0xb9a2de3a8c6d72df0bc04fa5ba3a2bbab6de11c9" as const;
 
 interface EndAuctionState {
   isLoading: boolean;
@@ -38,7 +38,7 @@ export function useEndAuction() {
 
     try {
       writeContract({
-        address: DOMAIN_AUCTION_HOUSE_ADDRESS,
+        address: CONTRACTS.DomainAuctionHouse,
         abi: DOMAIN_AUCTION_HOUSE_ABI,
         functionName: 'endAuction',
         args: [BigInt(listingId)],

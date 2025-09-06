@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ExternalLink, TrendingUp, Coins } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type DomainListItem } from "../data/mockDomains";
+import { type DomainListItem } from "../types/types";
 import Image from "next/image";
 
 interface DomainCardProps {
