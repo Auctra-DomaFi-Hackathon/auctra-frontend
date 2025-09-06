@@ -719,7 +719,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
               variant={isStrategySet ? "default" : "outline"}
               className={
                 isStrategySet
-                  ? "bg-purple-100 text-purple-700"
+                  ? "bg-blue-100 text-white-700"
                   : "text-gray-500"
               }
             >

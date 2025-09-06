@@ -50,7 +50,7 @@ export function getTone(kind: EventKind, title: string) {
       case 'Rental Ended': return { bg: 'bg-gray-50', border: 'border-gray-200', icon: 'text-gray-600' }
       case 'Security Deposit Locked': return { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-600' }
       case 'Security Deposit Claimed': return { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-700' }
-      default: return { bg: 'bg-purple-50', border: 'border-purple-200', icon: 'text-purple-700' }
+      default: return { bg: 'bg-blue-50', border: 'border-purple-200', icon: 'text-white-700' }
     }
   }
   return { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-700' }

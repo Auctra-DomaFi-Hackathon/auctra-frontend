@@ -174,7 +174,7 @@ export default function AuctionDetailsDialog({
                 <Badge 
                   className={`${
                     listing.status === 'Listed' 
-                      ? 'bg-green-100 text-green-700 border-green-200' 
+                      ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200  ' 
                       : listing.status === 'Sold'
                       ? 'bg-blue-100 text-blue-700 border-blue-200'
                       : 'bg-gray-100 text-gray-700 border-gray-200'
@@ -187,7 +187,7 @@ export default function AuctionDetailsDialog({
               {/* Auction Type */}
               <div className="mb-4">
                 <div className="text-sm text-gray-600 mb-1">Auction Type</div>
-                <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                <Badge className="bg-blue-100 text-black border-black-200 hover:bg-blue-200">
                   {strategyName}
                 </Badge>
               </div>

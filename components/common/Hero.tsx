@@ -37,7 +37,7 @@ export function Hero() {
       href: "https://tailwindcss.com",
     },
     {
-      node: <SiEthereum className="text-purple-600" />,
+      node: <SiEthereum className="text-white-600" />,
       title: "Ethereum",
       href: "https://ethereum.org",
     },

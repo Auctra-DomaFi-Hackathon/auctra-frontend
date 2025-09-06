@@ -37,12 +37,16 @@ export default function ListingGrid({
   const [isBidDialogOpen, setIsBidDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [selectedListingId, setSelectedListingId] = useState<string>("");
-  
+
   // Current prices for Dutch auctions
-  const [currentPrices, setCurrentPrices] = useState<{[listingId: string]: string}>({});
-  
+  const [currentPrices, setCurrentPrices] = useState<{
+    [listingId: string]: string;
+  }>({});
+
   // Auction times from contract
-  const [auctionTimes, setAuctionTimes] = useState<{[listingId: string]: {startTime: number, endTime: number}}>({});
+  const [auctionTimes, setAuctionTimes] = useState<{
+    [listingId: string]: { startTime: number; endTime: number };
+  }>({});
   const publicClient = usePublicClient();
 
   const handlePlaceBid = (listing: ListingWithMetadata) => {
@@ -55,81 +59,55 @@ export default function ListingGrid({
     setIsDetailsDialogOpen(true);
   };
 
-  // Fetch current prices for Dutch auctions and auction times for all auctions
+  // Fetch current prices and times
   useEffect(() => {
     const fetchAuctionData = async () => {
       if (!publicClient || listings.length === 0) return;
 
-      // Fetch current prices for Dutch auctions
+      // Dutch current price
       const dutchListings = listings.filter(
-        listing => getStrategyName(listing.strategy) === "Dutch Auction"
+        (l) => getStrategyName(l.strategy) === "Dutch Auction",
       );
 
-      // Fetch Dutch auction prices using previewCurrentPrice from DomainAuctionHouse
       const pricePromises = dutchListings.map(async (listing) => {
         try {
-          console.log(`🔍 Fetching current price for Dutch auction ${listing.id} via previewCurrentPrice`);
-          
-          // Use previewCurrentPrice from DomainAuctionHouse contract
-          const currentPriceWei = await publicClient.readContract({
+          const currentPriceWei = (await publicClient.readContract({
             address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
             abi: DOMAIN_AUCTION_HOUSE_ABI,
-            functionName: 'previewCurrentPrice',
+            functionName: "previewCurrentPrice",
             args: [BigInt(listing.id)],
-          }) as bigint;
-          
-          console.log(`💰 Current price for ${listing.id} via previewCurrentPrice:`, {
-            wei: currentPriceWei.toString(),
-            eth: formatEther(currentPriceWei.toString())
-          });
-          
-          return {
-            listingId: listing.id,
-            price: currentPriceWei.toString(),
-            success: true
-          };
-        } catch (error) {
-          console.warn(`⚠️ Failed to get current price for listing ${listing.id} via previewCurrentPrice, using reserve price:`, error instanceof Error ? error.message : 'Unknown error');
-          return {
-            listingId: listing.id,
-            price: listing.reservePrice,
-            success: false
-          };
+          })) as bigint;
+
+          return { listingId: listing.id, price: currentPriceWei.toString() };
+        } catch {
+          return { listingId: listing.id, price: listing.reservePrice };
         }
       });
 
       const priceResults = await Promise.allSettled(pricePromises);
-      
-      // Update prices based on results
-      priceResults.forEach((result) => {
-        if (result.status === 'fulfilled') {
-          const { listingId, price } = result.value;
-          setCurrentPrices(prev => ({
-            ...prev,
-            [listingId]: price
-          }));
+      priceResults.forEach((r) => {
+        if (r.status === "fulfilled") {
+          const { listingId, price } = r.value;
+          setCurrentPrices((p) => ({ ...p, [listingId]: price }));
         }
       });
 
-      // Fetch auction times for all listings
+      // start & end time
       for (const listing of listings) {
         try {
-          const listingData = await publicClient.readContract({
+          const data = (await publicClient.readContract({
             address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
             abi: DOMAIN_AUCTION_HOUSE_ABI,
-            functionName: 'listings',
+            functionName: "listings",
             args: [BigInt(listing.id)],
-          }) as readonly any[];
+          })) as readonly any[];
 
-          const startTime = Number(listingData[5]); // startTime is at index 5
-          const endTime = Number(listingData[6]); // endTime is at index 6
+          const startTime = Number(data[5]);
+          const endTime = Number(data[6]);
 
-          setAuctionTimes(prev => ({
-            ...prev,
-            [listing.id]: { startTime, endTime }
-          }));
-        } catch (error) {
-          console.error(`Failed to get auction times for listing ${listing.id}:`, error);
+          setAuctionTimes((p) => ({ ...p, [listing.id]: { startTime, endTime } }));
+        } catch {
+          /* noop */
         }
       }
     };
@@ -137,223 +115,212 @@ export default function ListingGrid({
     fetchAuctionData();
   }, [listings, publicClient]);
 
-  // Debug pagination props
-  console.log('📋 ListingGrid render:', { 
-    listingsCount: listings.length, 
-    currentPage, 
-    totalPages,
-    onPageChange: !!onPageChange
-  });
   if (!listings.length) {
     return (
-      <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-        <p className="text-gray-600 dark:text-gray-400">{emptyLabel}</p>
+      <div className="rounded-xl border border-neutral-200 bg-neutral-50 py-10 text-center text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300">
+        {emptyLabel}
       </div>
     );
   }
 
   const formatPrice = (priceWei: string) => {
     try {
-      // Get the full ETH value without parseFloat to avoid precision loss
-      const fullEthValue = formatEther(priceWei);
-      const ethNumber = parseFloat(fullEthValue);
-
-      // If the original Wei value is non-zero but parseFloat gives 0, use full precision
-      if (ethNumber === 0 && priceWei !== "0") {
-        return `${fullEthValue} ETH`;
-      }
-
-      // For very small values (less than 0.001), show more precision
-      if (ethNumber > 0 && ethNumber < 0.001) {
-        return `${parseFloat(fullEthValue).toFixed(6)} ETH`;
-      }
-
-      // For normal values, use standard formatting
-      return `${ethNumber.toLocaleString()} ETH`;
+      const full = formatEther(priceWei);
+      const n = parseFloat(full);
+      if (n === 0 && priceWei !== "0") return `${full} ETH`;
+      if (n > 0 && n < 0.001) return `${n.toFixed(6)} ETH`;
+      return `${n.toLocaleString()} ETH`;
     } catch {
       return `${priceWei} wei`;
     }
   };
 
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
+  const formatAddress = (address: string) =>
+    `${address.slice(0, 6)}…${address.slice(-4)}`;
+
+  const Row = ({
+    label,
+    value,
+  }: {
+    label: string;
+    value: React.ReactNode;
+  }) => (
+    <div className="flex items-center justify-between text-[12.5px] text-neutral-600 dark:text-neutral-400">
+      <span>{label}</span>
+      <span className="text-neutral-800 dark:text-neutral-200">{value}</span>
+    </div>
+  );
+
+  const TypePill = ({ text }: { text: string }) => (
+    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:ring-blue-800">
+      {text}
+    </span>
+  );
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
-        {listings.map((listing) => (
-          <Card
-            key={listing.id}
-            className="hover:shadow-lg transition-shadow cursor-pointer bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-          >
-            <CardHeader className="space-y-2">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
-                    {listing.metadata?.name ||
-                      `Token #${listing.tokenId.slice(-8)}`}
-                  </h3>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {listings.map((listing) => {
+          const strategy = getStrategyName(listing.strategy);
+          const isDutch = strategy === "Dutch Auction";
+          const price = isDutch && currentPrices[listing.id]
+            ? currentPrices[listing.id]
+            : listing.reservePrice;
+
+          return (
+            <Card
+              key={listing.id}
+              className="group cursor-pointer rounded-2xl border border-neutral-200 bg-white shadow-sm transition-all hover:-translate-y-[1px] hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900"
+            >
+              {/* Header */}
+              <CardHeader className="space-y-1.5 p-4">
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="truncate text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">
+                        {listing.metadata?.name || `Token #${listing.tokenId.slice(-8)}`}
+                      </h3>
+                      <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-700 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:ring-neutral-700">
+                        {listing.metadata?.tld || ".eth"}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-[12px] text-neutral-500 dark:text-neutral-400">
+                      Seller: {formatAddress(listing.seller)}
+                    </div>
+                  </div>
                   <Badge
-                    variant="secondary"
-                    className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                    variant="outline"
+                    className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:ring-emerald-800"
                   >
-                    {listing.metadata?.tld || ".eth"}
+                    {listing.status}
                   </Badge>
                 </div>
-                <Badge
-                  variant="outline"
-                  className="text-green-600 dark:text-green-400 border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/30"
-                >
-                  {listing.status}
-                </Badge>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Seller: {formatAddress(listing.seller)}
-              </p>
-            </CardHeader>
+              </CardHeader>
 
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {getStrategyName(listing.strategy) === "Dutch Auction" 
-                    ? "Open bid:" 
-                    : getStrategyName(listing.strategy) === "English Auction"
-                    ? "Start bid:"
-                    : "Reserve Price:"
-                  }
-                </span>
-                <span className="font-bold text-lg text-blue-600 dark:text-blue-400">
-                  {getStrategyName(listing.strategy) === "Dutch Auction" && currentPrices[listing.id]
-                    ? formatPrice(currentPrices[listing.id])
-                    : formatPrice(listing.reservePrice)
-                  }
-                  <Image
-                    src="/images/LogoCoin/eth-logo.svg"
-                    alt="ETH"
-                    width={20}
-                    height={12}
-                    className="rounded-full inline-block ml-2 mb-1"
-                  />
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Auction Type:
-                </span>
-                <Badge
-                  variant={listing.strategy ? "default" : "outline"}
-                  className={
-                    listing.strategy
-                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-600 hover:text-white"
-                      : "text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600"
-                  }
-                >
-                  {getStrategyName(listing.strategy)}
-                </Badge>
-              </div>
-
-              {listing.metadata?.description && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                  {listing.metadata.description}
-                </p>
-              )}
-
-              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                <span>
-                  Domain Expires at:{" "}
-                  {listing.metadata?.expiresAt
-                    ? new Date(listing.metadata.expiresAt * 1000).toLocaleDateString()
-                    : 'Unknown'}
-                </span>
-                {/* <span>Token ID: {listing.tokenId.slice(0, 8)}...</span> */}
-              </div>
-
-              {/* Auction Start and End Times */}
-              {auctionTimes[listing.id] && (
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                    <span>Auction Start:</span>
-                    <span>
-                      {new Date(auctionTimes[listing.id].startTime * 1000).toLocaleString('id-ID', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                    <span>Auction End:</span>
-                    <span>
-                      {new Date(auctionTimes[listing.id].endTime * 1000).toLocaleString('id-ID', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-                {/* {listing.paymentToken ===
-                "0x0000000000000000000000000000000000000000" ? (
-                  <span className="font-bold text-blue-800 dark:text-blue-400">
-                    Payment: ETH 
+              <CardContent className="space-y-3 p-4">
+                {/* Price */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[12.5px] font-medium text-neutral-700 dark:text-neutral-300">
+                    {isDutch ? "Open bid" : strategy === "English Auction" ? "Start bid" : "Reserve"}
                   </span>
-                ) : (
-                  <span>Payment: {formatAddress(listing.paymentToken)}</span>
-                )} */}
-                <span className="font-bold text-blue-800 dark:text-blue-400">
-                  Chain
-                </span>
+                  <span className="font-mono text-[16px] font-semibold text-blue-600 dark:text-blue-400">
+                    {formatPrice(price)}
+                    <Image
+                      src="/images/LogoCoin/eth-logo.svg"
+                      alt="ETH"
+                      width={18}
+                      height={18}
+                      className="ml-1 inline-block align-[-3px]"
+                    />
+                  </span>
+                </div>
 
-                <div className="flex items-center gap-1">
+                {/* Type */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[12.5px] font-medium text-neutral-700 dark:text-neutral-300">
+                    Auction Type
+                  </span>
+                  <TypePill text={strategy} />
+                </div>
+
+                {/* Meta description (1 line) */}
+                {listing.metadata?.description && (
+                  <p className="line-clamp-1 text-[12.5px] text-neutral-600 dark:text-neutral-400">
+                    {listing.metadata.description}
+                  </p>
+                )}
+
+                {/* Domain + Expiry */}
+                <Row
+                  label="Domain"
+                  value={
+                    <span className="truncate font-medium">
+                      {listing.metadata?.name
+                        ? `${listing.metadata.name}${listing.metadata.tld || ""}`
+                        : "—"}
+                    </span>
+                  }
+                />
+                <Row
+                  label="Domain Expires"
+                  value={
+                    listing.metadata?.expiresAt
+                      ? new Date(listing.metadata.expiresAt * 1000).toLocaleDateString()
+                      : "Unknown"
+                  }
+                />
+
+                {/* Timeline */}
+                {auctionTimes[listing.id] && (
+                  <div className="space-y-1">
+                    <Row
+                      label="Auction Start"
+                      value={new Date(
+                        auctionTimes[listing.id].startTime * 1000,
+                      ).toLocaleString("id-ID", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    />
+                    <Row
+                      label="Auction End"
+                      value={new Date(
+                        auctionTimes[listing.id].endTime * 1000,
+                      ).toLocaleString("id-ID", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    />
+                  </div>
+                )}
+
+                {/* Chain */}
+                <div className="flex items-center justify-between pt-1 text-[12px]">
+                  <span className="font-semibold text-blue-800 dark:text-blue-300">
+                    Chain
+                  </span>
                   <Image
                     src="/images/logo/domaLogo.svg"
                     alt="Doma Chain"
-                    width={50}
-                    height={20}
-                    className="rounded-sm"
+                    width={46}
+                    height={16}
+                    className="opacity-90"
                   />
                 </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="pt-2 space-y-2">
-                <Button
-                  onClick={() => handlePlaceBid(listing)}
-                  disabled={
-                    !listing.strategy ||
-                    listing.strategy ===
-                      "0x0000000000000000000000000000000000000000"
-                  }
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  size="sm"
-                >
-                  {getStrategyName(listing.strategy) === "Dutch Auction"
-                    ? "Buy Now"
-                    : getStrategyName(listing.strategy) === "Sealed Bid Auction"
-                    ? "Commit Bid"
-                    : "Place Bid"}
-                </Button>
-                <Button
-                  onClick={() => handleViewDetails(listing)}
-                  variant="outline"
-                  className="w-full border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-600"
-                  size="sm"
-                >
-                  View Details
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                {/* Actions */}
+                <div className="pt-2">
+                  <Button
+                    onClick={() => handlePlaceBid(listing)}
+                    disabled={
+                      !listing.strategy ||
+                      listing.strategy ===
+                        "0x0000000000000000000000000000000000000000"
+                    }
+                    className="h-9 w-full rounded-lg bg-blue-600 text-[13px] hover:bg-blue-700"
+                    size="sm"
+                  >
+                    {isDutch ? "Buy Now" : strategy === "Sealed Bid Auction" ? "Commit Bid" : "Place Bid"}
+                  </Button>
+                  <Button
+                    onClick={() => handleViewDetails(listing)}
+                    variant="outline"
+                    className="mt-2 h-9 w-full rounded-lg border-blue-200 text-[13px] text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                    size="sm"
+                  >
+                    View Details
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Pagination */}
@@ -362,7 +329,7 @@ export default function ListingGrid({
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={onPageChange}
-          className="mt-8"
+          className="mt-6"
         />
       )}
 
