@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   Dialog,
@@ -16,6 +16,9 @@ import { getStrategyName } from "@/lib/utils/strategy";
 import BidDialog from "./BidDialog";
 import type { Listing, NFTMetadata } from "@/lib/graphql/types";
 import Link from "next/link";
+import { usePublicClient } from "wagmi";
+import { CONTRACTS } from "@/hooks/contracts/constants";
+import { DOMAIN_AUCTION_HOUSE_ABI } from "@/hooks/contracts/abis";
 
 interface AuctionDetailsDialogProps {
   isOpen: boolean;
@@ -29,7 +32,41 @@ export default function AuctionDetailsDialog({
   listingId,
 }: AuctionDetailsDialogProps) {
   const [isBidDialogOpen, setIsBidDialogOpen] = useState(false);
+  const [auctionTimes, setAuctionTimes] = useState<{startTime: number, endTime: number} | null>(null);
   const { listing, highestBid, allBids, loading, error } = useAuctionDetails(listingId);
+  const publicClient = usePublicClient();
+
+  // Fetch auction times from contract - same as ListingGrid
+  useEffect(() => {
+    const fetchAuctionTimes = async () => {
+      if (!publicClient || !listingId) return;
+      
+      try {
+        console.log(`🔍 Fetching auction times for listing ${listingId} from contract`);
+        
+        const listingData = await publicClient.readContract({
+          address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+          abi: DOMAIN_AUCTION_HOUSE_ABI,
+          functionName: 'listings',
+          args: [BigInt(listingId)],
+        }) as readonly any[];
+
+        const startTime = Number(listingData[5]); // startTime is at index 5
+        const endTime = Number(listingData[6]); // endTime is at index 6
+
+        console.log(`⏰ Auction times for ${listingId}:`, {
+          startTime: new Date(startTime * 1000).toLocaleString(),
+          endTime: new Date(endTime * 1000).toLocaleString()
+        });
+
+        setAuctionTimes({ startTime, endTime });
+      } catch (error) {
+        console.error(`Failed to get auction times for listing ${listingId}:`, error);
+      }
+    };
+
+    fetchAuctionTimes();
+  }, [listingId, publicClient]);
 
   if (loading) {
     return (
@@ -187,7 +224,7 @@ export default function AuctionDetailsDialog({
                 <div className="space-y-2">
                   {listing.startTime !== "0" && (
                     <div>
-                      <div className="text-sm text-gray-600">Start Time</div>
+                      <div className="text-sm text-gray-600">Auction Start:</div>
                       <div className="text-sm text-gray-800">
                         {formatTimestamp(listing.startTime)}
                       </div>
@@ -195,7 +232,7 @@ export default function AuctionDetailsDialog({
                   )}
                   {listing.endTime !== "0" && (
                     <div>
-                      <div className="text-sm text-gray-600">End Time</div>
+                      <div className="text-sm text-gray-600">Auction End:</div>
                       <div className="text-sm text-gray-800">
                         {formatTimestamp(listing.endTime)}
                       </div>
@@ -224,13 +261,59 @@ export default function AuctionDetailsDialog({
             </div>
 
             {/* Middle Column - NFT Preview (placeholder) */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100 flex items-center justify-center">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
               <div className="text-center">
-                <div className="w-48 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mb-4">
-                  <div className="text-blue-600 text-6xl">🌐</div>
+                <div className="w-48 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                  <Image src="/images/logo/auctraLogo.png" alt="NFT Preview" width={192} height={192} />
                 </div>
                 <div className="text-sm text-gray-600">NFT Preview</div>
-                <div className="text-xs text-gray-500 mt-1">Token ID: {listing.tokenId.slice(-12)}</div>
+                <div className="text-xs text-gray-500 mt-1 mb-4">Token ID: {listing.tokenId.slice(-12)}</div>
+                
+                {/* Auction Start and End Times - ListingGrid Style */}
+                {auctionTimes && (
+                  <div className="space-y-1 mb-4">
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>Auction Start:</span>
+                      <span>
+                        {new Date(auctionTimes.startTime * 1000).toLocaleString('id-ID', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>Auction End:</span>
+                      <span>
+                        {new Date(auctionTimes.endTime * 1000).toLocaleString('id-ID', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Chain - ListingGrid Style */}
+                <div className="flex justify-between items-center text-xs text-gray-500">
+                  <span className="font-bold text-blue-800">
+                    Chain
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Image
+                      src="/images/logo/domaLogo.svg"
+                      alt="Doma Chain"
+                      width={50}
+                      height={20}
+                      className="rounded-sm"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
