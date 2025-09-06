@@ -264,7 +264,7 @@ export default function AuctionDetailsDialog({
             <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
               <div className="text-center">
                 <div className="w-48 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                  <Image src="/images/logo/auctraLogo.png" alt="NFT Preview" width={192} height={192} />
+                  <Image src="/images/logo/dom.png" alt="NFT Preview" width={192} height={192} />
                 </div>
                 <div className="text-sm text-gray-600">NFT Preview</div>
                 <div className="text-xs text-gray-500 mt-1 mb-4">Token ID: {listing.tokenId.slice(-12)}</div>
