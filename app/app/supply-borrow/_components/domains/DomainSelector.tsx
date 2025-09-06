@@ -89,21 +89,21 @@ export default function DomainSelector({ onDomainSelect, selectedDomain, disable
   if (selectedDomain) {
     const { name, tld } = formatDomainName(selectedDomain)
     return (
-      <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
+      <Card className="border-blue-200 bg-white dark:border-blue-800 dark:bg-blue-900/20">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center dark:bg-green-900/30">
-                <Globe className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center dark:bg-blue-900/30">
+                <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-green-800 dark:text-green-300">{name}</span>
-                  <Badge variant="outline" className="text-xs border-green-300 text-green-700 dark:border-green-700 dark:text-green-400 dark:bg-green-900/20">
+                  <span className="font-semibold text-blue-800 dark:text-blue-300">{name}</span>
+                  <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400 dark:bg-blue-900/20">
                     {tld}
                   </Badge>
                 </div>
-                <div className="text-xs text-green-600 mt-1 dark:text-green-400">
+                <div className="text-xs text-blue-600 mt-1 dark:text-blue-400">
                   Token ID: {(() => {
                     const tokenId = selectedDomain.tokenId?.toString();
                     if (!tokenId) return 'N/A';
@@ -116,7 +116,7 @@ export default function DomainSelector({ onDomainSelect, selectedDomain, disable
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" disabled={disabled}>
@@ -152,7 +152,7 @@ export default function DomainSelector({ onDomainSelect, selectedDomain, disable
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Card className="border-dashed border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50/30 transition-colors cursor-pointer dark:border-gray-600 dark:hover:border-blue-500 dark:hover:bg-blue-900/20">
+        <Card className="border-dashed border-2 border-gray-300 hover:border-blue-400 hover:bg-white/30 transition-colors cursor-pointer dark:border-gray-600 dark:hover:border-blue-500 dark:hover:bg-blue-900/20">
           <CardContent className="p-6">
             <div className="flex items-center justify-center gap-3 text-gray-600 dark:text-gray-400">
               <Globe className="h-8 w-8" />
@@ -292,7 +292,7 @@ function DomainSelectionContent({
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center dark:bg-blue-900/30">
+                        <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center dark:bg-blue-900/30">
                           <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div>

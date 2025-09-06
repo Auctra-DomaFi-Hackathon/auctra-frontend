@@ -8,6 +8,8 @@ const toCaip10 = (addr: string) =>
   `${DOMA_TESTNET}:${addr.trim().toLowerCase()}`;
 
 export interface EnhancedDomainItem extends DomainItem {
+  createdAt: any;
+  owner: any;
   tokenAddress?: string;
   tokenId?: string;
   tokenChain?: string; // pakai networkId jika ada

@@ -4,12 +4,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Check, Shield, Clock, DollarSign, Hash, Loader2, ExternalLink, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Shield,
+  Clock,
+  DollarSign,
+  Hash,
+  Loader2,
+  ExternalLink,
+  CheckCircle,
+} from "lucide-react";
 import { formatUSD, shortAddress, parseUSDCInput } from "@/lib/rental/format";
 import { useState, useEffect } from "react";
 import { apolloClient } from "@/lib/graphql/client";
 import { GET_NAME_FROM_TOKEN_QUERY } from "@/lib/graphql/queries";
-import type { NameFromTokenResponse, NameFromTokenVariables, NFTMetadata } from "@/lib/graphql/types";
+import type {
+  NameFromTokenResponse,
+  NameFromTokenVariables,
+  NFTMetadata,
+} from "@/lib/graphql/types";
 
 interface StepPreviewProps {
   nftAddress: string;
@@ -19,9 +33,9 @@ interface StepPreviewProps {
   minDays: string;
   maxDays: string;
   onBack: () => void;
-  onSubmit: () => void; // Step 1: Approve NFT
-  onCreateRental?: () => void; // Step 2: Create Rental
-  onSetTerms?: () => void; // Step 3: Set Terms
+  onSubmit: () => void; // Step 1
+  onCreateRental?: () => void; // Step 2
+  onSetTerms?: () => void; // Step 3
   loading?: boolean;
   error?: string;
   flowStep?: string;
@@ -65,381 +79,293 @@ export default function StepPreview({
   const depositUSDC = parseUSDCInput(securityDeposit);
   const minDaysNum = parseInt(minDays);
   const maxDaysNum = parseInt(maxDays);
-
-  // Calculate potential earnings
   const minEarning = priceUSDC * BigInt(minDaysNum);
   const maxEarning = priceUSDC * BigInt(maxDaysNum);
 
-  // Get current step info
   const currentStepNumber = getCurrentStepNumber ? getCurrentStepNumber() : 0;
-  
-  // Transaction step data
+
   const steps = [
-    {
-      number: 1,
-      title: "Approve NFT",
-      description: "Allow the rental vault to manage your NFT",
-      action: onSubmit,
-      icon: Shield,
-    },
-    {
-      number: 2, 
-      title: "Create Rental",
-      description: "Deposit your NFT to create the listing",
-      action: onCreateRental,
-      icon: Hash,
-    },
-    {
-      number: 3,
-      title: "Set Terms",
-      description: "Configure pricing and rental conditions",
-      action: onSetTerms,
-      icon: DollarSign,
-    },
+    { number: 1, title: "Approve NFT", desc: "Permit vault to manage NFT", action: onSubmit, icon: Shield },
+    { number: 2, title: "Create Rental", desc: "Deposit NFT & open listing", action: onCreateRental, icon: Hash },
+    { number: 3, title: "Set Terms", desc: "Apply price & duration", action: onSetTerms, icon: DollarSign },
   ];
 
-  // Function to fetch NFT metadata from tokenId using Doma API
-  const fetchNFTMetadata = async (tokenId: string): Promise<NFTMetadata> => {
+  const fetchNFTMetadata = async (tid: string): Promise<NFTMetadata> => {
     try {
-      const { data } = await apolloClient.query<NameFromTokenResponse, NameFromTokenVariables>({
+      const { data } = await apolloClient.query<
+        NameFromTokenResponse,
+        NameFromTokenVariables
+      >({
         query: GET_NAME_FROM_TOKEN_QUERY,
-        variables: { tokenId },
-        errorPolicy: 'all'
+        variables: { tokenId: tid },
+        errorPolicy: "all",
       });
 
       const name = data?.nameStatistics?.name;
       if (name) {
-        // Split domain name to get SLD and TLD
-        const [sld, tld] = name.split('.');
-        return {
-          name: sld || name,
-          tld: tld ? `.${tld}` : '.eth',
-          description: `Domain: ${name}`
-        };
-      } else {
-        // Fallback if name not found
-        return {
-          name: `Domain-${tokenId.slice(-8)}`,
-          tld: '.eth',
-          description: `NFT Domain with token ID: ${tokenId}`
-        };
+        const [sld, tld] = name.split(".");
+        return { name: sld || name, tld: tld ? `.${tld}` : ".eth", description: `Domain: ${name}` };
       }
-    } catch (error) {
-      console.error('Failed to fetch NFT metadata from Doma API:', error);
-      return {
-        name: `Unknown-${tokenId.slice(-8)}`,
-        tld: '.eth',
-        description: `Failed to fetch domain info`
-      };
+      return { name: `Domain-${tid.slice(-8)}`, tld: ".eth", description: `NFT Domain #${tid}` };
+    } catch {
+      return { name: `Unknown-${tid.slice(-8)}`, tld: ".eth", description: "Failed to load metadata" };
     }
   };
 
-  // Fetch metadata when tokenId changes
   useEffect(() => {
     if (tokenId) {
       setMetadataLoading(true);
-      fetchNFTMetadata(tokenId).then((metadata) => {
-        setDomainMetadata(metadata);
+      fetchNFTMetadata(tokenId).then((m) => {
+        setDomainMetadata(m);
         setMetadataLoading(false);
       });
     }
   }, [tokenId]);
 
-  // Format token ID for display
-  const formatTokenId = (tokenId: string) => {
-    if (!tokenId || tokenId.length <= 20) return tokenId;
-    return `${tokenId.slice(0, 10)}...${tokenId.slice(-10)}`;
-  };
+  const formatTokenId = (tid: string) => (tid && tid.length > 20 ? `${tid.slice(0, 10)}…${tid.slice(-10)}` : tid);
 
   return (
     <div className="space-y-6">
-      <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-blue-100 dark:border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-              <span className="text-blue-600 dark:text-blue-400 font-semibold text-sm">3</span>
+      <Card className="rounded-2xl border border-neutral-200/70 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-3">
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-blue-50 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-800">
+              3
+            </span>
+            <div>
+              <CardTitle className="text-base font-semibold tracking-[-0.01em] text-neutral-900 dark:text-neutral-100">
+                Review & Create
+              </CardTitle>
+              <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                Confirm details before publishing your listing
+              </p>
             </div>
-            Review & Create
-          </CardTitle>
-          <p className="text-gray-600 dark:text-gray-400">
-            Review your listing details before going live
-          </p>
+          </div>
         </CardHeader>
-        
+
         <CardContent className="space-y-6">
-          {/* NFT Details */}
-          <div className="space-y-4">
-            <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
-              <Hash className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          {/* NFT meta */}
+          <section className="rounded-xl border border-neutral-200/70 p-4 dark:border-neutral-800">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+              <Hash className="h-4 w-4 text-neutral-500" />
               NFT Details
             </h3>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Contract Address:</span>
-                <code className="text-sm font-mono bg-white dark:bg-gray-800 px-2 py-1 rounded border dark:border-gray-600 dark:text-gray-300">
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg bg-neutral-50 p-3 text-xs dark:bg-neutral-900/40">
+                <div className="text-neutral-500">Contract</div>
+                <code className="mt-1 inline-block rounded px-1.5 py-0.5 font-mono text-[11px] text-neutral-800 dark:text-neutral-200">
                   {shortAddress(nftAddress as any)}
                 </code>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Token ID:</span>
-                <span className="text-sm font-medium font-mono dark:text-gray-300">{formatTokenId(tokenId)}</span>
+
+              <div className="rounded-lg bg-neutral-50 p-3 text-xs dark:bg-neutral-900/40">
+                <div className="text-neutral-500">Token ID</div>
+                <div className="mt-1 font-mono text-[11px] text-neutral-800 dark:text-neutral-200">
+                  {formatTokenId(tokenId)}
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Domain:</span>
-                {metadataLoading ? (
-                  <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded animate-pulse w-32"></div>
-                ) : domainMetadata ? (
-                  <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
-                    {domainMetadata.name}{domainMetadata.tld}
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600">
-                    domain{tokenId.slice(-8)}.eth
-                  </Badge>
-                )}
+
+              <div className="rounded-lg bg-neutral-50 p-3 text-xs dark:bg-neutral-900/40">
+                <div className="text-neutral-500">Domain</div>
+                <div className="mt-1">
+                  {metadataLoading ? (
+                    <div className="h-4 w-24 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
+                  ) : (
+                    <Badge variant="outline" className="h-5 rounded-full px-2 text-[11px]">
+                      {domainMetadata ? `${domainMetadata.name}${domainMetadata.tld}` : `domain${tokenId.slice(-6)}.eth`}
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Pricing Details */}
-          <div className="space-y-4">
-            <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
+          {/* Pricing */}
+          <section className="rounded-xl border border-neutral-200/70 p-4 dark:border-neutral-800">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+              <DollarSign className="h-4 w-4 text-neutral-500" />
               Pricing & Terms
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
-                    {formatUSD(priceUSDC)}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">per day</div>
-                </div>
+
+            <div className="grid gap-3 sm:grid-cols-4">
+              <div className="rounded-lg bg-neutral-50 p-3 text-center dark:bg-neutral-900/40">
+                <div className="text-[12px] text-neutral-500">Daily Rate</div>
+                <div className="mt-1 text-lg font-semibold">{formatUSD(priceUSDC)}</div>
               </div>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">
-                    {formatUSD(depositUSDC)}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">security deposit</div>
-                </div>
+              <div className="rounded-lg bg-neutral-50 p-3 text-center dark:bg-neutral-900/40">
+                <div className="text-[12px] text-neutral-500">Deposit</div>
+                <div className="mt-1 text-lg font-semibold">{formatUSD(depositUSDC)}</div>
+              </div>
+              <div className="rounded-lg bg-neutral-50 p-3 text-center dark:bg-neutral-900/40">
+                <div className="text-[12px] text-neutral-500">Min Days</div>
+                <div className="mt-1 text-lg font-semibold">{minDaysNum}</div>
+              </div>
+              <div className="rounded-lg bg-neutral-50 p-3 text-center dark:bg-neutral-900/40">
+                <div className="text-[12px] text-neutral-500">Max Days</div>
+                <div className="mt-1 text-lg font-semibold">{maxDaysNum}</div>
               </div>
             </div>
-          </div>
 
-          {/* Duration & Earnings */}
-          <div className="space-y-4">
-            <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
-              <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              Rental Duration & Earnings
-            </h3>
-            <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 rounded-lg p-4 border dark:border-gray-700">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {minDaysNum} - {maxDaysNum} days
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">rental period</div>
-                </div>
-                <div>
-                  <div className="text-lg font-semibold text-green-600 dark:text-green-400">
-                    {formatUSD(minEarning)}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">minimum earning</div>
-                </div>
-                <div>
-                  <div className="text-lg font-semibold text-green-600 dark:text-green-400">
-                    {formatUSD(maxEarning)}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">maximum earning</div>
-                </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg bg-green-50 p-3 text-center text-sm dark:bg-green-900/20">
+                Min earning: <span className="font-semibold">{formatUSD(minEarning)}</span>
+              </div>
+              <div className="rounded-lg bg-green-50 p-3 text-center text-sm dark:bg-green-900/20">
+                Max earning: <span className="font-semibold">{formatUSD(maxEarning)}</span>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Transaction Steps */}
-          <div className="space-y-4">
-            <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          {/* Steps */}
+          <section className="rounded-xl border border-neutral-200/70 p-4 dark:border-neutral-800">
+            <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+              <Clock className="h-4 w-4 text-neutral-500" />
               Create Listing Steps
             </h3>
-            
-            <div className="space-y-3">
-              {steps.map((step, index) => {
-                const Icon = step.icon;
-                const isCurrentStep = currentStepNumber === step.number;
-                const isCompleted = currentStepNumber > step.number;
-                const canExecute = canExecuteStep ? canExecuteStep(step.number) : false;
-                const isExecuting = isCurrentStep && (isPending || isConfirming);
-                
+
+            <ul className="space-y-2">
+              {steps.map((s) => {
+                const Icon = s.icon;
+                const isCurrent = currentStepNumber === s.number;
+                const isDone = currentStepNumber > s.number;
+                const canRun = canExecuteStep ? canExecuteStep(s.number) : false;
+                const executing = isCurrent && (isPending || isConfirming);
+
                 return (
-                  <div key={step.number} className={`border rounded-lg p-4 transition-all ${
-                    isCurrentStep 
-                      ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20' 
-                      : isCompleted
-                      ? 'border-green-500 dark:border-green-400 bg-green-50 dark:bg-green-900/20'
-                      : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'
-                  }`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          isCompleted 
-                            ? 'bg-green-100 dark:bg-green-900/40' 
-                            : isCurrentStep 
-                            ? 'bg-blue-100 dark:bg-blue-900/40' 
-                            : 'bg-gray-100 dark:bg-gray-700'
-                        }`}>
-                          {isCompleted ? (
-                            <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
-                          ) : isExecuting ? (
-                            <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
-                          ) : (
-                            <Icon className={`w-5 h-5 ${
-                              isCurrentStep 
-                                ? 'text-blue-600 dark:text-blue-400' 
-                                : 'text-gray-500 dark:text-gray-400'
-                            }`} />
-                          )}
-                        </div>
-                        <div>
-                          <div className={`font-medium ${
-                            isCompleted 
-                              ? 'text-green-700 dark:text-green-400' 
-                              : isCurrentStep 
-                              ? 'text-blue-700 dark:text-blue-400' 
-                              : 'text-gray-700 dark:text-gray-300'
-                          }`}>
-                            Step {step.number}: {step.title}
-                          </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
-                            {step.description}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        {isCompleted && (
-                          <Badge variant="outline" className="bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
-                            Completed
-                          </Badge>
+                  <li
+                    key={s.number}
+                    className="flex items-center justify-between rounded-lg border border-neutral-200/70 bg-neutral-50 px-3 py-2 text-sm dark:border-neutral-800 dark:bg-neutral-900/40"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span
+                        className={[
+                          "grid h-7 w-7 place-items-center rounded-full",
+                          isDone
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                            : isCurrent
+                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                            : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400",
+                        ].join(" ")}
+                      >
+                        {executing ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : isDone ? (
+                          <Check className="h-3.5 w-3.5" />
+                        ) : (
+                          <Icon className="h-3.5 w-3.5" />
                         )}
-                        
-                        {canExecute && step.action && (
-                          <Button
-                            onClick={step.action}
-                            disabled={isExecuting}
-                            size="sm"
-                            className={`min-w-24 ${
-                              step.number === 1 
-                                ? 'bg-blue-600 hover:bg-blue-700' 
-                                : step.number === 2 
-                                ? 'bg-purple-600 hover:bg-purple-700' 
-                                : 'bg-green-600 hover:bg-green-700'
-                            }`}
-                          >
-                            {isExecuting ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              step.title
-                            )}
-                          </Button>
-                        )}
+                      </span>
+
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">
+                          Step {s.number}: {s.title}
+                        </div>
+                        <div className="truncate text-[12px] text-neutral-500">{s.desc}</div>
                       </div>
                     </div>
-                    
-                    {/* Transaction details for current executing step */}
-                    {isCurrentStep && hash && (
-                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Transaction:</span>
-                          <a 
-                            href={`https://explorer-testnet.doma.xyz/tx/${hash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1"
-                          >
-                            View on Explorer <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </div>
-                      </div>
+
+                    {isDone ? (
+                      <Badge variant="outline" className="h-6 rounded-full px-2 text-[11px]">
+                        Done
+                      </Badge>
+                    ) : (
+                      canRun &&
+                      s.action && (
+                        <Button
+                          size="sm"
+                          onClick={s.action}
+                          disabled={executing}
+                          className="h-8 rounded-md bg-blue-600 px-3 text-[12px] hover:bg-blue-700"
+                        >
+                          {executing ? <Loader2 className="h-4 w-4 animate-spin" /> : s.title}
+                        </Button>
+                      )
                     )}
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
 
-            {/* Success message */}
+            {currentStepNumber > 0 && hash && (
+              <div className="mt-3 border-t border-neutral-200 pt-3 text-xs dark:border-neutral-800">
+                <a
+                  href={`https://explorer-testnet.doma.xyz/tx/${hash}`}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-300"
+                >
+                  View transaction <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            )}
+
             {isCompleted && listingId !== null && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  <span className="font-medium text-green-700 dark:text-green-400">Listing Created Successfully!</span>
-                </div>
-                <div className="text-sm text-green-600 dark:text-green-400">
-                  Your rental listing #{listingId} is now live and available for rent.
+              <div className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm dark:bg-emerald-900/20">
+                <div className="flex items-center gap-2 font-medium text-emerald-700 dark:text-emerald-300">
+                  <CheckCircle className="h-4 w-4" />
+                  Listing #{listingId} is live.
                 </div>
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Security Notice */}
+          {/* Security note */}
           {!loading && !isCompleted && (
-            <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-              <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <AlertDescription className="text-blue-700 dark:text-blue-400">
-                <strong>Your NFT will be securely held</strong> in our smart contract vault during rentals. 
-                You maintain ownership and can unlist anytime when not actively rented.
+            <Alert className="border-blue-200 bg-blue-50/80 text-blue-800 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-300">
+              <AlertDescription className="text-[13px]">
+                Your NFT is held by a smart-contract vault during rentals. You
+                keep ownership and can unlist anytime when not rented.
               </AlertDescription>
             </Alert>
           )}
 
           {error && (
             <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription className="text-sm">{error}</AlertDescription>
             </Alert>
           )}
 
-          <div className="flex justify-between pt-4">
+          <div className="flex items-center justify-between pt-2">
             <Button variant="outline" onClick={onBack} disabled={loading || isCompleted}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
-            
+
             {isCompleted ? (
-              <Button 
-                onClick={() => window.location.href = "/app/rent/manage"}
-                className="bg-blue-600 hover:bg-blue-700 min-w-32"
+              <Button
+                onClick={() => (window.location.href = "/app/rent/manage")}
+                className="bg-blue-600 hover:bg-blue-700"
               >
-                <Check className="w-4 h-4 mr-2" />
+                <Check className="mr-2 h-4 w-4" />
                 View My Listings
               </Button>
             ) : (
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Use the step buttons above to create your listing
-              </div>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                Run the steps above to publish your listing.
+              </span>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Process Notice */}
-      <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+      {/* Compact guide */}
+      <Card className="rounded-2xl border border-neutral-200/70 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900/40">
         <CardContent className="p-4">
-          <h3 className="font-medium text-blue-800 dark:text-blue-400 mb-2">📋 How It Works</h3>
-          <div className="text-sm text-blue-700 dark:text-blue-400 space-y-2">
-            <div className="flex items-start gap-2">
-              <span className="text-blue-600 dark:text-blue-400 font-semibold">1.</span>
-              <span><strong>Approve NFT:</strong> Give permission to the rental vault contract</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-purple-600 dark:text-purple-400 font-semibold">2.</span>
-              <span><strong>Create Rental:</strong> Deposit your NFT to create the listing</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-green-600 dark:text-green-400 font-semibold">3.</span>
-              <span><strong>Set Terms:</strong> Configure pricing and make your listing live</span>
-            </div>
-          </div>
+          <h4 className="mb-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+            Quick Guide
+          </h4>
+          <ol className="grid gap-2 text-[13px] sm:grid-cols-3">
+            <li className="rounded-lg bg-white p-3 ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800">
+              1) Approve the NFT
+            </li>
+            <li className="rounded-lg bg-white p-3 ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800">
+              2) Create the rental listing
+            </li>
+            <li className="rounded-lg bg-white p-3 ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800">
+              3) Set terms & go live
+            </li>
+          </ol>
         </CardContent>
       </Card>
     </div>

@@ -1,153 +1,171 @@
-'use client'
+"use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { CheckCircle, ExternalLink, Copy } from 'lucide-react'
-import { useState } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, Copy, ExternalLink } from "lucide-react";
+import { useMemo, useState } from "react";
 
 interface AuctionSuccessModalProps {
-  isOpen: boolean
-  onClose: () => void
-  listingId: string
-  domain: string
-  auctionType: string
-  reservePrice: number
+  isOpen: boolean;
+  onClose: () => void;
+  listingId: string;
+  domain: string;
+  auctionType: string;
+  reservePrice: number | string;
   transactionHashes: {
-    list?: string
-    criteria?: string
-    strategy?: string
-    goLive?: string
-  }
+    list?: string;
+    criteria?: string;
+    strategy?: string;
+    goLive?: string;
+  };
+  /**
+   * Optional: override base explorer URL (no trailing slash)
+   * e.g. https://explorer-testnet.doma.xyz
+   */
+  explorerBaseUrl?: string;
 }
 
-export default function AuctionSuccessModal({
+export default function AuctionSuccessModalMinimal({
   isOpen,
   onClose,
   listingId,
   domain,
   auctionType,
   reservePrice,
-  transactionHashes
+  transactionHashes,
+  explorerBaseUrl = "https://explorer-testnet.doma.xyz",
 }: AuctionSuccessModalProps) {
-  const [copiedHash, setCopiedHash] = useState<string | null>(null)
+  const [copied, setCopied] = useState<string | null>(null);
 
-  const copyToClipboard = (text: string, hashType: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedHash(hashType)
-    setTimeout(() => setCopiedHash(null), 2000)
-  }
+  const steps = useMemo(
+    () => [
+      { key: "list", label: "List", hash: transactionHashes.list },
+    ],
+    [transactionHashes.list]
+  );
 
-  const getExplorerUrl = (hash: string) => `https://explorer-testnet.doma.xyz/tx/${hash}`
+  const short = (v?: string) => (v ? `${v.slice(0, 6)}…${v.slice(-4)}` : "—");
+  const txUrl = (hash: string) => `${explorerBaseUrl}/tx/${hash}`;
 
-  const transactionSteps = [
-    { key: 'list', label: 'List Domain', hash: transactionHashes.list },
-    { key: 'criteria', label: 'Set Criteria', hash: transactionHashes.criteria },
-    { key: 'strategy', label: 'Choose Strategy', hash: transactionHashes.strategy },
-    { key: 'goLive', label: 'Go Live', hash: transactionHashes.goLive },
-  ]
+  const copy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(id);
+    const t = setTimeout(() => setCopied(null), 1600);
+    // @ts-ignore — keep ref-less for minimalism
+    t;
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-green-600 dark:text-green-400">
-            <CheckCircle className="h-6 w-6" />
-            🎉 Auction Created Successfully!
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-6">
-          {/* Auction Details */}
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <h3 className="font-semibold text-green-800 dark:text-green-400 mb-3">Auction Details</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-700 dark:text-gray-300">Listing ID:</span>
-                <span className="font-mono bg-green-100 dark:bg-green-900/40 text-gray-900 dark:text-gray-100 px-2 py-1 rounded">{listingId}</span>
+      <DialogContent className="max-w-md p-0 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-3 border-b bg-white/70 px-5 py-4 dark:bg-neutral-900/70 backdrop-blur">
+          <div className="shrink-0 rounded-full border border-blue-200 bg-blue-50 p-1.5 dark:border-blue-900/50 dark:bg-blue-950">
+            <CheckCircle2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <DialogHeader className="p-0">
+            <DialogTitle className="text-base font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
+              Auction created
+            </DialogTitle>
+          </DialogHeader>
+        </div>
+
+        {/* Body */}
+        <div className="space-y-5 px-5 py-5">
+          {/* Primary summary */}
+          <div className="rounded-xl border border-neutral-200 bg-white p-4 text-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="flex items-center justify-between">
+              <span className="text-neutral-500">Listing</span>
+              <code className="rounded bg-neutral-100 px-2 py-0.5 font-mono text-[11px] text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100">
+                {listingId}
+              </code>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-neutral-500">Domain</div>
+                <div className="truncate font-medium text-neutral-900 dark:text-neutral-100">{domain}</div>
               </div>
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-700 dark:text-gray-300">Domain:</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{domain}</span>
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-neutral-500">Type</div>
+                <div className="capitalize text-neutral-900 dark:text-neutral-100">{auctionType} auction</div>
               </div>
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-700 dark:text-gray-300">Type:</span>
-                <span className="capitalize text-gray-900 dark:text-white">{auctionType} Auction</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-700 dark:text-gray-300">Reserve Price:</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{reservePrice} ETH</span>
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-neutral-500">Reserve</div>
+                <div className="font-medium text-neutral-900 dark:text-neutral-100">{reservePrice} ETH</div>
               </div>
             </div>
           </div>
 
-          {/* Transaction Hashes */}
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Transaction Details</h3>
-            <div className="space-y-3">
-              {transactionSteps.map((step) => (
-                <div key={step.key} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+          {/* Steps */}
+          <div className="rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            <ul className="divide-y divide-neutral-100 text-sm dark:divide-neutral-800">
+              {steps.map((s) => (
+                <li key={s.key} className="flex items-center justify-between px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
-                    <span className="font-medium text-gray-900 dark:text-white">{step.label}</span>
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-[10px] font-medium text-blue-700 dark:border-blue-900/60 dark:bg-blue-950 dark:text-blue-300">
+                      ✓
+                    </span>
+                    <span className="font-medium text-neutral-900 dark:text-neutral-100">{s.label}</span>
                   </div>
-                  
-                  {step.hash && (
-                    <div className="flex items-center gap-2">
-                      <code className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1 rounded font-mono">
-                        {step.hash.slice(0, 6)}...{step.hash.slice(-6)}
+
+                  {s.hash ? (
+                    <div className="flex items-center gap-1.5">
+                      <code className="rounded bg-neutral-100 px-2 py-0.5 font-mono text-[11px] text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100">
+                        {short(s.hash)}
                       </code>
-                      
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => copyToClipboard(step.hash!, step.key)}
-                        className="h-8 w-8 p-0"
-                        title="Copy transaction hash"
+                        className="h-7 w-7 p-0"
+                        onClick={() => copy(s.hash!, s.key)}
+                        aria-label={`Copy ${s.label} hash`}
+                        title="Copy"
                       >
-                        <Copy className="h-3 w-3" />
+                        <Copy className="h-3.5 w-3.5" />
                       </Button>
-                      
                       <Button
+                        asChild
                         variant="ghost"
                         size="sm"
-                        asChild
-                        className="h-8 w-8 p-0"
-                        title="View on Explorer"
+                        className="h-7 w-7 p-0"
+                        aria-label={`Open ${s.label} in explorer`}
+                        title="Open in explorer"
                       >
-                        <a
-                          href={getExplorerUrl(step.hash)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="h-3 w-3" />
+                        <a href={txUrl(s.hash)} target="_blank" rel="noreferrer noopener">
+                          <ExternalLink className="h-3.5 w-3.5" />
                         </a>
                       </Button>
                     </div>
+                  ) : (
+                    <span className="text-xs text-neutral-400">pending…</span>
                   )}
-                </div>
+                </li>
               ))}
-            </div>
-            
-            {copiedHash && (
-              <div className="mt-2 text-xs text-green-600 dark:text-green-400 text-center">
-                ✓ {transactionSteps.find(s => s.key === copiedHash)?.label} hash copied to clipboard!
+            </ul>
+
+            {copied && (
+              <div className="px-4 pb-3 pt-2 text-center text-xs text-blue-700 dark:text-blue-300">
+                {steps.find((x) => x.key === copied)?.label} hash copied
               </div>
             )}
           </div>
 
-          {/* Success Message */}
-          <div className="text-center">
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Your auction is now live on the Doma Testnet blockchain! 
-              Bidders can now participate in your {auctionType} auction.
-            </p>
-            
-            <Button onClick={onClose} className="bg-green-600 hover:bg-green-700 text-white">
-              Create Another Auction
+          {/* Actions */}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="ghost" onClick={onClose} className="sm:px-4">
+              Close
+            </Button>
+            <Button onClick={onClose} className="bg-blue-600 text-white hover:bg-blue-700 sm:px-4">
+              Create another auction
             </Button>
           </div>
+
+          {/* Tiny footnote */}
+          <p className="text-center text-xs text-neutral-500 dark:text-neutral-400">
+            Your auction is live. Share the link and start accepting bids.
+          </p>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

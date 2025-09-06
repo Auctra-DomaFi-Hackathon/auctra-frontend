@@ -42,6 +42,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
   const [bidAmount, setBidAmount] = useState("");
   const [depositAmount, setDepositAmount] = useState(""); // For sealed bid
   const [error, setError] = useState("");
+  const [bidValidationError, setBidValidationError] = useState(""); // For bid validation errors
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successBidAmount, setSuccessBidAmount] = useState("");
   const [successBidType, setSuccessBidType] = useState<
@@ -214,6 +215,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
     setBidAmount("");
     setDepositAmount("");
     setError("");
+    setBidValidationError(""); // Clear bid validation errors
     setShowSuccessDialog(false);
     setSuccessBidAmount("");
     setIsSubmitting(false);
@@ -845,7 +847,31 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                       placeholder="Enter your bid amount"
                       value={bidAmount}
                       onChange={(e) => {
-                        setBidAmount(e.target.value);
+                        const newBidAmount = e.target.value;
+                        setBidAmount(newBidAmount);
+                        
+                        // Clear previous validation errors
+                        setBidValidationError("");
+                        
+                        // Validate bid amount for English auctions
+                        if (isEnglish && newBidAmount && highestBid) {
+                          const bidAmountFloat = parseFloat(newBidAmount);
+                          const highestBidFloat = parseFloat(formatEther(highestBid.amount.toString()));
+                          const reservePriceFloat = parseFloat(formatEther(listing.reservePrice));
+                          
+                          if (highestBid.amount > 0) {
+                            // There's already a highest bid
+                            if (bidAmountFloat <= highestBidFloat) {
+                              setBidValidationError(`Your bid must be higher than the current highest bid of ${highestBidFloat.toFixed(6)} ETH`);
+                            }
+                          } else {
+                            // No bids yet, check against reserve price
+                            if (bidAmountFloat < reservePriceFloat) {
+                              setBidValidationError(`Your bid must be at least the reserve price of ${reservePriceFloat.toFixed(6)} ETH`);
+                            }
+                          }
+                        }
+                        
                         // Clear success dialog when user starts typing new amount
                         if (showSuccessDialog) {
                           console.log(
@@ -856,6 +882,18 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                       }}
                       disabled={isLoading}
                     />
+                    {/* Bid validation alert for English auctions */}
+                    {bidValidationError && (
+                      <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                        <div className="flex-shrink-0">⚠️</div>
+                        <div className="flex-1">
+                          <div className="font-medium">Invalid Bid Amount</div>
+                          <div className="text-xs mt-1 text-red-600 dark:text-red-400">
+                            {bidValidationError}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <p className="text-xs text-gray-500">
                       {highestBid && highestBid.amount > 0
                         ? `Enter your bid amount. Must be higher than ${parseFloat(
@@ -1108,6 +1146,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                     isSubmitting ||
                     isLoading ||
                     !bidAmount ||
+                    bidValidationError !== "" || // Disable if there's a validation error
                     (isSealed &&
                       (!depositAmount ||
                         sealedBidPhase?.phase !== 1 ||

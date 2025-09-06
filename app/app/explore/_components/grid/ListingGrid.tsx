@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ExplorePagination } from "../ExplorePagination";
 import { getStrategyName } from "@/lib/utils/strategy";
 import BidDialog from "@/components/auction/BidDialog";
+import AuctionDetailsDialog from "@/components/auction/AuctionDetailsDialog";
 import Image from "next/image";
 import { usePublicClient } from "wagmi";
 import { CONTRACTS } from "@/hooks/contracts/constants";
@@ -34,6 +35,8 @@ export default function ListingGrid({
   const [selectedListing, setSelectedListing] =
     useState<ListingWithMetadata | null>(null);
   const [isBidDialogOpen, setIsBidDialogOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [selectedListingId, setSelectedListingId] = useState<string>("");
   
   // Current prices for Dutch auctions
   const [currentPrices, setCurrentPrices] = useState<{[listingId: string]: string}>({});
@@ -45,6 +48,11 @@ export default function ListingGrid({
   const handlePlaceBid = (listing: ListingWithMetadata) => {
     setSelectedListing(listing);
     setIsBidDialogOpen(true);
+  };
+
+  const handleViewDetails = (listing: ListingWithMetadata) => {
+    setSelectedListingId(listing.id);
+    setIsDetailsDialogOpen(true);
   };
 
   // Fetch current prices for Dutch auctions and auction times for all auctions
@@ -238,7 +246,7 @@ export default function ListingGrid({
                   variant={listing.strategy ? "default" : "outline"}
                   className={
                     listing.strategy
-                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-600"
+                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-600 hover:text-white"
                       : "text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600"
                   }
                 >
@@ -316,8 +324,8 @@ export default function ListingGrid({
                 </div>
               </div>
 
-              {/* Place Bid Button */}
-              <div className="pt-2">
+              {/* Action Buttons */}
+              <div className="pt-2 space-y-2">
                 <Button
                   onClick={() => handlePlaceBid(listing)}
                   disabled={
@@ -325,7 +333,7 @@ export default function ListingGrid({
                     listing.strategy ===
                       "0x0000000000000000000000000000000000000000"
                   }
-                  className="w-full"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   size="sm"
                 >
                   {getStrategyName(listing.strategy) === "Dutch Auction"
@@ -333,6 +341,14 @@ export default function ListingGrid({
                     : getStrategyName(listing.strategy) === "Sealed Bid Auction"
                     ? "Commit Bid"
                     : "Place Bid"}
+                </Button>
+                <Button
+                  onClick={() => handleViewDetails(listing)}
+                  variant="outline"
+                  className="w-full border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-600"
+                  size="sm"
+                >
+                  View Details
                 </Button>
               </div>
             </CardContent>
@@ -358,6 +374,16 @@ export default function ListingGrid({
           setSelectedListing(null);
         }}
         listing={selectedListing}
+      />
+
+      {/* Auction Details Dialog */}
+      <AuctionDetailsDialog
+        isOpen={isDetailsDialogOpen}
+        onClose={() => {
+          setIsDetailsDialogOpen(false);
+          setSelectedListingId("");
+        }}
+        listingId={selectedListingId}
       />
     </>
   );

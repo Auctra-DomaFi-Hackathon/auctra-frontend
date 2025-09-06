@@ -314,3 +314,56 @@ export const GET_USER_RENTAL_HISTORY_QUERY = gql`
     }
   }
 `;
+
+// NEW: Get Current Auction Details with Strategy (from CLAUDE.md)
+export const GET_CURRENT_AUCTION_QUERY = gql`
+  query GetCurrentAuction($listingId: String!) {
+    listings(where: { id: $listingId }) {
+      items {
+        id
+        seller
+        nft
+        tokenId
+        reservePrice
+        startTime
+        endTime
+        status
+        winner
+        winningBid
+        createdAt
+        updatedAt
+        strategy
+      }
+    }
+    
+    # Highest bid (current price)
+    highestBid: bids(
+      where: { listingId: $listingId }
+      orderBy: "amount"
+      orderDirection: "desc"
+    ) {
+      items {
+        id
+        bidder
+        amount
+        timestamp
+      }
+    }
+    
+    # All bids for history
+    allBids: bids(
+      where: { listingId: $listingId }
+      orderBy: "timestamp"
+      orderDirection: "desc"
+    ) {
+      items {
+        id
+        bidder
+        amount
+        timestamp
+        blockNumber
+        transactionHash
+      }
+    }
+  }
+`;
