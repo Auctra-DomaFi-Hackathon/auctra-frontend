@@ -102,19 +102,20 @@ export function useCreateAuctionForm() {
     return () => clearTimeout(timer)
   }, [])
 
-  // Auto-set start time and default durations when auction type changes to sealed
+  // Auto-set start time with WIB timezone for all auction types
   useEffect(() => {
+    // Set start time to current WIB time when switching auction types
+    const now = new Date()
+    // Convert to WIB timezone (UTC+7)
+    const wibTime = new Date(now.getTime() + (7 * 60 * 60 * 1000))
+    // Add 5 minutes buffer to allow for form completion and transaction processing
+    wibTime.setMinutes(wibTime.getMinutes() + 5)
+    const startTimeISO = wibTime.toISOString().slice(0, 16)
+    setField('startTime', startTimeISO)
+    console.log(`🕒 Auto-set start time for ${formData.auctionType} auction (WIB):`, startTimeISO, 'WIB time:', wibTime.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))
+    
+    // Auction-specific defaults
     if (formData.auctionType === 'sealed') {
-      // Always set start time to current WIB time when switching to sealed bid
-      const now = new Date()
-      // Convert to WIB timezone (UTC+7)
-      const wibTime = new Date(now.getTime() + (7 * 60 * 60 * 1000))
-      // Add 5 minutes buffer to allow for form completion and transaction processing
-      wibTime.setMinutes(wibTime.getMinutes() + 5)
-      const startTimeISO = wibTime.toISOString().slice(0, 16)
-      setField('startTime', startTimeISO)
-      console.log('🕒 Auto-set start time for sealed bid auction (WIB):', startTimeISO, 'WIB time:', wibTime.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))
-      
       // Set default commit window if not set
       if (!formData.commitWindow) {
         setField('commitWindow', 1) // 1 hour default
@@ -131,6 +132,22 @@ export function useCreateAuctionForm() {
       if (!formData.minBid) {
         setField('minBid', '0.0001') // 0.0001 ETH default
         console.log('💰 Auto-set default minimum bid: 0.0001 ETH')
+      }
+    }
+    
+    if (formData.auctionType === 'english') {
+      // Set default minimum increment if not set
+      if (!formData.minIncrement) {
+        setField('minIncrement', 5) // 5% default increment
+        console.log('📈 Auto-set default minimum increment: 5%')
+      }
+    }
+    
+    if (formData.auctionType === 'dutch') {
+      // Set default decay interval if not set
+      if (!formData.decayInterval) {
+        setField('decayInterval', 60) // 60 minutes default
+        console.log('⏰ Auto-set default decay interval: 60 minutes')
       }
     }
   }, [formData.auctionType])

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient, useAccount } from 'wagmi'
 import { parseEther, formatEther, encodeAbiParameters, keccak256, parseEventLogs, decodeEventLog, decodeAbiParameters, zeroAddress, isAddressEqual } from 'viem'
 import { CONTRACTS } from './contracts/constants'
-import { DOMAIN_AUCTION_HOUSE_ABI, SEALED_BID_AUCTION_ABI } from './contracts/abis'
+import { DOMAIN_AUCTION_HOUSE_ABI, SEALED_BID_AUCTION_ABI, DUTCH_AUCTION_ABI } from './contracts/abis'
 
 export interface AuctionParams {
   tokenId: bigint
@@ -982,6 +982,55 @@ function saveCommitLocal(listingId: bigint, data: { nonce: bigint; bidWei: bigin
   }));
 }
 
+// Hook to get highest bid for English auctions
+export function useGetHighestBid() {
+  const publicClient = usePublicClient();
+
+  const getHighestBid = async (listingId: bigint) => {
+    try {
+      if (!publicClient) {
+        console.warn("No public client available");
+        return { bidder: '0x0000000000000000000000000000000000000000' as `0x${string}`, amount: BigInt(0) };
+      }
+
+      console.log("🔍 Getting highest bid for listing:", listingId.toString());
+
+      // Call getHighestBid function from DomainAuctionHouse contract
+      const result = await publicClient.readContract({
+        address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+        abi: DOMAIN_AUCTION_HOUSE_ABI,
+        functionName: 'getHighestBid',
+        args: [listingId],
+      }) as readonly [string, bigint];
+
+      const [bidder, amount] = result;
+      
+      console.log("✅ Got highest bid:", {
+        listingId: listingId.toString(),
+        bidder,
+        amount: amount.toString(),
+        amountETH: formatEther(amount)
+      });
+
+      return {
+        bidder: bidder as `0x${string}`,
+        amount: amount as bigint
+      };
+      
+    } catch (error) {
+      console.error("❌ Error getting highest bid:", error);
+      return { 
+        bidder: '0x0000000000000000000000000000000000000000' as `0x${string}`, 
+        amount: BigInt(0) 
+      };
+    }
+  };
+
+  return {
+    getHighestBid,
+  };
+}
+
 export function useGetSealedBidPhase() {
   const publicClient = usePublicClient();
 
@@ -1134,5 +1183,39 @@ export function useGetSealedBidPhase() {
 
   return {
     getSealedBidPhase,
+  };
+}
+
+export function useGetCurrentPrice() {
+  const publicClient = usePublicClient();
+  
+  const getCurrentPrice = async (listingId: bigint) => {
+    if (!publicClient) throw new Error('No public client available');
+    
+    try {
+      console.log('🔍 Getting current price for Dutch auction:', listingId.toString());
+      
+      const currentPrice = await publicClient.readContract({
+        address: CONTRACTS.DutchAuction as `0x${string}`,
+        abi: DUTCH_AUCTION_ABI,
+        functionName: 'getCurrentPrice',
+        args: [listingId, '0x'], // listingId and empty bytes
+      }) as bigint;
+      
+      console.log('💰 Current price retrieved:', {
+        listingId: listingId.toString(),
+        currentPriceWei: currentPrice.toString(),
+        currentPriceETH: formatEther(currentPrice)
+      });
+      
+      return currentPrice;
+    } catch (error) {
+      console.error('❌ Error getting current price:', error);
+      throw error;
+    }
+  };
+  
+  return {
+    getCurrentPrice,
   };
 }

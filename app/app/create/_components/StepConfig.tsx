@@ -155,12 +155,12 @@ export default function StepConfig({
         <TwoCols>
           <Field
             id="start-time"
-            label={formData.auctionType === 'sealed' ? 'Start Time WIB (Auto-set)' : 'Start Time'}
+            label="Start Time WIB (Auto-set)"
             type="datetime-local"
             value={formData.startTime || nowISO}
             onChange={(e) => setField('startTime', e.target.value)}
             error={errors.startTime}
-            hint={formData.auctionType === 'sealed' ? 'Automatically set to current WIB time + 5 minutes' : undefined}
+            hint="Automatically set to current WIB time + 5 minutes"
           />
           <Field
             id="end-time"

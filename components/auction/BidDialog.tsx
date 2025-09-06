@@ -14,13 +14,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatEther } from "ethers";
-import { formatEther as formatEtherViem, isAddressEqual, zeroAddress } from "viem";
+import { isAddressEqual, zeroAddress, parseEther } from "viem";
 import { usePublicClient } from "wagmi";
 import {
   usePlaceBid,
   useDutchAuctionPurchase,
   useCommitSealedBid,
   useGetSealedBidPhase,
+  useGetHighestBid,
   getSealedBidParams,
   type SealedBidParams,
 } from "@/hooks/useAuction";
@@ -29,6 +30,7 @@ import { getStrategyName } from "@/lib/utils/strategy";
 import { formatTransactionError } from "@/lib/utils/auction";
 import BidSuccessDialog from "./BidSuccessDialog";
 import type { Listing, NFTMetadata } from "@/lib/graphql/types";
+import { DOMAIN_AUCTION_HOUSE_ABI } from "@/hooks";
 
 interface BidDialogProps {
   isOpen: boolean;
@@ -81,6 +83,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
     hash: sealedHash,
   } = useCommitSealedBid();
   const { getSealedBidPhase } = useGetSealedBidPhase();
+  const { getHighestBid } = useGetHighestBid();
   const publicClient = usePublicClient();
 
   // Sealed bid specific state
@@ -101,6 +104,18 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
     isETH: boolean;
     symbol: string;
   } | null>(null);
+
+  // Highest bid state for English auctions
+  const [highestBid, setHighestBid] = useState<{
+    bidder: `0x${string}`;
+    amount: bigint;
+  } | null>(null);
+
+  // Current price state for Dutch auctions
+  const [currentPrice, setCurrentPrice] = useState<bigint | null>(null);
+  const [currentPriceError, setCurrentPriceError] = useState<string | null>(
+    null
+  );
 
   // Handle success states
   const isLoading = englishPending || dutchPending || sealedPending;
@@ -313,6 +328,60 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
             listingId: listing.id,
           });
 
+          // If it's an English auction, fetch highest bid
+          if (isEnglish) {
+            try {
+              const highestBidInfo = await getHighestBid(BigInt(listing.id));
+              console.log("🏆 Highest bid info:", highestBidInfo);
+              setHighestBid(highestBidInfo);
+            } catch (highestBidError) {
+              console.error("❌ Error fetching highest bid:", highestBidError);
+              setHighestBid({
+                bidder:
+                  "0x0000000000000000000000000000000000000000" as `0x${string}`,
+                amount: BigInt(0),
+              });
+            }
+          }
+
+          // If it's a Dutch auction, fetch current price using previewCurrentPrice
+          if (isDutch) {
+            try {
+              console.log(
+                "🔍 Fetching current price via previewCurrentPrice for listing:",
+                listing.id
+              );
+
+              const currentPriceWei = (await publicClient.readContract({
+                address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+                abi: DOMAIN_AUCTION_HOUSE_ABI,
+                functionName: "previewCurrentPrice",
+                args: [BigInt(listing.id)],
+              })) as bigint;
+
+              console.log("💰 Current price via previewCurrentPrice:", {
+                wei: currentPriceWei.toString(),
+                eth: formatEther(currentPriceWei.toString()),
+              });
+
+              setCurrentPrice(currentPriceWei);
+              setCurrentPriceError(null);
+
+              // Don't auto-fill bid amount - let user enter their own amount
+            } catch (currentPriceError) {
+              console.error(
+                "❌ Error fetching current price via previewCurrentPrice:",
+                currentPriceError
+              );
+              setCurrentPriceError(
+                currentPriceError instanceof Error
+                  ? currentPriceError.message
+                  : "Failed to fetch current price"
+              );
+              setCurrentPrice(null);
+            }
+          }
+
           // If it's a sealed bid auction, also fetch sealed bid phase and parameters
           if (isSealed) {
             try {
@@ -330,7 +399,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
 
               console.log("✅ Sealed bid params:", {
                 minDeposit: params.minDeposit.toString(),
-                minDepositETH: formatEtherViem(params.minDeposit),
+                minDepositETH: formatEther(params.minDeposit.toString()),
                 commitDuration: params.commitDuration.toString(),
                 revealDuration: params.revealDuration.toString(),
               });
@@ -370,13 +439,23 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
         setSealedBidPhase(null);
         setSealedBidParams(null);
         setMinDepositError(null);
+        setHighestBid(null);
       }
     };
 
     // Add delay to reduce immediate RPC calls when dialog opens
     const timeoutId = setTimeout(fetchContractData, 500);
     return () => clearTimeout(timeoutId);
-  }, [listing, isOpen, isSealed, getSealedBidPhase, publicClient]);
+  }, [
+    listing,
+    isOpen,
+    isSealed,
+    isEnglish,
+    isDutch,
+    getSealedBidPhase,
+    getHighestBid,
+    publicClient,
+  ]);
 
   if (!listing) return null;
 
@@ -424,6 +503,22 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
           setIsSubmitting(false);
           return;
         }
+
+        // Validate bid is higher than current highest bid
+        if (highestBid && highestBid.amount > 0) {
+          const currentBidWei = parseEther(bidAmount);
+          if (currentBidWei <= highestBid.amount) {
+            const highestBidETH = parseFloat(
+              formatEther(highestBid.amount.toString())
+            ).toFixed(6);
+            setError(
+              `Bid amount must be higher than current highest bid of ${highestBidETH} ETH`
+            );
+            setIsSubmitting(false);
+            return;
+          }
+        }
+
         await placeBidEnglish(listingId, bidAmount);
       } else if (isDutch) {
         // For Dutch auction, we need current price
@@ -527,9 +622,9 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
           fullError: error,
           message: errorMessage,
           cause: error?.cause,
-          name: error?.name
+          name: error?.name,
         });
-        
+
         if (errorMessage.includes("CommitmentNotFound")) {
           formattedError =
             "No commitment found. Please ensure you are in the commit phase and using the correct data format.";
@@ -549,7 +644,9 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
             "Invalid bid: The transaction value doesn't match the deposit amount. This usually means the ETH value wasn't sent correctly.";
         } else if (errorMessage.includes("simulation failed")) {
           formattedError =
-            "Transaction simulation failed: " + errorMessage + ". Check console for details.";
+            "Transaction simulation failed: " +
+            errorMessage +
+            ". Check console for details.";
         } else if (errorMessage.includes("User rejected")) {
           formattedError = "Transaction was rejected in wallet.";
         }
@@ -562,7 +659,20 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
 
   const formatPrice = (priceWei: string) => {
     try {
-      return `${parseFloat(formatEther(priceWei)).toLocaleString()} ETH`;
+      const ethValue = parseFloat(formatEther(priceWei));
+
+      // Handle very small values - show up to 6 decimal places
+      if (ethValue < 0.000001) {
+        return `${ethValue.toFixed(8)} ETH`;
+      } else if (ethValue < 0.001) {
+        return `${ethValue.toFixed(6)} ETH`;
+      } else if (ethValue < 1) {
+        return `${ethValue.toFixed(4)} ETH`;
+      } else {
+        return `${ethValue.toLocaleString(undefined, {
+          maximumFractionDigits: 4,
+        })} ETH`;
+      }
     } catch {
       return `${priceWei} wei`;
     }
@@ -599,12 +709,58 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                 </span>
               </span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Reserve Price:</span>
-              <span className="font-medium">
-                {formatPrice(listing.reservePrice)}
-              </span>
-            </div>
+            {/* Reserve Price - hidden for Dutch auctions */}
+            {!isDutch && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Reserve Price:</span>
+                <div className="flex items-center gap-1 font-medium">
+                  <span>
+                    {formatPrice(listing.reservePrice).replace(" ETH", "")}
+                  </span>
+                  <Image
+                    src="/images/LogoCoin/eth-logo.svg"
+                    alt="ETH"
+                    className="h-4 w-4"
+                    width={16}
+                    height={16}
+                  />
+                  <span>ETH</span>
+                </div>
+              </div>
+            )}
+
+            {/* Current Price for Dutch auctions only */}
+            {isDutch && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Current Price (ETH):</span>
+                <div className="flex items-center gap-1 font-medium">
+                  {currentPriceError ? (
+                    <span className="text-red-500 text-xs">
+                      {currentPriceError}
+                    </span>
+                  ) : currentPrice ? (
+                    <>
+                      <span>
+                        {formatPrice(currentPrice.toString()).replace(
+                          " ETH",
+                          ""
+                        )}
+                      </span>
+                      <Image
+                        src="/images/LogoCoin/eth-logo.svg"
+                        alt="ETH"
+                        className="h-4 w-4"
+                        width={16}
+                        height={16}
+                      />
+                      <span>ETH</span>
+                    </>
+                  ) : (
+                    <span className="text-gray-400 text-xs">Loading...</span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <Separator />
@@ -619,43 +775,95 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* English Auction */}
               {isEnglish && (
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="bidAmount"
-                    className="flex items-center gap-2"
-                  >
-                    Your Bid Amount ({paymentTokenInfo?.symbol || "ETH"})
-                    <Image
-                      src="/images/logo/domaLogo.svg"
-                      alt="Doma"
-                      className="h-4 w-4"
-                      width={20}
-                      height={20}
-                    />
-                  </Label>
-                  <Input
-                    id="bidAmount"
-                    type="number"
-                    step="0.00001"
-                    min="0.00001"
-                    placeholder="0.0001"
-                    value={bidAmount}
-                    onChange={(e) => {
-                      setBidAmount(e.target.value);
-                      // Clear success dialog when user starts typing new amount
-                      if (showSuccessDialog) {
-                        console.log(
-                          "🔄 User typing new bid - clearing success dialog"
-                        );
-                        setShowSuccessDialog(false);
+                <div className="space-y-4">
+                  {/* Show current highest bid */}
+                  {highestBid && highestBid.amount > 0 && (
+                    <div className="flex items-center gap-2 text-blue-600 text-sm bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800">
+                      <div className="flex-shrink-0">🏆</div>
+                      <div className="flex-1">
+                        <div className="font-medium">Current Highest Bid</div>
+                        <div className="flex items-center gap-1 text-xs mt-1 text-blue-600 dark:text-blue-400">
+                          <span>
+                            {parseFloat(
+                              formatEther(highestBid.amount.toString())
+                            ).toFixed(6)}
+                          </span>
+                          <Image
+                            src="/images/LogoCoin/eth-logo.svg"
+                            alt="ETH"
+                            className="h-3 w-3"
+                            width={12}
+                            height={12}
+                          />
+                          <span>
+                            ETH by {highestBid.bidder.slice(0, 6)}...
+                            {highestBid.bidder.slice(-4)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No bids yet */}
+                  {highestBid && highestBid.amount === BigInt(0) && (
+                    <div className="flex items-center gap-2 text-gray-600 text-sm bg-gray-50 dark:bg-gray-900/20 p-3 rounded border border-gray-200 dark:border-gray-800">
+                      <div className="flex-shrink-0">💰</div>
+                      <div className="flex-1">
+                        <div className="font-medium">No Bids Yet</div>
+                        <div className="text-xs mt-1 text-gray-600 dark:text-gray-400">
+                          Be the first to place a bid on this auction!
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="bidAmount"
+                      className="flex items-center gap-2"
+                    >
+                      Your Bid Amount ({paymentTokenInfo?.symbol || "ETH"})
+                      <Image
+                        src="/images/logoCoin/eth-logo.svg"
+                        alt="eth"
+                        className="h-4 w-4"
+                        width={18}
+                        height={18}
+                      />
+                    </Label>
+                    <Input
+                      id="bidAmount"
+                      type="number"
+                      step="0.00001"
+                      min={
+                        highestBid && highestBid.amount > 0
+                          ? formatEther(
+                              (highestBid.amount + BigInt(1)).toString()
+                            )
+                          : "0.00001"
                       }
-                    }}
-                    disabled={isLoading}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Enter your bid amount. Must be higher than current highest
-                    bid.
-                  </p>
+                      placeholder="Enter your bid amount"
+                      value={bidAmount}
+                      onChange={(e) => {
+                        setBidAmount(e.target.value);
+                        // Clear success dialog when user starts typing new amount
+                        if (showSuccessDialog) {
+                          console.log(
+                            "🔄 User typing new bid - clearing success dialog"
+                          );
+                          setShowSuccessDialog(false);
+                        }
+                      }}
+                      disabled={isLoading}
+                    />
+                    <p className="text-xs text-gray-500">
+                      {highestBid && highestBid.amount > 0
+                        ? `Enter your bid amount. Must be higher than ${parseFloat(
+                            formatEther(highestBid.amount.toString())
+                          ).toFixed(6)} ETH.`
+                        : "Enter your bid amount. Must be higher than reserve price."}
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -666,10 +874,10 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                     htmlFor="bidAmount"
                     className="flex items-center gap-2"
                   >
-                    Current Price ({paymentTokenInfo?.symbol || "ETH"})
+                    Your Purchase Amount ({paymentTokenInfo?.symbol || "ETH"})
                     <Image
-                      src="/images/logo/domaLogo.svg"
-                      alt="Doma"
+                      src="/images/logoCoin/eth-logo.svg"
+                      alt="eth"
                       className="h-4 w-4"
                       width={18}
                       height={18}
@@ -680,7 +888,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                     type="number"
                     step="0.00001"
                     min="0.00001"
-                    placeholder="0.0001"
+                    placeholder="Enter your bid offer"
                     value={bidAmount}
                     onChange={(e) => {
                       setBidAmount(e.target.value);
@@ -695,7 +903,8 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                     disabled={isLoading}
                   />
                   <p className="text-xs text-gray-500">
-                    Dutch auctions have declining prices. First to pay wins!
+                    Enter your purchase amount. Dutch auctions have declining
+                    prices - first to pay wins!
                   </p>
                 </div>
               )}
@@ -718,16 +927,23 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                           {sealedBidPhase.phase === 3 && "Auction Ended"}
                         </div>
                         <div className="text-xs text-gray-600 dark:text-gray-400">
-                          {sealedBidPhase.phase === 1 && "Place your sealed bids now"}
-                          {sealedBidPhase.phase === 2 && "Bidders must reveal their bids"}
-                          {sealedBidPhase.phase === 3 && "Auction has concluded"}
+                          {sealedBidPhase.phase === 1 &&
+                            "Place your sealed bids now"}
+                          {sealedBidPhase.phase === 2 &&
+                            "Bidders must reveal their bids"}
+                          {sealedBidPhase.phase === 3 &&
+                            "Auction has concluded"}
                         </div>
                       </div>
-                      <Badge variant={
-                        sealedBidPhase.phase === 1 ? "default" : 
-                        sealedBidPhase.phase === 2 ? "secondary" : 
-                        "outline"
-                      }>
+                      <Badge
+                        variant={
+                          sealedBidPhase.phase === 1
+                            ? "default"
+                            : sealedBidPhase.phase === 2
+                            ? "secondary"
+                            : "outline"
+                        }
+                      >
                         Phase {sealedBidPhase.phase}
                       </Badge>
                     </div>
@@ -742,7 +958,8 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                           Auction is in Reveal Phase
                         </div>
                         <div className="text-xs mt-1 text-blue-600 dark:text-blue-400">
-                          Bidding is closed. Bidders must now reveal their sealed bids to determine the winner.
+                          Bidding is closed. Bidders must now reveal their
+                          sealed bids to determine the winner.
                         </div>
                       </div>
                     </div>
@@ -753,11 +970,10 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                     <div className="flex items-center gap-2 text-gray-600 text-sm bg-gray-50 dark:bg-gray-900/20 p-3 rounded border border-gray-200 dark:border-gray-800">
                       <div className="flex-shrink-0">🏁</div>
                       <div className="flex-1">
-                        <div className="font-medium">
-                          Auction Has Ended
-                        </div>
+                        <div className="font-medium">Auction Has Ended</div>
                         <div className="text-xs mt-1 text-gray-600 dark:text-gray-400">
-                          This auction has concluded. No more bids can be placed.
+                          This auction has concluded. No more bids can be
+                          placed.
                         </div>
                       </div>
                     </div>
@@ -799,7 +1015,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                       step="0.00001"
                       min={
                         sealedBidParams
-                          ? formatEtherViem(sealedBidParams.minDeposit)
+                          ? formatEther(sealedBidParams.minDeposit.toString())
                           : "0.00001"
                       }
                       placeholder="0.001"
@@ -814,11 +1030,12 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                           setShowSuccessDialog(false);
                         }
                       }}
-                      disabled={isLoading || (sealedBidPhase?.phase !== 1)}
+                      disabled={isLoading || sealedBidPhase?.phase !== 1}
                     />
                     <p className="text-xs text-gray-500">
                       Your actual bid amount (kept secret until reveal phase).
-                      {sealedBidPhase?.phase !== 1 && " Bidding is only allowed during commit phase."}
+                      {sealedBidPhase?.phase !== 1 &&
+                        " Bidding is only allowed during commit phase."}
                     </p>
                   </div>
                   <div className="space-y-2">
@@ -841,28 +1058,29 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                       step="0.00001"
                       min={
                         sealedBidParams
-                          ? formatEtherViem(sealedBidParams.minDeposit)
+                          ? formatEther(sealedBidParams.minDeposit.toString())
                           : "0.0001"
                       }
                       placeholder={
                         sealedBidParams
-                          ? formatEtherViem(sealedBidParams.minDeposit)
+                          ? formatEther(sealedBidParams.minDeposit.toString())
                           : "0.0001"
                       }
                       value={depositAmount}
                       onChange={(e) => setDepositAmount(e.target.value)}
-                      disabled={isLoading || (sealedBidPhase?.phase !== 1)}
+                      disabled={isLoading || sealedBidPhase?.phase !== 1}
                     />
                     <p className="text-xs text-gray-500">
                       Minimum deposit:{" "}
                       {sealedBidParams
-                        ? formatEtherViem(sealedBidParams.minDeposit)
+                        ? formatEther(sealedBidParams.minDeposit.toString())
                         : minDepositError
                         ? "0.0001 (fallback)"
                         : "Loading..."}{" "}
                       {paymentTokenInfo?.symbol || "ETH"}. Refunded if you
                       don&apos;t win.
-                      {sealedBidPhase?.phase !== 1 && " Deposits are only accepted during commit phase."}
+                      {sealedBidPhase?.phase !== 1 &&
+                        " Deposits are only accepted during commit phase."}
                     </p>
                   </div>
                 </div>
@@ -887,16 +1105,22 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                 <Button
                   type="submit"
                   disabled={
-                    (isSubmitting || isLoading) || 
-                    !bidAmount || 
-                    (isSealed && (
-                      !depositAmount || 
-                      (sealedBidPhase?.phase !== 1) ||
-                      // Only enforce contract minDeposit if we have the parameters
-                      (sealedBidParams && parseFloat(depositAmount || '0') < parseFloat(formatEtherViem(sealedBidParams.minDeposit))) ||
-                      // If we don't have params but have an error, enforce fallback minimum
-                      (!sealedBidParams && !!minDepositError && parseFloat(depositAmount || '0') < 0.0001)
-                    ))
+                    isSubmitting ||
+                    isLoading ||
+                    !bidAmount ||
+                    (isSealed &&
+                      (!depositAmount ||
+                        sealedBidPhase?.phase !== 1 ||
+                        // Only enforce contract minDeposit if we have the parameters
+                        (sealedBidParams &&
+                          parseFloat(depositAmount || "0") <
+                            parseFloat(
+                              formatEther(sealedBidParams.minDeposit.toString())
+                            )) ||
+                        // If we don't have params but have an error, enforce fallback minimum
+                        (!sealedBidParams &&
+                          !!minDepositError &&
+                          parseFloat(depositAmount || "0") < 0.0001)))
                   }
                   className="flex-1 relative"
                 >
@@ -910,9 +1134,15 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                   ) : isDutch ? (
                     "Purchase Now"
                   ) : isSealed ? (
-                    sealedBidPhase?.phase === 2 ? "Auction in Reveal Phase" :
-                    sealedBidPhase?.phase === 3 ? "Auction Ended" :
-                    sealedBidPhase?.phase === 1 ? "Commit Bid" : "Commit Bid"
+                    sealedBidPhase?.phase === 2 ? (
+                      "Auction in Reveal Phase"
+                    ) : sealedBidPhase?.phase === 3 ? (
+                      "Auction Ended"
+                    ) : sealedBidPhase?.phase === 1 ? (
+                      "Commit Bid"
+                    ) : (
+                      "Commit Bid"
+                    )
                   ) : (
                     "Place Bid"
                   )}

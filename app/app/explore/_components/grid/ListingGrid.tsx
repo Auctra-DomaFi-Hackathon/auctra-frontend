@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Listing, NFTMetadata } from "@/lib/graphql/types";
 import { formatEther } from "ethers";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -10,6 +10,9 @@ import { ExplorePagination } from "../ExplorePagination";
 import { getStrategyName } from "@/lib/utils/strategy";
 import BidDialog from "@/components/auction/BidDialog";
 import Image from "next/image";
+import { usePublicClient } from "wagmi";
+import { CONTRACTS } from "@/hooks/contracts/constants";
+import { DOMAIN_AUCTION_HOUSE_ABI } from "@/hooks/contracts/abis";
 
 interface ListingWithMetadata extends Listing {
   metadata?: NFTMetadata;
@@ -31,11 +34,100 @@ export default function ListingGrid({
   const [selectedListing, setSelectedListing] =
     useState<ListingWithMetadata | null>(null);
   const [isBidDialogOpen, setIsBidDialogOpen] = useState(false);
+  
+  // Current prices for Dutch auctions
+  const [currentPrices, setCurrentPrices] = useState<{[listingId: string]: string}>({});
+  
+  // Auction times from contract
+  const [auctionTimes, setAuctionTimes] = useState<{[listingId: string]: {startTime: number, endTime: number}}>({});
+  const publicClient = usePublicClient();
 
   const handlePlaceBid = (listing: ListingWithMetadata) => {
     setSelectedListing(listing);
     setIsBidDialogOpen(true);
   };
+
+  // Fetch current prices for Dutch auctions and auction times for all auctions
+  useEffect(() => {
+    const fetchAuctionData = async () => {
+      if (!publicClient || listings.length === 0) return;
+
+      // Fetch current prices for Dutch auctions
+      const dutchListings = listings.filter(
+        listing => getStrategyName(listing.strategy) === "Dutch Auction"
+      );
+
+      // Fetch Dutch auction prices using previewCurrentPrice from DomainAuctionHouse
+      const pricePromises = dutchListings.map(async (listing) => {
+        try {
+          console.log(`🔍 Fetching current price for Dutch auction ${listing.id} via previewCurrentPrice`);
+          
+          // Use previewCurrentPrice from DomainAuctionHouse contract
+          const currentPriceWei = await publicClient.readContract({
+            address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+            abi: DOMAIN_AUCTION_HOUSE_ABI,
+            functionName: 'previewCurrentPrice',
+            args: [BigInt(listing.id)],
+          }) as bigint;
+          
+          console.log(`💰 Current price for ${listing.id} via previewCurrentPrice:`, {
+            wei: currentPriceWei.toString(),
+            eth: formatEther(currentPriceWei.toString())
+          });
+          
+          return {
+            listingId: listing.id,
+            price: currentPriceWei.toString(),
+            success: true
+          };
+        } catch (error) {
+          console.warn(`⚠️ Failed to get current price for listing ${listing.id} via previewCurrentPrice, using reserve price:`, error instanceof Error ? error.message : 'Unknown error');
+          return {
+            listingId: listing.id,
+            price: listing.reservePrice,
+            success: false
+          };
+        }
+      });
+
+      const priceResults = await Promise.allSettled(pricePromises);
+      
+      // Update prices based on results
+      priceResults.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          const { listingId, price } = result.value;
+          setCurrentPrices(prev => ({
+            ...prev,
+            [listingId]: price
+          }));
+        }
+      });
+
+      // Fetch auction times for all listings
+      for (const listing of listings) {
+        try {
+          const listingData = await publicClient.readContract({
+            address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
+            abi: DOMAIN_AUCTION_HOUSE_ABI,
+            functionName: 'listings',
+            args: [BigInt(listing.id)],
+          }) as readonly any[];
+
+          const startTime = Number(listingData[5]); // startTime is at index 5
+          const endTime = Number(listingData[6]); // endTime is at index 6
+
+          setAuctionTimes(prev => ({
+            ...prev,
+            [listing.id]: { startTime, endTime }
+          }));
+        } catch (error) {
+          console.error(`Failed to get auction times for listing ${listing.id}:`, error);
+        }
+      }
+    };
+
+    fetchAuctionData();
+  }, [listings, publicClient]);
 
   // Debug pagination props
   console.log('📋 ListingGrid render:', { 
@@ -116,10 +208,18 @@ export default function ListingGrid({
             <CardContent className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Reserve Price:
+                  {getStrategyName(listing.strategy) === "Dutch Auction" 
+                    ? "Open bid:" 
+                    : getStrategyName(listing.strategy) === "English Auction"
+                    ? "Start bid:"
+                    : "Reserve Price:"
+                  }
                 </span>
                 <span className="font-bold text-lg text-blue-600 dark:text-blue-400">
-                  {formatPrice(listing.reservePrice)}
+                  {getStrategyName(listing.strategy) === "Dutch Auction" && currentPrices[listing.id]
+                    ? formatPrice(currentPrices[listing.id])
+                    : formatPrice(listing.reservePrice)
+                  }
                   <Image
                     src="/images/LogoCoin/eth-logo.svg"
                     alt="ETH"
@@ -159,8 +259,38 @@ export default function ListingGrid({
                     ? new Date(listing.metadata.expiresAt * 1000).toLocaleDateString()
                     : 'Unknown'}
                 </span>
-                <span>Token ID: {listing.tokenId.slice(0, 8)}...</span>
+                {/* <span>Token ID: {listing.tokenId.slice(0, 8)}...</span> */}
               </div>
+
+              {/* Auction Start and End Times */}
+              {auctionTimes[listing.id] && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>Auction Start:</span>
+                    <span>
+                      {new Date(auctionTimes[listing.id].startTime * 1000).toLocaleString('id-ID', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>Auction End:</span>
+                    <span>
+                      {new Date(auctionTimes[listing.id].endTime * 1000).toLocaleString('id-ID', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
                 {/* {listing.paymentToken ===
