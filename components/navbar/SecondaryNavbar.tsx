@@ -353,13 +353,13 @@ export default function SecondaryNavbar() {
                             transformOrigin: 'top center'
                           }}
                         >
-                          <div className="py-1">
+                          <div className="py-2">
                             {item.items.map((subItem) => (
                               <Link
                                 key={subItem.href}
                                 href={subItem.href}
                                 className={cn(
-                                  "rounded-md block px-3 py-2 text-sm transition-colors duration-150 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400",
+                                  "block mx-2 px-3 py-2 text-sm rounded-md transition-colors duration-150 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400",
                                   pathname === subItem.href
                                     ? "bg-blue-50 text-blue-700 font-medium dark:bg-blue-900/30 dark:text-blue-400"
                                     : "text-gray-600 dark:text-gray-300"

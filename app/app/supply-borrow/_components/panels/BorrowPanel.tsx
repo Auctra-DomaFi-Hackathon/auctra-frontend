@@ -148,7 +148,6 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
       return fullName;
     }
 
-    // Fallback to formatted token ID if metadata not loaded yet
     return `Domain #${userPosition.collateral.tokenId.toString().slice(-6)}`;
   };
 

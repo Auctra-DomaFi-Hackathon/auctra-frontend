@@ -453,7 +453,6 @@ export function useHistoryData() {
       return
     }
 
-    console.log('🎯 Processing bid history:', userBids)
 
     const activities: ActivityItem[] = userBids.map((bid: any) => {
       // Get domain name from metadata
@@ -539,13 +538,6 @@ export function useHistoryData() {
 
   // Loading state includes auction, lending, rental, and bid loading  
   const isLoading = loading || (address && (auctionsLoading || lendingLoading || rentalLoading || bidsLoading))
-
-  console.log('useHistoryData - auction activities:', auctionActivities)
-  console.log('useHistoryData - lending activities:', lendingActivities)
-  console.log('useHistoryData - rental activities:', rentalActivities)
-  console.log('useHistoryData - bid activities:', bidActivities)
-  console.log('useHistoryData - all activities:', allActivities)
-  console.log('useHistoryData - filtered:', filtered)
 
   return { 
     search, 

@@ -12,6 +12,7 @@ export type AuctionState = "LIVE" | "SCHEDULED" | "ENDED";
 
 export interface AuctionRow {
   id: string;
+  listingId: string;
   domain: string;
   tld: string;
   type: AuctionType;
@@ -157,6 +158,7 @@ export function useDashboardData() {
 
           return {
             id: auction.id,
+            listingId: auction.id,
             domain: domainName,
             tld: tldValue,
             type: shortType as AuctionType,

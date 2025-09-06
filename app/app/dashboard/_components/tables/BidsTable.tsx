@@ -2,8 +2,6 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table'
-// import { Coins } from 'lucide-react'
-
 import SortHead from './SortHead'
 import SkeletonRows from './SkeletonRows'
 import EmptyRow from './EmptyRow'
@@ -12,6 +10,8 @@ import { cn } from '@/lib/utils'
 import { useSort } from '../hooks/useSort'
 import type { BidRow } from '../hooks/useDashboardData'
 import { PushPin } from '@phosphor-icons/react/dist/icons/PushPin'
+import { ExternalLink } from 'lucide-react'
+import Link from 'next/link'
 
 export default function BidsTable({ rows }: { rows: BidRow[] }) {
   const bSort = useSort(rows)
@@ -53,7 +53,7 @@ export default function BidsTable({ rows }: { rows: BidRow[] }) {
                         {r.tld || '.doma'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-gray-700 dark:text-gray-300">{r.type}</TableCell>
+                    <TableCell className="text-gray-700 dark:text-gray-300">{r.type} Auction</TableCell>
                     <TableCell className="text-gray-700 dark:text-gray-300">{r.yourBid}</TableCell>
                     <TableCell className="text-gray-700 dark:text-gray-300">{r.phaseOrRank}</TableCell>
                     <TableCell>
@@ -70,14 +70,14 @@ export default function BidsTable({ rows }: { rows: BidRow[] }) {
                     </TableCell>
                     <TableCell>
                       {r.txHash ? (
-                        <a
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 hover:underline text-sm font-medium"
+                        <Link
+                          className="gap-1 mr-2 inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 hover:underline text-sm font-medium"
                           href={`https://explorer-testnet.doma.xyz/tx/${r.txHash}`}
                           target="_blank"
                           rel="noreferrer"
                         >
-                          View Transaction Hash
-                        </a>
+                          <ExternalLink className="h-3.5 w-3.5" /> View Transaction Hash 
+                        </Link>
                       ) : (
                         <span className="text-gray-400 dark:text-gray-500">—</span>
                       )}

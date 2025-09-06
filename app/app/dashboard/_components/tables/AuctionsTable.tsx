@@ -18,9 +18,36 @@ import { useSort } from "../hooks/useSort";
 import type { AuctionRow } from "../hooks/useDashboardData";
 import { CurrencyEth } from "@phosphor-icons/react/dist/icons/CurrencyEth";
 import Image from "next/image";
+import { useEndAuction } from "@/hooks/useEndAuction";
+import EndAuctionSuccessDialog from "@/components/auction/EndAuctionSuccessDialog";
+import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
   const aSort = useSort(rows);
+  const { endAuction, getAuctionState, resetAuctionState } = useEndAuction();
+  const [successDialog, setSuccessDialog] = useState<{
+    open: boolean;
+    hash?: `0x${string}`;
+    domain?: string;
+  }>({ open: false });
+
+  // Monitor all auctions for success state
+  useEffect(() => {
+    if (!rows) return;
+
+    rows.forEach((row) => {
+      const state = getAuctionState(row.listingId);
+      if (state.isSuccess && state.hash && !successDialog.open) {
+        setSuccessDialog({
+          open: true,
+          hash: state.hash,
+          domain: `${row.domain}${row.tld}`,
+        });
+        resetAuctionState(row.listingId);
+      }
+    });
+  }, [rows, getAuctionState, resetAuctionState, successDialog.open]);
 
   return (
     <Card className="border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
@@ -100,14 +127,21 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
                 >
                   Reserve Price
                 </SortHead>
-                {/* <th className="text-right px-4 py-2">Actions</th> */}
+                <SortHead
+                  onClick={() => {}}
+                  active={false}
+                  dir="asc"
+                  className="text-center w-10"
+                >
+                  Actions
+                </SortHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows === undefined ? (
-                <SkeletonRows cols={9} message="Loading domain data..." />
+                <SkeletonRows cols={10} message="Loading domain data..." />
               ) : aSort.sorted.length === 0 ? (
-                <EmptyRow message="No auctions yet" colSpan={9} />
+                <EmptyRow message="No auctions yet" colSpan={10} />
               ) : (
                 aSort.sorted.map((r) => (
                   <TableRow
@@ -153,9 +187,31 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
                         className="rounded-full inline-block ml-2 mb-1"
                       />
                     </TableCell>
-                    {/* <TableCell className="text-right">
-                      <Button variant="outline" size="sm">View</Button>
-                    </TableCell> */}
+                    <TableCell className="text-center w-20">
+                      {r.state === "LIVE" ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            endAuction(r.listingId).catch((error) => {
+                              console.error("Failed to end auction:", error);
+                            });
+                          }}
+                          disabled={getAuctionState(r.listingId).isLoading}
+                          className="h-8 px-3"
+                        >
+                          {getAuctionState(r.listingId).isLoading ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            "End Auction"
+                          )}
+                        </Button>
+                      ) : (
+                        <span className="text-sm text-gray-400 dark:text-gray-500">
+                          -
+                        </span>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -163,6 +219,15 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
           </Table>
         </div>
       </CardContent>
+
+      {successDialog.open && successDialog.hash && successDialog.domain && (
+        <EndAuctionSuccessDialog
+          open={successDialog.open}
+          onOpenChange={(open) => setSuccessDialog({ open })}
+          transactionHash={successDialog.hash}
+          domain={successDialog.domain}
+        />
+      )}
     </Card>
   );
 }

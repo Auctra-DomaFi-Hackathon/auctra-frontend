@@ -10,6 +10,15 @@ export function formatUSDC(amount: bigint): string {
 
 export function formatUSD(amount: bigint): string {
   const formatted = Number(amount) / 1_000_000; // 6 decimals
+  
+  // Handle very small amounts by showing more decimal places
+  if (formatted > 0 && formatted < 0.01) {
+    return `${formatted.toLocaleString('en-US', {
+      minimumFractionDigits: 6,
+      maximumFractionDigits: 6,
+    })}`;
+  }
+  
   return `${formatted.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
