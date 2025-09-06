@@ -367,3 +367,24 @@ export const GET_CURRENT_AUCTION_QUERY = gql`
     }
   }
 `;
+
+// NEW: Get User Bid History for Dashboard and History (from CLAUDE.md)
+export const GET_USER_BID_HISTORY_QUERY = gql`
+  query GetUserBidHistory($bidder: String!) {
+    bids(
+      where: { bidder: $bidder }
+      orderBy: "timestamp"
+      orderDirection: "desc"
+    ) {
+      items {
+        id
+        listingId
+        bidder
+        amount
+        timestamp
+        blockNumber
+        transactionHash
+      }
+    }
+  }
+`;

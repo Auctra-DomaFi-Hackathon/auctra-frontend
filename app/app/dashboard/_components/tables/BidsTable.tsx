@@ -31,22 +31,28 @@ export default function BidsTable({ rows }: { rows: BidRow[] }) {
             <TableHeader className="bg-blue-50/40 dark:bg-gray-700/50">
               <TableRow className="border-gray-200 dark:border-gray-600">
                 <SortHead onClick={() => bSort.toggle('domain')} active={bSort.key==='domain'} dir={bSort.dir}>Domain</SortHead>
+                <th className="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300 text-left">TLD</th>
                 <SortHead onClick={() => bSort.toggle('type')} active={bSort.key==='type'} dir={bSort.dir}>Type</SortHead>
-                <th className="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300">Your Bid</th>
-                <th className="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300">Phase/Rank</th>
+                <th className="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300 text-left">Your Bid</th>
+                <th className="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300 text-left">Phase/Rank</th>
                 <SortHead onClick={() => bSort.toggle('result')} active={bSort.key==='result'} dir={bSort.dir}>Result</SortHead>
-                <th className="px-4 py-2 text-gray-700 dark:text-gray-300">Tx</th>
+                <th className="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300 text-left">Transaction Hash</th>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows === undefined ? (
-                <SkeletonRows cols={6} message="Loading bid data..." />
+                <SkeletonRows cols={7} message="Loading bid data..." />
               ) : bSort.sorted.length === 0 ? (
-                <EmptyRow message="You haven't placed any bids" colSpan={6} />
+                <EmptyRow message="You haven't placed any bids" colSpan={7} />
               ) : (
-                bSort.sorted.map((r) => (
+                bSort.sorted.map((r: any) => (
                   <TableRow key={r.id} className="hover:bg-blue-50/30 dark:hover:bg-gray-700/50 transition border-gray-200 dark:border-gray-700">
                     <TableCell className="font-medium text-gray-900 dark:text-white">{r.domain}</TableCell>
+                    <TableCell className="text-gray-700 dark:text-gray-300">
+                      <Badge variant="secondary" className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        {r.tld || '.doma'}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-gray-700 dark:text-gray-300">{r.type}</TableCell>
                     <TableCell className="text-gray-700 dark:text-gray-300">{r.yourBid}</TableCell>
                     <TableCell className="text-gray-700 dark:text-gray-300">{r.phaseOrRank}</TableCell>
@@ -65,12 +71,12 @@ export default function BidsTable({ rows }: { rows: BidRow[] }) {
                     <TableCell>
                       {r.txHash ? (
                         <a
-                          className="text-blue-700 dark:text-blue-400 hover:underline"
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 hover:underline text-sm font-medium"
                           href={`https://explorer-testnet.doma.xyz/tx/${r.txHash}`}
                           target="_blank"
                           rel="noreferrer"
                         >
-                          View
+                          View Transaction Hash
                         </a>
                       ) : (
                         <span className="text-gray-400 dark:text-gray-500">—</span>

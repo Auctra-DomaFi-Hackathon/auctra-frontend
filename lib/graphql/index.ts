@@ -9,5 +9,6 @@ export {
 export { useMyDomains } from './hooks';
 export { useMyAuctions } from './hooks/useMyAuctions';
 export { useMyBids } from './hooks/useMyBids';
+export { useUserBids } from './hooks/useUserBids';
 export { useAuctionHistory } from './hooks/useAuctionHistory';
 export type { DomainItem, MyDomainsResponse, MyDomainsVariables, SortOrder, ClaimStatus } from './types';

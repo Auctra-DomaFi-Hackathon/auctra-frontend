@@ -23,6 +23,7 @@ export interface AuctionRow {
 export interface BidRow {
   id: string;
   domain: string;
+  tld: string;
   type: AuctionType;
   yourBid: string;
   phaseOrRank: string;
@@ -199,13 +200,34 @@ export function useDashboardData() {
           // Convert wei to ETH for bid amount using the formatter
           const bidAmount = formatETH(bid.amount || '0');
 
+          // Get domain name from metadata if available, otherwise use listing ID
+          const domainName = bid.metadata?.name || `Listing #${bid.listingId}`;
+          
+          // Get auction type from listing strategy if available
+          const auctionType = bid.listing?.strategy ? getStrategyName(bid.listing.strategy) : "English Auction";
+          const shortType = auctionType === 'English Auction' ? 'English' :
+                           auctionType === 'Dutch Auction' ? 'Dutch' :
+                           auctionType === 'Sealed Bid Auction' ? 'Sealed' : 'English';
+
+          // Determine bid result based on listing status and winner
+          let result: "Pending" | "Won" | "Lost" = "Pending";
+          if (bid.listing?.status === "Sold") {
+            result = bid.listing.winner?.toLowerCase() === address.toLowerCase() ? "Won" : "Lost";
+          }
+
+          // Format timestamp for phase/rank
+          const bidTime = bid.timestamp ? 
+            new Date(parseInt(bid.timestamp) * 1000).toLocaleDateString('id-ID') : 
+            "-";
+
           return {
             id: bid.id,
-            domain: `Listing #${bid.listingId}`,
-            type: "English" as AuctionType,
+            domain: domainName,
+            tld: bid.metadata?.tld || '.doma',
+            type: shortType as AuctionType,
             yourBid: `${bidAmount} ETH`,
-            phaseOrRank: "-",
-            result: "Pending" as const,
+            phaseOrRank: bidTime,
+            result,
             txHash: bid.transactionHash,
           };
         });

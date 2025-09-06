@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi'
 import { groupBy, dayKey } from '../utils/date'
 import { MOCK } from '../utils/mock'
 import { useAuctionHistory } from '@/lib/graphql/hooks/useAuctionHistory'
+import { useUserBids } from '@/lib/graphql'
 import { getStrategyName } from '@/lib/utils/strategy'
 import useUserLendingHistory from '@/hooks/useUserLendingHistory'
 import { useUserRentalHistory } from '@/lib/graphql/hooks'
@@ -104,6 +105,13 @@ export function useHistoryData() {
     error: rentalError,
   } = useUserRentalHistory(address || '', 50)
 
+  // Fetch bid history from GraphQL
+  const {
+    bids: userBids,
+    loading: bidsLoading,
+    error: bidsError,
+  } = useUserBids()
+
   React.useEffect(() => {
     const t = setTimeout(() => setLoading(false), 600) // simulate fetch
     return () => clearTimeout(t)
@@ -159,6 +167,9 @@ export function useHistoryData() {
 
   // State for rental activities with metadata
   const [rentalActivities, setRentalActivities] = React.useState<ActivityItem[]>([])
+
+  // State for bid activities with metadata
+  const [bidActivities, setBidActivities] = React.useState<ActivityItem[]>([])
 
   // Transform lending data to ActivityItem format with async metadata fetching
   React.useEffect(() => {
@@ -435,21 +446,79 @@ export function useHistoryData() {
     }
   }, [rentalHistory.length, depositRecords.length, address, fetchNFTMetadata])
 
-  // Combine real auction, lending, and rental data with mock data for other activities
+  // Transform bid data to ActivityItem format
+  React.useEffect(() => {
+    if (!address || !userBids || userBids.length === 0) {
+      setBidActivities([])
+      return
+    }
+
+    console.log('🎯 Processing bid history:', userBids)
+
+    const activities: ActivityItem[] = userBids.map((bid: any) => {
+      // Get domain name from metadata
+      const domainName = bid.metadata?.name 
+        ? `${bid.metadata.name}${bid.metadata.tld || '.doma'}`
+        : `Listing #${bid.listingId}`
+
+      // Convert wei to ETH for bid amount
+      const bidAmount = parseFloat(bid.amount) / 1e18
+      const formattedAmount = formatETH(bidAmount)
+
+      // Get auction type from listing strategy
+      const auctionType = bid.listing?.strategy ? getStrategyName(bid.listing.strategy) : 'English Auction'
+
+      // Determine bid result
+      let status = 'Pending'
+      if (bid.listing?.status === 'Sold') {
+        status = bid.listing.winner?.toLowerCase() === bid.bidder.toLowerCase() ? 'Won' : 'Lost'
+      }
+
+      // Format bid time
+      const bidTime = new Date(parseInt(bid.timestamp) * 1000)
+
+      console.log(`🎯 Creating bid activity for domain: ${domainName}, amount: ${formattedAmount} ETH, status: ${status}`)
+
+      return {
+        id: `bid-${bid.id}`,
+        kind: 'Bids' as EventKind,
+        title: 'New bid placed',
+        subtitle: `${auctionType} • ${formattedAmount} ETH${status !== 'Pending' ? ` • ${status}` : ''}`,
+        domain: domainName,
+        amount: `${formattedAmount} ETH`,
+        time: bidTime.toISOString(),
+        status,
+        txHash: bid.transactionHash,
+        meta: {
+          listingId: bid.listingId,
+          bidAmount: bid.amount,
+          auctionType: bid.listing?.strategy,
+          result: status,
+        }
+      }
+    })
+
+    const sortedActivities = activities.sort((a, b) => +new Date(b.time) - +new Date(a.time))
+    console.log('🎯 Final bid activities:', sortedActivities)
+    setBidActivities(sortedActivities)
+  }, [userBids, address, formatETH])
+
+  // Combine real auction, lending, rental, and bid data with mock data for other activities
   const allActivities = React.useMemo(() => {
     if (address) {
-      // If wallet connected, use real auction + lending + rental data + mock for other types
+      // If wallet connected, use real data for auction, lending, rental, and bids + mock for other types
       const otherMockData = MOCK.filter(item => 
         item.kind !== 'Auctions' && 
         item.kind !== 'Supply & Borrow' && 
-        item.kind !== 'Renting'
+        item.kind !== 'Renting' &&
+        item.kind !== 'Bids'
       )
-      return [...auctionActivities, ...lendingActivities, ...rentalActivities, ...otherMockData]
+      return [...auctionActivities, ...lendingActivities, ...rentalActivities, ...bidActivities, ...otherMockData]
     } else {
       // If no wallet, show all mock data
       return MOCK
     }
-  }, [auctionActivities, lendingActivities, rentalActivities, address])
+  }, [auctionActivities, lendingActivities, rentalActivities, bidActivities, address])
 
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -468,12 +537,13 @@ export function useHistoryData() {
 
   const grouped = React.useMemo(() => groupBy(filtered, (i: ActivityItem) => dayKey(i.time)), [filtered])
 
-  // Loading state includes auction, lending, and rental loading  
-  const isLoading = loading || (address && (auctionsLoading || lendingLoading || rentalLoading))
+  // Loading state includes auction, lending, rental, and bid loading  
+  const isLoading = loading || (address && (auctionsLoading || lendingLoading || rentalLoading || bidsLoading))
 
   console.log('useHistoryData - auction activities:', auctionActivities)
   console.log('useHistoryData - lending activities:', lendingActivities)
   console.log('useHistoryData - rental activities:', rentalActivities)
+  console.log('useHistoryData - bid activities:', bidActivities)
   console.log('useHistoryData - all activities:', allActivities)
   console.log('useHistoryData - filtered:', filtered)
 
@@ -487,6 +557,7 @@ export function useHistoryData() {
     flat: filtered,
     auctionsError,
     lendingError,
-    rentalError
+    rentalError,
+    bidsError
   }
 }

@@ -7,9 +7,36 @@ import { GET_USER_BID_HISTORY_QUERY, GET_NAME_FROM_TOKEN_QUERY, GET_ACTIVE_LISTI
 import { listingsApolloClient, apolloClient } from '../client'
 import type { NFTMetadata, NameFromTokenResponse, NameFromTokenVariables } from '../types'
 
-export function useMyBids(limit: number = 10) {
+export interface UserBid {
+  id: string
+  listingId: string
+  bidder: string
+  amount: string
+  timestamp: string
+  blockNumber?: string
+  transactionHash?: string
+  // Enhanced with metadata
+  listing?: {
+    id: string
+    seller: string
+    status: string
+    strategy: string
+    tokenId: string
+    reservePrice: string
+  }
+  metadata?: NFTMetadata
+}
+
+export interface UserBidsData {
+  bids: UserBid[]
+  loading: boolean
+  error: any
+  refetch: () => void
+}
+
+export function useUserBids(): UserBidsData {
   const { address } = useAccount()
-  const [bidsWithMetadata, setBidsWithMetadata] = useState<any[]>([])
+  const [bidsWithMetadata, setBidsWithMetadata] = useState<UserBid[]>([])
   const [metadataLoading, setMetadataLoading] = useState(false)
 
   const { data, loading, error, refetch } = useQuery(GET_USER_BID_HISTORY_QUERY, {
@@ -87,7 +114,7 @@ export function useMyBids(limit: number = 10) {
       setMetadataLoading(true);
       try {
         const enhancedBids = await Promise.all(
-          data.bids.items.slice(0, limit).map(async (bid: any) => {
+          data.bids.items.map(async (bid: any) => {
             // Fetch listing details
             const listing = await fetchListingDetails(bid.listingId);
             
@@ -107,25 +134,23 @@ export function useMyBids(limit: number = 10) {
         setBidsWithMetadata(enhancedBids);
       } catch (error) {
         console.error('Failed to enhance bids with metadata:', error);
-        setBidsWithMetadata(data.bids.items.slice(0, limit));
+        setBidsWithMetadata(data.bids.items);
       } finally {
         setMetadataLoading(false);
       }
     };
 
     enhanceBids();
-  }, [data, limit]);
+  }, [data]);
 
-  console.log('useMyBids - address:', address)
-  console.log('useMyBids - data:', data)
-  console.log('useMyBids - bidsWithMetadata:', bidsWithMetadata)
-  console.log('useMyBids - loading:', loading || metadataLoading)
-  console.log('useMyBids - error:', error)
+  console.log('useUserBids - address:', address)
+  console.log('useUserBids - data:', data)
+  console.log('useUserBids - bidsWithMetadata:', bidsWithMetadata)
+  console.log('useUserBids - loading:', loading || metadataLoading)
+  console.log('useUserBids - error:', error)
 
   return {
     bids: bidsWithMetadata,
-    pageInfo: data?.bids?.pageInfo,
-    totalCount: data?.bids?.totalCount || 0,
     loading: loading || metadataLoading,
     error,
     refetch,
