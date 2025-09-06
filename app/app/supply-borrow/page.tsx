@@ -1,13 +1,42 @@
 "use client";
 
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Layers, Activity } from "lucide-react";
 import Image from "next/image";
-import SupplyPanel from "./_components/panels/SupplyPanel";
-import BorrowPanel from "./_components/panels/BorrowPanel";
 import LendingPoolSkeleton from "./_components/loading/LendingPoolSkeleton";
 import { useLendingPool, formatUSDC } from "@/hooks/useLendingPool";
+
+// Lazy load heavy components
+const SupplyPanel = dynamic(() => import('./_components/panels/SupplyPanel'), {
+  loading: () => <PanelSkeleton />,
+  ssr: false
+});
+
+const BorrowPanel = dynamic(() => import('./_components/panels/BorrowPanel'), {
+  loading: () => <PanelSkeleton />,
+  ssr: false
+});
+
+// Panel loading skeleton
+function PanelSkeleton() {
+  return (
+    <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <CardHeader>
+        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/3"></div>
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-2/3"></div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function SupplyBorrowPage() {
   const { poolData, isLoadingPoolData } = useLendingPool();
@@ -141,8 +170,12 @@ export default function SupplyBorrowPage() {
 
       {/* Main Action Panels */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <SupplyPanel />
-        <BorrowPanel />
+        <Suspense fallback={<PanelSkeleton />}>
+          <SupplyPanel />
+        </Suspense>
+        <Suspense fallback={<PanelSkeleton />}>
+          <BorrowPanel />
+        </Suspense>
       </div>
 
       {/* Pool Parameters */}

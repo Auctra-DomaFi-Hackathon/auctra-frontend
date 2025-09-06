@@ -413,7 +413,7 @@ export function useExploreData() {
     fetchAuctionData();
   }, [publicClient, filteredListings]);
 
-  // Create fetchMoreListings function for infinite scroll
+  // Create fetchMoreListings function for pagination with 6 items per page
   const fetchMoreListings = useCallback(
     async (page: number) => {
       console.log(
@@ -423,7 +423,7 @@ export function useExploreData() {
         filteredListings.length
       );
 
-      const itemsPerPage = 6; // Match with UI grid display
+      const itemsPerPage = 6; // Start with 6 items as default
       const startIndex = (page - 1) * itemsPerPage;
       const endIndex = startIndex + itemsPerPage;
 
@@ -440,6 +440,9 @@ export function useExploreData() {
         endIndex,
         totalFilteredListings: filteredListings.length,
       });
+
+      // Add small delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       return {
         items,
@@ -483,6 +486,6 @@ export function useExploreData() {
     currentPrices,
     auctionTimes,
     // Add metadata loading state
-    isDataReady: !listingsLoading && filteredListings.length > 0,
+    isDataReady: !listingsLoading && !!listings && listings.length >= 0,
   };
 }

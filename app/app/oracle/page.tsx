@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,10 +21,49 @@ import { useAccount } from "wagmi";
 import { toast } from "@/hooks/use-toast";
 import { useOracleSetup } from "./_hooks/useOracleSetup";
 import { useMyDomains } from "@/lib/graphql/hooks";
-import DomainSelector from "../supply-borrow/_components/domains/DomainSelector";
 import OracleSkeleton from "./_components/OracleSkeleton";
 import type { EnhancedDomainItem } from "@/lib/graphql/services";
-import OracleInstructions from "./_components/OracleInstruction";
+
+// Lazy load heavy components
+const DomainSelector = dynamic(() => import('../supply-borrow/_components/domains/DomainSelector'), {
+  loading: () => <DomainSelectorSkeleton />,
+  ssr: false
+});
+
+const OracleInstructions = dynamic(() => import('./_components/OracleInstruction'), {
+  loading: () => <InstructionsSkeleton />,
+  ssr: false
+});
+
+// Component skeletons
+function DomainSelectorSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+      <div className="grid grid-cols-1 gap-3">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InstructionsSkeleton() {
+  return (
+    <Card className="mt-8 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <CardHeader>
+        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/3"></div>
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-2/3"></div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function OraclePage() {
   const { isConnected, address } = useAccount();
@@ -225,11 +265,13 @@ export default function OraclePage() {
           </CardHeader>
 
           <CardContent className="space-y-4">
-            <DomainSelector
-              onDomainSelect={setSelectedDomain}
-              selectedDomain={selectedDomain}
-              disabled={isPending || isConfirming}
-            />
+            <Suspense fallback={<DomainSelectorSkeleton />}>
+              <DomainSelector
+                onDomainSelect={setSelectedDomain}
+                selectedDomain={selectedDomain}
+                disabled={isPending || isConfirming}
+              />
+            </Suspense>
 
             {selectedDomain ? (
               <>
@@ -604,7 +646,10 @@ export default function OraclePage() {
           </CardContent>
         </Card>
       </div>
-      <OracleInstructions />
+      
+      <Suspense fallback={<InstructionsSkeleton />}>
+        <OracleInstructions />
+      </Suspense>
     </div>
   );
 }

@@ -120,6 +120,9 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
     null
   );
 
+  // Auction status state (1 = live, 2 = ended)
+  const [auctionStatus, setAuctionStatus] = useState<number | null>(null);
+
   // Handle success states
   const isLoading = englishPending || dutchPending || sealedPending;
   const isSuccessful = englishSuccess || dutchSuccess || sealedSuccess;
@@ -305,28 +308,10 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
         try {
           console.log("🔍 Fetching contract data for listing:", listing.id);
 
-          // A. Read paymentToken from listing as per CLAUDE.md instructions
+          // A. Read paymentToken and auction status from listing
           const listingData = await publicClient.readContract({
             address: CONTRACTS.DomainAuctionHouse as `0x${string}`,
-            abi: [
-              {
-                inputs: [{ type: "uint256", name: "listingId" }],
-                name: "listings",
-                outputs: [
-                  { type: "address", name: "seller" },
-                  { type: "address", name: "nft" },
-                  { type: "uint256", name: "tokenId" },
-                  { type: "address", name: "paymentToken" },
-                  { type: "uint256", name: "reservePrice" },
-                  { type: "uint256", name: "startTime" },
-                  { type: "uint256", name: "endTime" },
-                  { type: "address", name: "strategy" },
-                  { type: "bytes", name: "strategyData" },
-                ],
-                stateMutability: "view",
-                type: "function",
-              },
-            ],
+            abi: DOMAIN_AUCTION_HOUSE_ABI,
             functionName: "listings",
             args: [BigInt(listing.id)],
           });
@@ -334,6 +319,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
           const listingArray = [...(listingData as readonly any[])];
           const paymentToken = listingArray[3] as `0x${string}`;
           const isETHPayment = isAddressEqual(paymentToken, zeroAddress); // ⬅️ safe address comparison
+          const status = Number(listingArray[10]); // status is at index 10 (1 = live, 2 = ended)
 
           // Set payment token info
           setPaymentTokenInfo({
@@ -341,6 +327,10 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
             isETH: isETHPayment,
             symbol: isETHPayment ? "ETH" : "ERC20", // TODO: fetch actual symbol for ERC20 tokens
           });
+
+          // Set auction status
+          setAuctionStatus(status);
+          console.log(`⏰ Auction status for ${listing.id}:`, status === 1 ? 'LIVE' : status === 2 ? 'ENDED' : 'UNKNOWN');
 
           console.log("💳 Payment token info:", {
             paymentToken,
@@ -460,6 +450,9 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
         setSealedBidParams(null);
         setMinDepositError(null);
         setHighestBid(null);
+        setCurrentPrice(null);
+        setCurrentPriceError(null);
+        setAuctionStatus(null);
       }
     };
 
@@ -809,6 +802,19 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
               {/* English Auction */}
               {isEnglish && (
                 <div className="space-y-4">
+                  {/* Show auction ended message for English auctions */}
+                  {auctionStatus === 2 && (
+                    <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
+                      <div className="flex-shrink-0">🔴</div>
+                      <div className="flex-1">
+                        <div className="font-medium">This auction has ended</div>
+                        <div className="text-xs mt-1 text-red-600 dark:text-red-400">
+                          This English auction has ended. Bidding is no longer available.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Show current highest bid */}
                   {highestBid && highestBid.amount > 0 && (
                     <div className="flex items-center gap-2 text-blue-600 text-sm bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800">
@@ -911,7 +917,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                           setShowSuccessDialog(false);
                         }
                       }}
-                      disabled={isLoading}
+                      disabled={isLoading || auctionStatus === 2}
                     />
                     {/* Bid validation alert for English auctions */}
                     {bidValidationError && (
@@ -926,11 +932,14 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                       </div>
                     )}
                     <p className="text-xs text-gray-500">
-                      {highestBid && highestBid.amount > 0
+                      {auctionStatus === 2 
+                        ? "This English auction has ended. Bidding is no longer available."
+                        : highestBid && highestBid.amount > 0
                         ? `Enter your bid amount. Must be higher than ${parseFloat(
                             formatEther(highestBid.amount.toString())
                           ).toFixed(6)} ETH.`
-                        : "Enter your bid amount. Must be higher than reserve price."}
+                        : "Enter your bid amount. Must be higher than reserve price."
+                      }
                     </p>
                   </div>
                 </div>
@@ -938,43 +947,60 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
 
               {/* Dutch Auction */}
               {isDutch && (
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="bidAmount"
-                    className="flex items-center gap-2"
-                  >
-                    Your Purchase Amount ({paymentTokenInfo?.symbol || "ETH"})
-                    <Image
-                      src="/images/logoCoin/eth-logo.svg"
-                      alt="eth"
-                      className="h-4 w-4"
-                      width={18}
-                      height={18}
+                <div className="space-y-4">
+                  {/* Show auction ended message for Dutch auctions */}
+                  {auctionStatus === 2 && (
+                    <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
+                      <div className="flex-shrink-0">🔴</div>
+                      <div className="flex-1">
+                        <div className="font-medium">Auction Has Ended</div>
+                        <div className="text-xs mt-1 text-red-600 dark:text-red-400">
+                          This Dutch auction has ended. Purchasing is no longer available.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="bidAmount"
+                      className="flex items-center gap-2"
+                    >
+                      Your Purchase Amount ({paymentTokenInfo?.symbol || "ETH"})
+                      <Image
+                        src="/images/logoCoin/eth-logo.svg"
+                        alt="eth"
+                        className="h-4 w-4"
+                        width={18}
+                        height={18}
+                      />
+                    </Label>
+                    <Input
+                      id="bidAmount"
+                      type="number"
+                      step="0.00001"
+                      min="0.00001"
+                      placeholder="Enter your bid offer"
+                      value={bidAmount}
+                      onChange={(e) => {
+                        setBidAmount(e.target.value);
+                        // Clear success dialog when user starts typing new amount
+                        if (showSuccessDialog) {
+                          console.log(
+                            "🔄 User typing new bid - clearing success dialog"
+                          );
+                          setShowSuccessDialog(false);
+                        }
+                      }}
+                      disabled={isLoading || auctionStatus === 2}
                     />
-                  </Label>
-                  <Input
-                    id="bidAmount"
-                    type="number"
-                    step="0.00001"
-                    min="0.00001"
-                    placeholder="Enter your bid offer"
-                    value={bidAmount}
-                    onChange={(e) => {
-                      setBidAmount(e.target.value);
-                      // Clear success dialog when user starts typing new amount
-                      if (showSuccessDialog) {
-                        console.log(
-                          "🔄 User typing new bid - clearing success dialog"
-                        );
-                        setShowSuccessDialog(false);
+                    <p className="text-xs text-gray-500">
+                      {auctionStatus === 2 
+                        ? "This Dutch auction has ended. Purchasing is no longer available."
+                        : "Enter your purchase amount. Dutch auctions have declining prices - first to pay wins!"
                       }
-                    }}
-                    disabled={isLoading}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Enter your purchase amount. Dutch auctions have declining
-                    prices - first to pay wins!
-                  </p>
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -1178,6 +1204,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                     isLoading ||
                     !bidAmount ||
                     bidValidationError !== "" || // Disable if there's a validation error
+                    ((isDutch || isEnglish) && auctionStatus === 2) || // Disable Dutch/English auction if ended
                     (isSealed &&
                       (!depositAmount ||
                         sealedBidPhase?.phase !== 1 ||
@@ -1202,7 +1229,7 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                         : "Processing..."}
                     </div>
                   ) : isDutch ? (
-                    "Purchase Now"
+                    auctionStatus === 2 ? "Auction Ended" : "Purchase Now"
                   ) : isSealed ? (
                     sealedBidPhase?.phase === 2 ? (
                       "Auction in Reveal Phase"
@@ -1213,6 +1240,8 @@ function BidDialogInner({ isOpen, onClose, listing }: BidDialogProps) {
                     ) : (
                       "Commit Bid"
                     )
+                  ) : isEnglish ? (
+                    auctionStatus === 2 ? "Auction Ended" : "Place Bid"
                   ) : (
                     "Place Bid"
                   )}

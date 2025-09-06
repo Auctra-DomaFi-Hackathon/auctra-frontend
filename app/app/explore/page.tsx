@@ -17,8 +17,8 @@ const AuctionGrid = dynamic(() => import('./_components/grid/AuctionGrid'), {
   loading: () => <LoadingGrid count={6} />,
   ssr: false
 })
-// Use InfiniteListingGrid for better UX
-const InfiniteListingGrid = dynamic(() => import('./_components/InfiniteListingGrid'), {
+// Use PaginatedListingGrid for button-based pagination
+const PaginatedListingGrid = dynamic(() => import('./_components/PaginatedListingGrid'), {
   loading: () => <LoadingGrid count={6} />,
   ssr: false
 })
@@ -55,8 +55,7 @@ export default function ExplorePage() {
     onListingsPageChange,
     onAuctionPageChange,
     currentPage,
-    // Add new methods for infinite scroll
-    fetchMoreListings,
+    // Add pricing and timing data
     currentPrices,
     auctionTimes,
     isDataReady
@@ -150,8 +149,8 @@ export default function ExplorePage() {
                     </button>
                   </div>
                 ) : isDataReady ? (
-                  <InfiniteListingGrid
-                    fetchListings={fetchMoreListings}
+                  <PaginatedListingGrid
+                    allListings={listings || []}
                     emptyLabel="No active listings found. Try adjusting your filters or check back later."
                     currentPrices={currentPrices || {}}
                     auctionTimes={auctionTimes || {}}
