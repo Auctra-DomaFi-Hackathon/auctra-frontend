@@ -7,18 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  CreditCard,
-  TrendingDown,
-  ArrowRight,
-  AlertCircle,
-  CheckCircle,
-  Loader2,
-  Plus,
-  HeartPulse,
-  Globe,
-  AlertTriangle,
-} from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle, Globe, Loader2, TrendingDown } from "lucide-react";
 import Image from "next/image";
 import {
   useLendingPool,
@@ -30,18 +19,13 @@ import {
 } from "@/hooks/useLendingPool";
 import { useAccount } from "wagmi";
 import { toast } from "@/hooks/use-toast";
-import { useQuery } from "@apollo/client";
-import { GET_NAME_FROM_TOKEN_QUERY } from "@/lib/graphql/queries";
-import { apolloClient } from "@/lib/graphql/client";
 import { cn } from "@/lib/utils";
-import type {
-  NameFromTokenResponse,
-  NameFromTokenVariables,
-  NFTMetadata,
-} from "@/lib/graphql/types";
 import DomainSelector from "../domains/DomainSelector";
 import type { EnhancedDomainItem } from "@/lib/graphql/services";
 import { CONTRACTS } from "@/hooks/contracts/constants";
+import { apolloClient } from "@/lib/graphql/client";
+import { GET_NAME_FROM_TOKEN_QUERY } from "@/lib/graphql/queries";
+import type { NameFromTokenResponse, NameFromTokenVariables, NFTMetadata } from "@/lib/graphql/types";
 
 interface BorrowPanelProps {
   className?: string;
@@ -68,339 +52,116 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
     error,
   } = useLendingPool();
 
+  const [tab, setTab] = useState<"borrow" | "repay">("borrow");
   const [borrowAmount, setBorrowAmount] = useState("");
   const [repayAmount, setRepayAmount] = useState("");
-  const [isBorrowMode, setIsBorrowMode] = useState(true);
-  const [selectedDomain, setSelectedDomain] = useState<
-    EnhancedDomainItem | undefined
-  >();
   const [needsApproval, setNeedsApproval] = useState(false);
+  const [selectedDomain, setSelectedDomain] = useState<EnhancedDomainItem | undefined>();
   const [nftApproved, setNftApproved] = useState(false);
-  const [currentAction, setCurrentAction] = useState<
-    | "approve-nft"
-    | "deposit"
-    | "approve-usdc"
-    | "borrow"
-    | "repay"
-    | "withdraw"
-    | null
-  >(null);
-  const [collateralMetadata, setCollateralMetadata] =
-    useState<NFTMetadata | null>(null);
+  const [act, setAct] = useState<"approve-nft" | "deposit" | "withdraw" | "approve-usdc" | "borrow" | "repay" | null>(null);
+  const [meta, setMeta] = useState<NFTMetadata | null>(null);
 
-  // Define computed values first
-  const hasCollateral = userPosition.collateral.active;
+  const hasCol = userPosition.collateral.active;
   const hasDebt = userPosition.debt.principal > BigInt(0);
 
-  // Get the real current debt amount
-  const getCurrentDebt = () => {
-    // Use userTotalDebt if available (from contract call), otherwise calculate
-    if (userTotalDebt && userTotalDebt > BigInt(0)) {
-      return userTotalDebt;
-    }
+  const currentDebt = (() => {
+    if (userTotalDebt && userTotalDebt > BigInt(0)) return userTotalDebt;
+    return calculateCurrentDebt(userPosition.debt.principal, userPosition.debt.lastAccrued, poolData.aprBps);
+  })();
 
-    // Fallback to calculated debt
-    return calculateCurrentDebt(
-      userPosition.debt.principal,
-      userPosition.debt.lastAccrued,
-      poolData.aprBps
-    );
-  };
-
-  // Function to fetch NFT metadata from tokenId using Doma API
-  const fetchNFTMetadata = async (tokenId: string): Promise<NFTMetadata> => {
-    try {
-      const { data } = await apolloClient.query<
-        NameFromTokenResponse,
-        NameFromTokenVariables
-      >({
-        query: GET_NAME_FROM_TOKEN_QUERY,
-        variables: { tokenId },
-        errorPolicy: "all",
-      });
-      const name = data?.nameStatistics?.name;
-      if (name) {
-        // Split domain name to get SLD and TLD
-        const [sld, tld] = name.split(".");
-        return {
-          name: sld || name,
-          tld: tld ? `.${tld}` : ".doma",
-          description: `Domain: ${name}`,
-        };
-      } else {
-        // Fallback if name not found
-        return {
-          name: `Domain-${tokenId.slice(-8)}`,
-          tld: ".doma",
-          description: `Domain NFT #${tokenId}`,
-        };
-      }
-    } catch (error) {
-      console.error("Error fetching NFT metadata:", error);
-      return {
-        name: `Domain-${tokenId.slice(-8)}`,
-        tld: ".doma",
-        description: `Domain NFT #${tokenId}`,
-      };
-    }
-  };
-
-  // Fetch collateral metadata when collateral is active
   useEffect(() => {
-    if (hasCollateral && userPosition.collateral.tokenId) {
-      const tokenId = userPosition.collateral.tokenId.toString();
-      fetchNFTMetadata(tokenId).then(setCollateralMetadata);
-    } else {
-      setCollateralMetadata(null);
+    if (!isConfirmed || !act || !hash) return;
+    toast({
+      title:
+        act === "approve-nft"
+          ? "NFT Approved"
+          : act === "deposit"
+          ? "Collateral Deposited"
+          : act === "withdraw"
+          ? "Collateral Withdrawn"
+          : act === "approve-usdc"
+          ? "USDC Approved"
+          : act === "borrow"
+          ? "Borrowed"
+          : "Repaid",
+      description: (
+        <a href={`https://explorer-testnet.doma.xyz/tx/${hash}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+          View transaction
+        </a>
+      ),
+      duration: 7000,
+    });
+    if (act === "borrow") setBorrowAmount("");
+    if (act === "repay") setRepayAmount("");
+    if (act === "deposit") {
+      setSelectedDomain(undefined);
+      setNftApproved(false);
     }
-  }, [hasCollateral, userPosition.collateral.tokenId]);
+    if (act === "approve-usdc") setNeedsApproval(false);
+    setAct(null);
+  }, [isConfirmed, act, hash]);
 
-  const getDomainName = () => {
-    if (!hasCollateral || !userPosition.collateral.tokenId) return null;
-
-    if (collateralMetadata?.name) {
-      const fullName = collateralMetadata.tld
-        ? `${collateralMetadata.name}${collateralMetadata.tld}`
-        : collateralMetadata.name;
-      return fullName;
-    }
-
-    return `Domain #${userPosition.collateral.tokenId.toString().slice(-6)}`;
-  };
-
-  // Check if approval is needed for repay
-  useEffect(() => {
-    if (repayAmount && typeof usdcAllowance === "bigint" && !isBorrowMode) {
-      const amount = parseUSDC(repayAmount);
-      setNeedsApproval(amount > usdcAllowance);
-    } else {
-      setNeedsApproval(false);
-    }
-  }, [repayAmount, usdcAllowance, isBorrowMode]);
-
-  // Show success toast when transaction is confirmed
-  useEffect(() => {
-    if (isConfirmed && currentAction && hash) {
-      let description = "";
-      let title = "";
-      switch (currentAction) {
-        case "approve-nft":
-          title = "NFT Approval Successful";
-          description = "Successfully approved NFT for collateral";
-          setNftApproved(true);
-          break;
-        case "deposit":
-          title = "Collateral Deposit Successful";
-          description = "Successfully deposited collateral";
-          setSelectedDomain(undefined);
-          setNftApproved(false);
-          break;
-        case "approve-usdc":
-          title = "USDC Approval Successful";
-          description = "Successfully approved USDC spending";
-          // Reset needsApproval after successful USDC approval
-          setNeedsApproval(false);
-          break;
-        case "borrow":
-          title = "USDC Borrow Successful";
-          description = "Successfully borrowed USDC";
-          setBorrowAmount("");
-          break;
-        case "repay":
-          title = "USDC Repayment Successful";
-          description = "Successfully repaid USDC";
-          setRepayAmount("");
-          break;
-        case "withdraw":
-          title = "Collateral Withdrawal Successful";
-          description = "Successfully withdrew collateral";
-          break;
-      }
-
-      // Create transaction link
-      const txLink = `https://explorer-testnet.doma.xyz/tx/${hash}`;
-
-      toast({
-        title,
-        description: (
-          <div className="space-y-2">
-            <p>{description}</p>
-            <a
-              href={txLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline text-sm"
-            >
-              View Transaction
-              <svg
-                className="w-3 h-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                />
-              </svg>
-            </a>
-          </div>
-        ),
-        duration: 8000, // Show longer for transaction link
-      });
-
-      // Reset current action
-      setCurrentAction(null);
-    }
-  }, [isConfirmed, currentAction, hash]);
-
-  // Show error toast
   useEffect(() => {
     if (error) {
-      toast({
-        title: "Transaction Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Transaction Failed", description: error.message, variant: "destructive" });
     }
   }, [error]);
 
-  const handleMaxBorrow = () => {
-    if (userPosition.maxBorrowable) {
-      setBorrowAmount(formatUSDC(userPosition.maxBorrowable));
+  useEffect(() => {
+    if (repayAmount && typeof usdcAllowance === "bigint" && tab === "repay") {
+      setNeedsApproval(parseUSDC(repayAmount) > usdcAllowance);
+    } else {
+      setNeedsApproval(false);
     }
+  }, [repayAmount, usdcAllowance, tab]);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!hasCol || !userPosition.collateral.tokenId) return setMeta(null);
+      const tokenId = userPosition.collateral.tokenId.toString();
+      try {
+        const { data } = await apolloClient.query<NameFromTokenResponse, NameFromTokenVariables>({
+          query: GET_NAME_FROM_TOKEN_QUERY,
+          variables: { tokenId },
+          errorPolicy: "all",
+        });
+        const name = data?.nameStatistics?.name;
+        if (!name) return setMeta({ name: `Domain-${tokenId.slice(-8)}`, tld: ".doma", description: "" });
+        const [sld, tld] = name.split(".");
+        setMeta({ name: sld || name, tld: tld ? `.${tld}` : ".doma", description: "" });
+      } catch {
+        setMeta({ name: `Domain-${tokenId.slice(-8)}`, tld: ".doma", description: "" });
+      }
+    };
+    load();
+  }, [hasCol, userPosition.collateral.tokenId]);
+
+  const hfNew = () => {
+    if (!borrowAmount || !hasCol) return userPosition.healthFactor;
+    const debt = userPosition.debt.principal + parseUSDC(borrowAmount);
+    const col = userPosition.collateral.valueUsd6;
+    const lt = BigInt(poolData.liqThresholdBps);
+    if (debt === BigInt(0)) return BigInt(0);
+    return ((col * lt) / BigInt(10000)) * BigInt(1e18) / debt;
   };
 
-  const handleMaxRepay = () => {
-    if (userPosition.debt.principal && typeof usdcBalance === "bigint") {
-      // Get the real current debt amount
-      const currentDebt = getCurrentDebt();
-
-      // Add buffer (0.5 USDC) to handle any remaining debt due to precision issues
-      const buffer = parseUSDC("0.5");
-      const debtWithBuffer = currentDebt + buffer;
-
-      const maxRepay =
-        debtWithBuffer < usdcBalance ? debtWithBuffer : usdcBalance;
-      setRepayAmount(formatUSDC(maxRepay));
-    }
-  };
-
-  const handleApproveNFT = async () => {
-    if (
-      !selectedDomain ||
-      !selectedDomain.tokenId ||
-      !selectedDomain.tokenAddress
-    )
-      return;
-
-    try {
-      setCurrentAction("approve-nft");
-      await approveNFT(
-        selectedDomain.tokenAddress,
-        BigInt(selectedDomain.tokenId)
-      );
-    } catch (error) {
-      console.error("Failed to approve NFT:", error);
-    }
-  };
-
-  const handleDepositCollateral = async () => {
-    if (
-      !selectedDomain ||
-      !selectedDomain.tokenId ||
-      !selectedDomain.tokenAddress
-    )
-      return;
-
-    try {
-      setCurrentAction("deposit");
-      await depositCollateral(
-        CONTRACTS.DomainNFT,
-        BigInt(selectedDomain.tokenId)
-      );
-    } catch (error) {
-      console.error("Failed to deposit collateral:", error);
-    }
-  };
-
-  const handleWithdrawCollateral = async () => {
-    setCurrentAction("withdraw");
-    await withdrawCollateral();
-  };
-
-  const handleApprove = async () => {
-    if (!repayAmount) return;
-    const amount = parseUSDC(repayAmount);
-    setCurrentAction("approve-usdc");
-    await approveUSDC(amount);
-  };
-
-  const handleBorrow = async () => {
-    if (!borrowAmount) return;
-    const amount = parseUSDC(borrowAmount);
-    setCurrentAction("borrow");
-    await borrow(amount);
-  };
-
-  const handleRepay = async () => {
-    if (!repayAmount) return;
-    const amount = parseUSDC(repayAmount);
-    setCurrentAction("repay");
-    await repay(amount);
-  };
-
-  const getBorrowAPR = () => {
-    return formatAPR(poolData.aprBps);
-  };
-
-  const calculateNewHealthFactor = () => {
-    if (!borrowAmount || !userPosition.collateral.active)
-      return userPosition.healthFactor;
-
-    const currentDebt = userPosition.debt.principal;
-    const newDebt = currentDebt + parseUSDC(borrowAmount);
-    const collateralValue = userPosition.collateral.valueUsd6;
-    const liquidationThreshold = BigInt(poolData.liqThresholdBps);
-
-    if (newDebt === BigInt(0)) return BigInt(0); // Infinite health factor
-
-    const numerator = (collateralValue * liquidationThreshold) / BigInt(10000);
-    const denominator = newDebt;
-
-    return (numerator * BigInt("1000000000000000000")) / denominator;
-  };
-
-  const getHealthFactorColor = (hf: bigint) => {
-    const healthFactor = Number(hf) / 1e18;
-    if (healthFactor >= 2) return "text-blue-600";
-    if (healthFactor >= 1.5) return "text-yellow-600";
-    if (healthFactor >= 1.2) return "text-orange-600";
+  const hfClass = (hf: bigint) => {
+    const v = Number(hf) / 1e18;
+    if (v >= 2) return "text-blue-600";
+    if (v >= 1.5) return "text-yellow-600";
+    if (v >= 1.2) return "text-orange-600";
     return "text-red-600";
   };
+
+  const borrowAPR = formatAPR(poolData.aprBps);
 
   if (!isConnected) {
     return (
       <Card className={cn("dark:bg-gray-800 dark:border-gray-700", className)}>
         <CardContent className="p-6">
-          <div className="text-center py-8">
-            <CreditCard className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Connect Your Wallet
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
-              Connect your wallet to start borrowing
-              <Image
-                src="/images/LogoCoin/usd-coin-usdc-logo.png"
-                alt="USDC"
-                width={14}
-                height={14}
-                className="rounded-full"
-              />
-              USDC
-            </p>
+          <div className="py-8 text-center">
+            <Globe className="mx-auto mb-3 h-6 w-6 text-neutral-500" />
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">Connect your wallet to borrow USDC</p>
           </div>
         </CardContent>
       </Card>
@@ -409,496 +170,222 @@ export default function BorrowPanel({ className }: BorrowPanelProps) {
 
   return (
     <Card className={cn("dark:bg-gray-800 dark:border-gray-700", className)}>
-      <CardHeader>
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 dark:text-white text-xl">
-            <Globe className=" text-blue-600 dark:text-gray-400" />
-            Borrow USDC with Domain Collateral
-          </CardTitle>
-          <Badge
-            variant="secondary"
-            className="bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800"
-          >
-            <TrendingDown className="h-3 w-3 mr-1" />
-            {getBorrowAPR()} APR
+          <CardTitle className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">Borrow USDC</CardTitle>
+          <Badge className="gap-1 bg-blue-50 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:ring-blue-900/50">
+            <TrendingDown className="h-3 w-3" />
+            {borrowAPR}
           </Badge>
         </div>
       </CardHeader>
 
       <CardContent className="p-6 pt-0">
-        {/* Collateral Status */}
-        {!hasCollateral ? (
-          <div className="mb-6">
-            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/20 dark:border-amber-800">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center dark:bg-amber-900/30">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-amber-800 mb-1 dark:text-amber-300">
-                    No Collateral Deposited
-                  </h4>
-                  <p className="text-sm text-amber-700 dark:text-amber-400">
-                    You need to deposit a domain name as collateral before you
-                    can borrow USDC.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Domain Selector */}
-            <div className="mb-4">
-              <DomainSelector
-                onDomainSelect={setSelectedDomain}
-                selectedDomain={selectedDomain}
-                disabled={isPending || isConfirming}
-              />
-            </div>
-
-            {/* NFT Approve and Deposit Buttons */}
+        {!hasCol ? (
+          <div className="mb-5 space-y-3">
+            <DomainSelector onDomainSelect={setSelectedDomain} selectedDomain={selectedDomain} disabled={isPending || isConfirming} />
             {selectedDomain && (
-              <div className="space-y-3">
+              <div className="grid gap-2">
                 {!nftApproved && (
                   <Button
-                    onClick={handleApproveNFT}
-                    disabled={
-                      (isPending && currentAction === "approve-nft") ||
-                      (isConfirming && currentAction === "approve-nft")
-                    }
-                    className="w-full"
                     variant="outline"
+                    className="h-10"
+                    onClick={async () => {
+                      if (!selectedDomain?.tokenAddress || !selectedDomain?.tokenId) return;
+                      setAct("approve-nft");
+                      await approveNFT(selectedDomain.tokenAddress, BigInt(selectedDomain.tokenId));
+                      setNftApproved(true);
+                    }}
+                    disabled={(isPending && act === "approve-nft") || (isConfirming && act === "approve-nft")}
                   >
-                    {(isPending && currentAction === "approve-nft") ||
-                    (isConfirming && currentAction === "approve-nft") ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {isPending ? "Approving NFT..." : "Confirming..."}
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Approve NFT for Collateral
-                      </>
-                    )}
+                    {(isPending && act === "approve-nft") || (isConfirming && act === "approve-nft") ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                    <span className="ml-2">Approve NFT</span>
                   </Button>
                 )}
-
                 <Button
-                  onClick={handleDepositCollateral}
-                  disabled={
-                    !nftApproved ||
-                    (isPending && currentAction === "deposit") ||
-                    (isConfirming && currentAction === "deposit")
-                  }
-                  className="w-full"
+                  className="h-10"
+                  onClick={async () => {
+                    if (!selectedDomain?.tokenId) return;
+                    setAct("deposit");
+                    await depositCollateral(CONTRACTS.DomainNFT, BigInt(selectedDomain.tokenId));
+                  }}
+                  disabled={!nftApproved || (isPending && act === "deposit") || (isConfirming && act === "deposit")}
                 >
-                  {(isPending && currentAction === "deposit") ||
-                  (isConfirming && currentAction === "deposit") ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {isPending ? "Depositing..." : "Confirming..."}
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Use {selectedDomain?.name.split(".")[0]} as Collateral
-                    </>
-                  )}
+                  {(isPending && act === "deposit") || (isConfirming && act === "deposit") ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  <span className="ml-2">{(isPending && act === "deposit") || (isConfirming && act === "deposit") ? "Depositing…" : `Use ${selectedDomain?.name.split(".")[0]} as Collateral`}</span>
                 </Button>
               </div>
             )}
           </div>
         ) : (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800">
+          <div className="mb-5 rounded-lg ring-1 ring-blue-200 dark:ring-blue-900/50 bg-blue-50/60 dark:bg-blue-900/10 p-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center dark:bg-blue-900/30">
-                  <Globe className="h-5 w-5 text-blue-400 dark:text-blue-300" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-blue-800 mb-1 dark:text-blue-300">
-                    Collateral Active
-                  </h4>
-                  <div className="space-y-1">
-                    <p className="text-sm text-blue-700 font-medium flex items-center gap-2 dark:text-blue-400">
-                      {collateralMetadata ? (
-                        getDomainName()
-                      ) : (
-                        <>
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          Loading domain name...
-                        </>
-                      )}
-                    </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-400">
-                      Token ID:{" "}
-                      {(() => {
-                        const tokenId =
-                          userPosition.collateral.tokenId.toString();
-                        if (tokenId.length > 20) {
-                          return `${tokenId.slice(0, 10)}....${tokenId.slice(
-                            -11
-                          )}`;
-                        }
-                        return tokenId;
-                      })()}
-                    </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-400">
-                      Value: {formatUSDC(userPosition.collateral.valueUsd6)}
-                      <Image
-                        src="/images/LogoCoin/usd-coin-usdc-logo.png"
-                        alt="USDC"
-                        width={15}
-                        height={10}
-                        className="rounded-full inline-block ml-1"
-                      />
-                    </p>
-                  </div>
-                </div>
+              <div className="text-[13px]">
+                <div className="font-medium text-blue-800 dark:text-blue-300">{meta ? `${meta.name}${meta.tld}` : "Domain"}</div>
+                <div className="text-blue-700/80 dark:text-blue-300/80">Value {formatUSDC(userPosition.collateral.valueUsd6)} USDC</div>
               </div>
               {!hasDebt && (
                 <Button
-                  variant="outline"
                   size="sm"
-                  onClick={handleWithdrawCollateral}
-                  disabled={
-                    (isPending && currentAction === "withdraw") ||
-                    (isConfirming && currentAction === "withdraw")
-                  }
+                  variant="outline"
+                  onClick={async () => {
+                    setAct("withdraw");
+                    await withdrawCollateral();
+                  }}
+                  disabled={(isPending && act === "withdraw") || (isConfirming && act === "withdraw")}
                 >
-                  {(isPending && currentAction === "withdraw") ||
-                  (isConfirming && currentAction === "withdraw") ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Withdraw"
-                  )}
+                  {(isPending && act === "withdraw") || (isConfirming && act === "withdraw") ? <Loader2 className="h-4 w-4 animate-spin" /> : "Withdraw"}
                 </Button>
               )}
             </div>
           </div>
         )}
 
-        {hasCollateral && (
+        {hasCol && (
           <>
-            {/* Mode Toggle */}
-            <div className="grid grid-cols-2 gap-2 mb-6">
-              <Button
-                variant={isBorrowMode ? "default" : "outline"}
-                onClick={() => setIsBorrowMode(true)}
-                className="w-full"
-              >
+            <div className="grid grid-cols-2 rounded-lg ring-1 ring-neutral-200 dark:ring-neutral-700 overflow-hidden mb-4">
+              <Button onClick={() => setTab("borrow")} variant={tab === "borrow" ? "default" : "ghost"} className={cn("h-8 rounded-none", tab !== "borrow" && "bg-transparent")}>
                 Borrow
               </Button>
-              <Button
-                variant={!isBorrowMode ? "default" : "outline"}
-                onClick={() => setIsBorrowMode(false)}
-                className="w-full"
-              >
+              <Button onClick={() => setTab("repay")} variant={tab === "repay" ? "default" : "ghost"} className={cn("h-8 rounded-none", tab !== "repay" && "bg-transparent")}>
                 Repay
               </Button>
             </div>
 
-            {isBorrowMode ? (
-              // Borrow Mode
-              <div className="space-y-4">
+            {tab === "borrow" ? (
+              <div className="space-y-3">
                 <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Borrow Amount
-                    </label>
-                    <span className="text-xs text-gray-500 flex items-center gap-1 dark:text-gray-400">
-                      Max: {formatUSDC(userPosition.maxBorrowable)}
-                      <Image
-                        src="/images/LogoCoin/usd-coin-usdc-logo.png"
-                        alt="USDC"
-                        width={12}
-                        height={10}
-                        className="rounded-full"
-                      />
-                    </span>
+                  <div className="flex justify-between text-[12px] text-neutral-500 dark:text-neutral-400 mb-1">
+                    <span>Amount</span>
+                    <span className="inline-flex items-center gap-1">Max: {formatUSDC(userPosition.maxBorrowable)}</span>
                   </div>
                   <div className="relative">
-                    <Input
-                      type="number"
-                      placeholder="0.00"
-                      value={borrowAmount}
-                      onChange={(e) => setBorrowAmount(e.target.value)}
-                      className="pr-16 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleMaxBorrow}
-                        className="h-6 px-2 text-xs"
-                      >
+                    <Input type="number" inputMode="decimal" placeholder="0.00" value={borrowAmount} onChange={(e) => setBorrowAmount(e.target.value)} className="pr-20 h-10" />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setBorrowAmount(formatUSDC(userPosition.maxBorrowable))}>
                         MAX
                       </Button>
-                      <span className="text-sm font-medium text-gray-600 flex items-center gap-1 dark:text-gray-300">
-                        <Image
-                          src="/images/LogoCoin/usd-coin-usdc-logo.png"
-                          alt="USDC"
-                          width={12}
-                          height={12}
-                          className="rounded-full"
-                        />
-                      </span>
+                      <Image src="/images/LogoCoin/usd-coin-usdc-logo.png" alt="USDC" width={16} height={16} />
                     </div>
                   </div>
                 </div>
 
                 {borrowAmount && (
-                  <div className="p-3 bg-blue-50 rounded-lg dark:bg-blue-900/20 dark:border dark:border-blue-800">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600 dark:text-gray-400">
-                        Borrow APR
-                      </span>
-                      <span className="font-medium text-blue-600 dark:text-blue-400">
-                        {getBorrowAPR()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">
-                        New Health Factor
-                      </span>
-                      <span
-                        className={`font-medium ${getHealthFactorColor(
-                          calculateNewHealthFactor()
-                        )}`}
-                      >
-                        {formatHealthFactor(calculateNewHealthFactor())}
-                      </span>
-                    </div>
+                  <div className="rounded-lg ring-1 ring-blue-200 dark:ring-blue-900/40 bg-blue-50/60 dark:bg-blue-900/10 p-3 text-[13px]">
+                    <div className="flex justify-between"><span>Borrow APR</span><span>{borrowAPR}</span></div>
+                    <div className="flex justify-between mt-1"><span>New Health Factor</span><span className={hfClass(hfNew())}>{formatHealthFactor(hfNew())}</span></div>
                   </div>
                 )}
 
                 <Button
-                  onClick={handleBorrow}
-                  disabled={
-                    !borrowAmount ||
-                    (isPending && currentAction === "borrow") ||
-                    (isConfirming && currentAction === "borrow")
-                  }
-                  className="w-full"
+                  className="w-full h-10"
+                  onClick={async () => {
+                    if (!borrowAmount) return;
+                    setAct("borrow");
+                    await borrow(parseUSDC(borrowAmount));
+                  }}
+                  disabled={!borrowAmount || (isPending && act === "borrow") || (isConfirming && act === "borrow")}
                 >
-                  {(isPending && currentAction === "borrow") ||
-                  (isConfirming && currentAction === "borrow") ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {isPending ? "Borrowing..." : "Confirming..."}
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Borrow USDC
-                    </>
-                  )}
+                  {(isPending && act === "borrow") || (isConfirming && act === "borrow") ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  <span className="ml-2">{(isPending && act === "borrow") || (isConfirming && act === "borrow") ? "Borrowing…" : "Borrow USDC"}</span>
                 </Button>
               </div>
             ) : (
-              // Repay Mode
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Repay Amount
-                    </label>
-                    <span className="text-xs text-gray-500 flex items-center gap-1 dark:text-gray-400">
-                      Debt: {formatUSDC(getCurrentDebt())}
-                      <Image
-                        src="/images/LogoCoin/usd-coin-usdc-logo.png"
-                        alt="USDC"
-                        width={10}
-                        height={10}
-                        className="rounded-full"
-                      />
-                    </span>
+                  <div className="flex justify-between text-[12px] text-neutral-500 dark:text-neutral-400 mb-1">
+                    <span>Amount</span>
+                    <span className="inline-flex items-center gap-1">Debt: {formatUSDC(currentDebt)}</span>
                   </div>
                   <div className="relative">
-                    <Input
-                      type="number"
-                      placeholder="0.00"
-                      value={repayAmount}
-                      onChange={(e) => setRepayAmount(e.target.value)}
-                      className="pr-16 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <Input type="number" inputMode="decimal" placeholder="0.00" value={repayAmount} onChange={(e) => setRepayAmount(e.target.value)} className="pr-20 h-10" />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={handleMaxRepay}
-                        className="h-6 px-2 text-xs"
+                        className="h-6 px-2"
+                        onClick={() => {
+                          const buf = parseUSDC("0.5");
+                          const max = currentDebt + buf;
+                          const bal = typeof usdcBalance === "bigint" ? usdcBalance : BigInt(0);
+                          setRepayAmount(formatUSDC(max < bal ? max : bal));
+                        }}
                       >
                         MAX
                       </Button>
-                      <span className="text-sm font-medium text-gray-600 flex items-center gap-1 dark:text-gray-300">
-                        <Image
-                          src="/images/LogoCoin/usd-coin-usdc-logo.png"
-                          alt="USDC"
-                          width={12}
-                          height={12}
-                          className="rounded-full"
-                        />
-                        USDC
-                      </span>
+                      <Image src="/images/LogoCoin/usd-coin-usdc-logo.png" alt="USDC" width={16} height={16} />
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  {needsApproval && (
-                    <Button
-                      onClick={handleApprove}
-                      disabled={
-                        !repayAmount ||
-                        (isPending && currentAction === "approve-usdc") ||
-                        (isConfirming && currentAction === "approve-usdc")
-                      }
-                      className="w-full"
-                      variant="outline"
-                    >
-                      {(isPending && currentAction === "approve-usdc") ||
-                      (isConfirming && currentAction === "approve-usdc") ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          {isPending ? "Approving..." : "Confirming..."}
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Approve
-                          <Image
-                            src="/images/LogoCoin/usd-coin-usdc-logo.png"
-                            alt="USDC"
-                            width={14}
-                            height={14}
-                            className="rounded-full mx-1"
-                          />
-                          USDC
-                        </>
-                      )}
-                    </Button>
-                  )}
-
+                {needsApproval && (
                   <Button
-                    onClick={handleRepay}
-                    disabled={
-                      !repayAmount ||
-                      (isPending && currentAction === "repay") ||
-                      (isConfirming && currentAction === "repay") ||
-                      needsApproval
-                    }
-                    className="w-full"
+                    variant="outline"
+                    className="w-full h-10"
+                    onClick={async () => {
+                      if (!repayAmount) return;
+                      setAct("approve-usdc");
+                      await approveUSDC(parseUSDC(repayAmount));
+                    }}
+                    disabled={!repayAmount || (isPending && act === "approve-usdc") || (isConfirming && act === "approve-usdc")}
                   >
-                    {(isPending && currentAction === "repay") ||
-                    (isConfirming && currentAction === "repay") ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {isPending ? "Repaying..." : "Confirming..."}
-                      </>
-                    ) : (
-                      <>
-                        <ArrowRight className="h-4 w-4 mr-2" />
-                        Repay USDC
-                      </>
-                    )}
+                    {(isPending && act === "approve-usdc") || (isConfirming && act === "approve-usdc") ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                    <span className="ml-2">Approve USDC</span>
                   </Button>
-                </div>
+                )}
+
+                <Button
+                  className="w-full h-10"
+                  onClick={async () => {
+                    if (!repayAmount) return;
+                    setAct("repay");
+                    await repay(parseUSDC(repayAmount));
+                  }}
+                  disabled={!repayAmount || needsApproval || (isPending && act === "repay") || (isConfirming && act === "repay")}
+                >
+                  {(isPending && act === "repay") || (isConfirming && act === "repay") ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                  <span className="ml-2">{(isPending && act === "repay") || (isConfirming && act === "repay") ? "Repaying…" : "Repay USDC"}</span>
+                </Button>
               </div>
             )}
           </>
         )}
 
-        <Separator className="my-6" />
+        <Separator className="my-5" />
 
-        {/* Pool Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center">
-            <div className="text-sm text-gray-500 mb-1 dark:text-gray-400">
-              Total Borrowed
-            </div>
-            <div className="font-semibold flex items-center justify-center gap-1 dark:text-white">
-              <span>{formatUSDC(poolData.totalDebt)}</span>
-              USDC
-              <Image
-                src="/images/LogoCoin/usd-coin-usdc-logo.png"
-                alt="USDC"
-                width={12}
-                height={12}
-                className="rounded-full"
-              />
+        <div className="grid grid-cols-2 gap-4 text-center">
+          <div>
+            <div className="text-[12px] text-neutral-500 dark:text-neutral-400">Total Borrowed</div>
+            <div className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100 inline-flex items-center gap-1">
+              {formatUSDC(poolData.totalDebt)}
+              <Image src="/images/LogoCoin/usd-coin-usdc-logo.png" alt="USDC" width={14} height={14} />
             </div>
           </div>
-          <div className="text-center">
-            <div className="text-sm text-gray-500 mb-1 dark:text-gray-400">
-              LTV Ratio
-            </div>
-            <div className="font-semibold dark:text-white">
-              {(poolData.ltvBps / 100).toFixed(0)}%
-            </div>
+          <div>
+            <div className="text-[12px] text-neutral-500 dark:text-neutral-400">LTV</div>
+            <div className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">{(poolData.ltvBps / 100).toFixed(0)}%</div>
           </div>
         </div>
 
-        {/* Your Position */}
-        {hasCollateral && (
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg dark:bg-gray-800 dark:border dark:border-gray-700">
-            <h4 className="font-medium mb-2 flex items-center gap-2 dark:text-white">
-              <HeartPulse className="h-5 w-5 dark:text-gray-300" />
-              Your Borrow Position
-            </h4>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">
-                  Collateral Value
-                </span>
-                <span className="font-medium dark:text-white">
-                  ${formatUSDC(userPosition.collateral.valueUsd6)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">
-                  Borrowed Amount
-                </span>
-                <span className="font-medium flex items-center gap-1 dark:text-white">
-                  <span>{formatUSDC(getCurrentDebt())}</span>
-                  USDC
-                  <Image
-                    src="/images/LogoCoin/usd-coin-usdc-logo.png"
-                    alt="USDC"
-                    width={10}
-                    height={10}
-                    className="rounded-full"
-                  />
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">
-                  Health Factor
-                </span>
-                <span
-                  className={`font-medium ${getHealthFactorColor(
-                    userPosition.healthFactor
-                  )}`}
-                >
-                  {formatHealthFactor(userPosition.healthFactor)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">
-                  Max Borrowable
-                </span>
-                <span className="font-medium flex items-center gap-1 dark:text-white">
-                  <span>{formatUSDC(userPosition.maxBorrowable)}</span>
-                  USDC
-                  <Image
-                    src="/images/LogoCoin/usd-coin-usdc-logo.png"
-                    alt="USDC"
-                    width={10}
-                    height={10}
-                    className="rounded-full"
-                  />
-                </span>
-              </div>
+        {hasCol && (
+          <div className="mt-5 rounded-lg ring-1 ring-neutral-200 dark:ring-neutral-700 p-3">
+            <div className="flex justify-between text-[13px]">
+              <span className="text-neutral-600 dark:text-neutral-300">Borrowed</span>
+              <span className="font-medium inline-flex items-center gap-1">
+                {formatUSDC(currentDebt)}
+                <Image src="/images/LogoCoin/usd-coin-usdc-logo.png" alt="USDC" width={12} height={12} />
+              </span>
+            </div>
+            <div className="flex justify-between text-[13px] mt-1">
+              <span className="text-neutral-600 dark:text-neutral-300">Health Factor</span>
+              <span className={hfClass(userPosition.healthFactor)}>{formatHealthFactor(userPosition.healthFactor)}</span>
+            </div>
+            <div className="flex justify-between text-[13px] mt-1">
+              <span className="text-neutral-600 dark:text-neutral-300">Max Borrowable</span>
+              <span className="font-medium inline-flex items-center gap-1">
+                {formatUSDC(userPosition.maxBorrowable)}
+                <Image src="/images/LogoCoin/usd-coin-usdc-logo.png" alt="USDC" width={12} height={12} />
+              </span>
             </div>
           </div>
         )}

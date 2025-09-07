@@ -8,6 +8,7 @@ import { ListingWithMeta } from "@/lib/rental/types";
 import { formatUSD, formatDate, getDaysLeft } from "@/lib/rental/format";
 import { useAtom } from "jotai";
 import { openRentDialogAtom } from "@/atoms/rentals";
+import { useRentalStatus, formatAddress, formatTimeLeft } from "@/hooks/useRentalStatus";
 
 interface ListingCardProps {
   listing: ListingWithMeta;
@@ -15,20 +16,37 @@ interface ListingCardProps {
 
 export default function ListingCard({ listing }: ListingCardProps) {
   const [, openRentDialog] = useAtom(openRentDialogAtom);
+  const rentalStatus = useRentalStatus(listing.id);
 
-  const isRented = !!listing.rental;
+  const isRented = rentalStatus.status === 'RENTED';
   const isPaused = listing.listing.paused;
-  const isAvailable = !isRented && !isPaused;
+  const isAvailable = !isRented && !isPaused && rentalStatus.status === 'AVAILABLE';
 
   const StatusPill = () => {
-    if (isRented && listing.rental) {
-      const daysLeft = getDaysLeft(listing.rental.expires);
+    if (rentalStatus.isLoading) {
       return (
-        <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700 ring-1 ring-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:ring-amber-800">
-          Rented • {daysLeft}d left
+        <span className="rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-500 ring-1 ring-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:ring-gray-800">
+          Loading...
         </span>
       );
     }
+
+    if (isRented && rentalStatus.timeLeft) {
+      return (
+        <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700 ring-1 ring-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:ring-amber-800">
+          Rented • {formatTimeLeft(rentalStatus.timeLeft)} left
+        </span>
+      );
+    }
+
+    if (rentalStatus.status === 'EXPIRED') {
+      return (
+        <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-medium text-orange-700 ring-1 ring-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:ring-orange-800">
+          Expired
+        </span>
+      );
+    }
+
     if (isPaused) {
       return (
         <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-medium text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-900/40 dark:text-neutral-300 dark:ring-neutral-700">
@@ -36,6 +54,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
         </span>
       );
     }
+
     return (
       <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:ring-blue-800">
         Available
@@ -125,6 +144,12 @@ export default function ListingCard({ listing }: ListingCardProps) {
               label="Rental period"
               value={`${listing.listing.minDays}-${listing.listing.maxDays} days`}
             />
+            {isRented && rentalStatus.renter && (
+              <Row
+                label="Rented by"
+                value={formatAddress(rentalStatus.renter)}
+              />
+            )}
           </div>
 
           {/* Domain expiry + Chain */}
@@ -161,7 +186,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
             }`}
             variant={isAvailable ? "default" : "secondary"}
           >
-            {isRented ? "Currently Rented" : isPaused ? "Paused" : "Rent Domain"}
+            {isRented ? "Currently Rented" : rentalStatus.status === 'EXPIRED' ? "Rental Expired" : isPaused ? "Paused" : "Rent Domain"}
           </Button>
         </CardFooter>
       </Card>

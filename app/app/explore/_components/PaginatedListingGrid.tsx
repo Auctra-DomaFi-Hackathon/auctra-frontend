@@ -131,7 +131,7 @@ export default function PaginatedListingGrid({
                 <span>Loading...</span>
               </div>
             ) : (
-              <span>Load More ({currentListings.length} of {totalItems})</span>
+              <span className="text-blue-600">Load More ({currentListings.length} of {totalItems})</span>
             )}
           </Button>
         </div>

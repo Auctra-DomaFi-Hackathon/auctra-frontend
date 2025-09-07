@@ -1,178 +1,136 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useState, useEffect, useCallback } from "react";
-import { ListingWithMeta } from "@/lib/rental/types";
-import { useRentDomain, RentalCostBreakdown } from "@/hooks/useRentDomain";
 import { useToast } from "@/hooks/use-toast";
-import { Info, BadgeInfo, Clock, CheckCircle, Loader2, ExternalLink, AlertCircle, Wallet } from "lucide-react";
 import { useAccount } from "wagmi";
 import { useAtom } from "jotai";
 import { rentDialogAtom, closeRentDialogAtom } from "@/atoms/rentals";
+import { useRentDomain, RentalCostBreakdown } from "@/hooks/useRentDomain";
+import { useRentalStatus, formatAddress, formatTimeLeft } from "@/hooks/useRentalStatus";
+import { Info, BadgeInfo, Clock, CheckCircle2, Loader2, ExternalLink, AlertCircle, Wallet } from "lucide-react";
 
 export default function RentDomainPopup() {
   const [rentDialogState] = useAtom(rentDialogAtom);
   const [, closeRentDialog] = useAtom(closeRentDialogAtom);
-  
   const { open, listing } = rentDialogState;
-  
-  // Early return if no listing
-  if (!listing) {
-    return null;
-  }
-  const [days, setDays] = useState(listing.listing.minDays);
+
+  const [days, setDays] = useState<number | string>(listing?.listing?.minDays || 1);
   const [costBreakdown, setCostBreakdown] = useState<RentalCostBreakdown | null>(null);
-  const [currentStep, setCurrentStep] = useState<1 | 2>(1); // Step 1: Approve USDC, Step 2: Rent Domain
-  
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+
   const { address } = useAccount();
   const { toast } = useToast();
-  
+  const rentalStatus = useRentalStatus(listing?.id || null);
+
   const {
-    // Cost calculation
     calculateRentalCost,
     formatUSDC,
-    
-    // Balance & Allowance
     usdcBalance,
     usdcAllowance,
     hasSufficientBalance,
     hasSufficientAllowance,
-    
-    // Transaction state
     currentAction,
     isPending,
     isConfirming,
     isConfirmed,
     hash,
     error,
-    
-    // Write functions
     approveUSDC,
     rentDomain,
-    
-    // Utility
     resetAction,
   } = useRentDomain();
 
-  // Calculate costs when days change
   useEffect(() => {
-    const calculateCosts = async () => {
-      try {
-        const breakdown = await calculateRentalCost(
-          listing.listing.pricePerDay,
-          listing.listing.securityDeposit,
-          days
-        );
-        setCostBreakdown(breakdown);
-      } catch (error) {
-        console.error('Failed to calculate rental costs:', error);
-      }
+    if (listing) setDays(listing.listing.minDays);
+  }, [listing]);
+
+  useEffect(() => {
+    if (!listing) return;
+    // Don't calculate cost if days is empty string
+    if (days === "" || typeof days === "string") return;
+    
+    const run = async () => {
+      const b = await calculateRentalCost(listing.listing.pricePerDay, listing.listing.securityDeposit, days);
+      setCostBreakdown(b);
     };
+    run();
+  }, [days, listing, calculateRentalCost]);
 
-    calculateCosts();
-  }, [days, listing.listing.pricePerDay, listing.listing.securityDeposit, calculateRentalCost]);
-
-  // Handle transaction confirmations
   useEffect(() => {
-    if (isConfirmed && currentAction === 'approve-usdc') {
+    if (!listing) return;
+    if (isConfirmed && currentAction === "approve-usdc") {
       setCurrentStep(2);
+      toast({ title: "USDC Approved", description: "You can continue to rent." });
+    } else if (isConfirmed && currentAction === "rent") {
+      const shortHash = hash ? `${hash.slice(0, 10)}…${hash.slice(-8)}` : "";
+      const link = hash ? `https://explorer-testnet.doma.xyz/tx/${hash}` : "";
       toast({
-        title: 'USDC Approved!',
-        description: 'You can now proceed to rent the domain.',
-      });
-    } else if (isConfirmed && currentAction === 'rent') {
-      const shortHash = hash ? `${hash.slice(0, 10)}...${hash.slice(-8)}` : '';
-      const explorerUrl = hash ? `https://explorer-testnet.doma.xyz/tx/${hash}` : '';
-      
-      toast({
-        title: '🎉 Domain Rented Successfully!',
+        title: "Domain Rented",
         description: (
-          <div className="space-y-2">
-            <p>{listing.domain}{listing.tld} is yours for {days} days!</p>
-            <p>Transaction: {shortHash}</p>
-            {explorerUrl && (
-              <a 
-                href={explorerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline text-sm font-medium"
-              >
-                View Transaction <ExternalLink className="w-3 h-3" />
+          <div className="space-y-1.5">
+            <p>{listing.domain}{listing.tld} for {typeof days === "string" ? parseInt(days) || 1 : days} days</p>
+            {!!shortHash && <p className="text-xs text-muted-foreground">Tx: {shortHash}</p>}
+            {!!link && (
+              <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:underline text-xs">
+                View Transaction <ExternalLink className="h-3 w-3" />
               </a>
             )}
           </div>
         ),
-        duration: 15000, // Extended duration so user can click the link
+        duration: 12000,
       });
       closeRentDialog();
-      // Remove the page reload - let user manually refresh if needed
     }
-  }, [isConfirmed, currentAction, listing.domain, listing.tld, days, hash, toast, closeRentDialog]);
+  }, [isConfirmed, currentAction, listing, days, hash, toast, closeRentDialog]);
 
-  // Handle errors
   useEffect(() => {
-    if (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      toast({
-        title: 'Transaction Failed',
-        description: errorMessage || 'An unknown error occurred',
-        variant: 'destructive',
-      });
-      // Clear the error after showing toast to prevent rendering issues
-      resetAction();
-    }
+    if (!error) return;
+    const msg = error instanceof Error ? error.message : String(error);
+    toast({ title: "Transaction Failed", description: msg, variant: "destructive" });
+    resetAction();
   }, [error, toast, resetAction]);
-
-  const handleDaysChange = (value: string) => {
-    const numDays = parseInt(value);
-    if (!isNaN(numDays)) {
-      const clampedDays = Math.max(
-        listing.listing.minDays,
-        Math.min(listing.listing.maxDays, numDays)
-      );
-      setDays(clampedDays);
-    }
-  };
 
   const handleApproveUSDC = useCallback(async () => {
     if (!costBreakdown) return;
-    
-    try {
-      await approveUSDC(costBreakdown.totalPayment);
-    } catch (error) {
-      console.error('Failed to approve USDC:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to approve USDC';
-      toast({
-        title: 'Approval Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    }
-  }, [approveUSDC, costBreakdown, toast]);
+    await approveUSDC(costBreakdown.totalPayment);
+  }, [approveUSDC, costBreakdown]);
 
   const handleRentDomain = useCallback(async () => {
-    try {
-      await rentDomain(listing.id, days);
-    } catch (error) {
-      console.error('Failed to rent domain:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to rent domain';
-      toast({
-        title: 'Rental Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+    if (!listing) return;
+    const numDays = typeof days === "string" ? parseInt(days) : days;
+    if (isNaN(numDays)) return;
+    await rentDomain(listing.id, numDays);
+  }, [rentDomain, listing, days]);
+
+  const handleDaysChange = (v: string) => {
+    // Allow empty string for user to clear and retype
+    if (v === "") {
+      setDays("");
+      return;
     }
-  }, [rentDomain, listing.id, days, toast]);
+    
+    const n = parseInt(v);
+    if (!Number.isNaN(n) && n > 0) {
+      setDays(n);
+    }
+  };
+
+  const handleDaysBlur = (v: string) => {
+    const n = parseInt(v);
+    if (Number.isNaN(n) || v === "") {
+      // If empty or invalid, set to minimum days
+      setDays(listing!.listing.minDays);
+      return;
+    }
+    const clamped = Math.max(listing!.listing.minDays, Math.min(listing!.listing.maxDays, n));
+    setDays(clamped);
+  };
 
   const handleClose = () => {
     resetAction();
@@ -180,24 +138,81 @@ export default function RentDomainPopup() {
     closeRentDialog();
   };
 
+  if (!listing) return null;
+
   if (!address) {
     return (
       <Dialog open={open} onOpenChange={() => closeRentDialog()}>
-        <DialogContent className="sm:max-w-md dark:bg-gray-800 dark:border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Wallet className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              Wallet Required
-            </DialogTitle>
-          </DialogHeader>
-          <div className="text-center py-6">
-            <p className="text-gray-600 dark:text-gray-400">
-              Please connect your wallet to rent this domain.
-            </p>
+        <DialogContent className="sm:max-w-[420px] rounded-2xl p-0 overflow-hidden backdrop-blur-xl border border-border/70">
+          <div className="p-5">
+            <DialogHeader className="pb-2">
+              <DialogTitle className="text-[15px] font-semibold flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-blue-600" />
+                Wallet Required
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">Please connect your wallet to continue.</p>
+            <div className="mt-4">
+              <Button onClick={() => closeRentDialog()} className="w-full h-9">Close</Button>
+            </div>
           </div>
-          <Button onClick={() => closeRentDialog()} className="w-full">
-            Close
-          </Button>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Show rented status if domain is already rented
+  if (rentalStatus.status === 'RENTED' || rentalStatus.status === 'EXPIRED') {
+    return (
+      <Dialog open={open} onOpenChange={() => closeRentDialog()}>
+        <DialogContent className="sm:max-w-[420px] rounded-2xl p-0 overflow-hidden backdrop-blur-xl border border-border/70">
+          <div className="p-5">
+            <DialogHeader className="pb-2">
+              <DialogTitle className="text-[15px] font-semibold flex items-center gap-2">
+                <Info className="h-4 w-4 text-amber-600" />
+                {listing.domain}{listing.tld} Status
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="text-center py-4">
+                <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-700 ring-1 ring-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:ring-amber-800">
+                  {rentalStatus.status === 'RENTED' ? 'Currently Rented' : 'Rental Expired'}
+                </div>
+              </div>
+              
+              {rentalStatus.renter && (
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Rented by</span>
+                    <span className="font-medium font-mono">{formatAddress(rentalStatus.renter)}</span>
+                  </div>
+                  {rentalStatus.expiresAt && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {rentalStatus.status === 'RENTED' ? 'Expires' : 'Expired'}
+                      </span>
+                      <span className="font-medium">{rentalStatus.expiresAt.toLocaleDateString()}</span>
+                    </div>
+                  )}
+                  {rentalStatus.timeLeft && rentalStatus.timeLeft > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Time left</span>
+                      <span className="font-medium">{formatTimeLeft(rentalStatus.timeLeft)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                {rentalStatus.status === 'RENTED' 
+                  ? 'This domain is currently rented and unavailable.' 
+                  : 'This domain rental has expired and can be ended by anyone.'}
+              </p>
+            </div>
+            <div className="mt-4">
+              <Button onClick={() => closeRentDialog()} className="w-full h-9">Close</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     );
@@ -206,229 +221,120 @@ export default function RentDomainPopup() {
   if (!costBreakdown) {
     return (
       <Dialog open={open} onOpenChange={() => closeRentDialog()}>
-        <DialogContent className="sm:max-w-md dark:bg-gray-800 dark:border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white">
-              Loading...
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center justify-center py-6">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
+        <DialogContent className="sm:max-w-[420px] rounded-2xl p-0 overflow-hidden backdrop-blur-xl border border-border/70">
+          <div className="p-6 flex items-center justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
           </div>
         </DialogContent>
       </Dialog>
     );
   }
 
-  // Safety check: if there's an error, don't render the main component
-  if (error && !isConfirmed) {
-    return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md dark:bg-gray-800 dark:border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-red-600 dark:text-red-400">
-              Error
-            </DialogTitle>
-          </DialogHeader>
-          <div className="text-center py-6">
-            <p className="text-gray-600 dark:text-gray-400">
-              {error instanceof Error ? error.message : 'An unknown error occurred'}
-            </p>
-          </div>
-          <Button onClick={handleClose} className="w-full">
-            Close
-          </Button>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  const hasEnoughBalance = costBreakdown && typeof usdcBalance === 'bigint' ? hasSufficientBalance(costBreakdown.totalPayment) : false;
-  const hasEnoughAllowance = costBreakdown && typeof usdcAllowance === 'bigint' ? hasSufficientAllowance(costBreakdown.totalPayment) : false;
-  const canProceedToStep2 = currentStep === 2 || hasEnoughAllowance;
-  const isTransacting = isPending || isConfirming;
+  const hasEnoughBalance = typeof usdcBalance === "bigint" ? hasSufficientBalance(costBreakdown.totalPayment) : false;
+  const hasEnoughAllowance = typeof usdcAllowance === "bigint" ? hasSufficientAllowance(costBreakdown.totalPayment) : false;
+  const canStep2 = currentStep === 2 || hasEnoughAllowance;
+  const busy = isPending || isConfirming;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg dark:bg-gray-800 dark:border-gray-700">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <Info className="w-6 h-6 text-black dark:text-blue-400" />
-            Rent {listing.domain}{listing.tld}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[520px] rounded-2xl p-0 overflow-hidden backdrop-blur-xl border border-border/70">
+        <div className="p-5 pb-3">
+          <DialogHeader className="pb-3">
+            <DialogTitle className="text-[15px] font-semibold flex items-center gap-2">
+              <Info className="h-4 w-4 text-blue-600" />
+              Rent {listing.domain}{listing.tld}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Step Indicator */}
-          <div className="flex items-center justify-center space-x-4">
-            <div className={`flex items-center space-x-2 ${currentStep >= 1 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${
-                currentStep >= 1 ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'
-              }`}>
-                {currentStep > 1 ? <CheckCircle className="w-5 h-5" /> : '1'}
-              </div>
-              <span className="font-medium">Approve USDC</span>
+          <div className="flex items-center justify-center gap-3 text-xs">
+            <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 ${currentStep >= 1 ? "bg-blue-50 text-blue-700 ring-blue-200" : "text-muted-foreground ring-border"}`}>
+              {currentStep > 1 ? <CheckCircle2 className="h-3.5 w-3.5" /> : <span className="h-4 w-4 grid place-items-center text-[11px]">1</span>}
+              Approve
             </div>
-            <div className={`w-8 h-px ${currentStep >= 2 ? 'bg-blue-600 dark:bg-blue-400' : 'bg-gray-300 dark:bg-gray-600'}`} />
-            <div className={`flex items-center space-x-2 ${currentStep >= 2 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${
-                currentStep >= 2 ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'
-              }`}>
-                2
-              </div>
-              <span className="font-medium">Rent Domain</span>
+            <span className="h-px w-6 bg-border" />
+            <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 ${currentStep >= 2 ? "bg-blue-50 text-blue-700 ring-blue-200" : "text-muted-foreground ring-border"}`}>
+              <span className="h-4 w-4 grid place-items-center text-[11px]">2</span>
+              Rent
             </div>
           </div>
 
-          {/* Days Selection */}
-          <div>
-            <Label htmlFor="days" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Rental Period (days)
-            </Label>
-            <div className="mt-2">
+          <div className="mt-4 space-y-4">
+            <div>
+              <Label htmlFor="days" className="text-xs">Rental Period (days)</Label>
               <Input
                 id="days"
                 type="number"
                 value={days}
                 onChange={(e) => handleDaysChange(e.target.value)}
+                onBlur={(e) => handleDaysBlur(e.target.value)}
                 min={listing.listing.minDays}
                 max={listing.listing.maxDays}
-                className="w-full"
-                disabled={isTransacting}
+                disabled={busy}
+                className="mt-1 h-9 text-sm"
               />
-              <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">
-                Min: {listing.listing.minDays} days, Max: {listing.listing.maxDays} days
-              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">Min {listing.listing.minDays} • Max {listing.listing.maxDays}</p>
             </div>
-          </div>
 
-          {/* Balance Information */}
-          <div className="bg-gray-50 rounded-lg p-4 dark:bg-gray-700">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Your USDC Balance</span>
-              <span className="font-medium dark:text-white">{formatUSDC(typeof usdcBalance === 'bigint' ? usdcBalance : BigInt(0))}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">USDC Allowance</span>
-              <span className="font-medium dark:text-white">{formatUSDC(typeof usdcAllowance === 'bigint' ? usdcAllowance : BigInt(0))}</span>
-            </div>
-          </div>
-
-          {/* Cost Breakdown */}
-          <div className="bg-gray-50 rounded-lg p-4 dark:bg-gray-700">
-            <h4 className="font-medium text-gray-900 mb-3 dark:text-white flex items-center gap-2">
-              <BadgeInfo className="w-4 h-4" />
-              Cost Breakdown
-            </h4>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">
-                  Rental fee ({days} × {formatUSDC(listing.listing.pricePerDay)}/day)
-                </span>
-                <span className="font-medium dark:text-white">{formatUSDC(costBreakdown.rentalFee)}</span>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-lg ring-1 ring-border p-2.5">
+                <div className="text-muted-foreground">Balance</div>
+                <div className="mt-1 text-sm font-medium">{formatUSDC(typeof usdcBalance === "bigint" ? usdcBalance : BigInt(0))}</div>
               </div>
-
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Protocol fee</span>
-                <span className="font-medium dark:text-white">{formatUSDC(costBreakdown.protocolFee)}</span>
-              </div>
-
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Security deposit (refundable)</span>
-                <span className="font-medium dark:text-white">{formatUSDC(costBreakdown.securityDeposit)}</span>
-              </div>
-
-              <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
-                <span>Owner receives</span>
-                <span className="font-medium">{formatUSDC(costBreakdown.ownerReceives)}</span>
-              </div>
-
-              <Separator className="my-2" />
-
-              <div className="flex justify-between font-semibold">
-                <span className="dark:text-white">Total Payment</span>
-                <span className="text-lg dark:text-white">{formatUSDC(costBreakdown.totalPayment)}</span>
+              <div className="rounded-lg ring-1 ring-border p-2.5">
+                <div className="text-muted-foreground">Allowance</div>
+                <div className="mt-1 text-sm font-medium">{formatUSDC(typeof usdcAllowance === "bigint" ? usdcAllowance : BigInt(0))}</div>
               </div>
             </div>
-          </div>
 
-          {/* Balance Warning */}
-          {!hasEnoughBalance && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Insufficient USDC balance. You need {formatUSDC(costBreakdown.totalPayment)} but only have {formatUSDC(typeof usdcBalance === 'bigint' ? usdcBalance : BigInt(0))}.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Current Transaction Info */}
-          {hash && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-blue-700 dark:text-blue-400 font-medium">
-                  {isConfirming ? 'Confirming...' : 'Transaction Sent'}
-                </span>
-                <a 
-                  href={`https://explorer-testnet.doma.xyz/tx/${hash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1"
-                >
-                  View <ExternalLink className="w-3 h-3" />
-                </a>
+            <div className="rounded-xl ring-1 ring-border p-3">
+              <div className="flex items-center gap-2 text-[13px] font-medium mb-2"><BadgeInfo className="h-4 w-4" /> Cost</div>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Rental ({typeof days === "string" ? parseInt(days) || 1 : days} × {formatUSDC(listing.listing.pricePerDay)})</span><span>{formatUSDC(costBreakdown.rentalFee)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Protocol fee</span><span>{formatUSDC(costBreakdown.protocolFee)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Deposit (refundable)</span><span>{formatUSDC(costBreakdown.securityDeposit)}</span></div>
+                <Separator className="my-2" />
+                <div className="flex justify-between text-[15px] font-semibold"><span>Total</span><span>{formatUSDC(costBreakdown.totalPayment)}</span></div>
               </div>
             </div>
-          )}
 
-          {/* Actions */}
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              className="flex-1"
-              disabled={isTransacting}
-            >
-              Cancel
-            </Button>
-            
-            {currentStep === 1 ? (
-              <Button
-                onClick={handleApproveUSDC}
-                disabled={isTransacting || !hasEnoughBalance}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
-                {isTransacting && currentAction === 'approve-usdc' ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {isPending ? 'Approving...' : 'Confirming...'}
-                  </>
-                ) : (
-                  `Approve ${formatUSDC(costBreakdown.totalPayment)}`
-                )}
-              </Button>
-            ) : (
-              <Button
-                onClick={handleRentDomain}
-                disabled={isTransacting || !canProceedToStep2}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                {isTransacting && currentAction === 'rent' ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {isPending ? 'Renting...' : 'Confirming...'}
-                  </>
-                ) : (
-                  <>
-                    <Clock className="w-4 h-4 mr-2" />
-                    Rent for {days} days
-                  </>
-                )}
-              </Button>
+            {!hasEnoughBalance && (
+              <Alert variant="destructive" className="py-2.5">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  Insufficient USDC. Need {formatUSDC(costBreakdown.totalPayment)}.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {hash && (
+              <div className="rounded-lg ring-1 ring-blue-200 bg-blue-50/60 p-2.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-blue-700">{isConfirming ? "Confirming…" : "Transaction Sent"}</span>
+                  <a href={`https://explorer-testnet.doma.xyz/tx/${hash}`} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline inline-flex items-center gap-1">
+                    View <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
             )}
           </div>
+        </div>
 
+        <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-t p-3 flex gap-2">
+          <Button variant="outline" className="flex-1 h-9" onClick={handleClose} disabled={busy}>
+            Cancel
+          </Button>
+
+          {currentStep === 1 ? (
+            <Button className="flex-1 h-9" onClick={handleApproveUSDC} disabled={busy || !hasEnoughBalance}>
+              {busy && currentAction === "approve-usdc" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {busy && currentAction === "approve-usdc" ? "Approving…" : `Approve ${formatUSDC(costBreakdown.totalPayment)}`}
+            </Button>
+          ) : (
+            <Button className="flex-1 h-9 bg-green-600 hover:bg-green-700" onClick={handleRentDomain} disabled={busy || !canStep2}>
+              {busy && currentAction === "rent" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Clock className="h-4 w-4 mr-2" />}
+              {busy && currentAction === "rent" ? "Renting…" : `Rent ${typeof days === "string" ? parseInt(days) || 1 : days}d`}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
