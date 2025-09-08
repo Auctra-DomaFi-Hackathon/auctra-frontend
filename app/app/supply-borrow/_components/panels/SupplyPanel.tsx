@@ -39,7 +39,9 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [tab, setTab] = useState<"supply" | "withdraw">("supply");
   const [needsApproval, setNeedsApproval] = useState(false);
-  const [act, setAct] = useState<"approve" | "supply" | "withdraw" | null>(null);
+  const [act, setAct] = useState<"approve" | "supply" | "withdraw" | null>(
+    null
+  );
 
   useEffect(() => {
     if (supplyAmount && typeof usdcAllowance === "bigint") {
@@ -51,7 +53,11 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
 
   useEffect(() => {
     if (error) {
-      toast({ title: "Transaction Failed", description: error.message, variant: "destructive" });
+      toast({
+        title: "Transaction Failed",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   }, [error]);
 
@@ -91,13 +97,17 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
 
   const userSupplied = (() => {
     if (!userPosition.shares || !poolData.exchangeRate) return "0";
-    const amt = (userPosition.shares * poolData.exchangeRate) / BigInt("1000000000000000000");
+    const amt =
+      (userPosition.shares * poolData.exchangeRate) /
+      BigInt("1000000000000000000");
     return formatUSDC(amt);
   })();
 
   const maxWithdraw = () => {
     if (!userPosition.shares || !poolData.exchangeRate) return "0";
-    const amt = (userPosition.shares * poolData.exchangeRate) / BigInt("1000000000000000000");
+    const amt =
+      (userPosition.shares * poolData.exchangeRate) /
+      BigInt("1000000000000000000");
     return formatUSDC(amt);
   };
 
@@ -106,8 +116,16 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
       <Card className={cn("dark:bg-gray-800 dark:border-gray-700", className)}>
         <CardContent className="p-6">
           <div className="py-8 text-center">
-            <Image src="/images/LogoCoin/usd-coin-usdc-logo.png" alt="USDC" width={40} height={40} className="mx-auto mb-3" />
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">Connect your wallet to supply USDC</p>
+            <Image
+              src="/images/LogoCoin/usd-coin-usdc-logo.png"
+              alt="USDC"
+              width={40}
+              height={40}
+              className="mx-auto mb-3"
+            />
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">
+              Connect your wallet to supply USDC
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -118,7 +136,9 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
     <Card className={cn("dark:bg-gray-800 dark:border-gray-700", className)}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">Supply USDC</CardTitle>
+          <CardTitle className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">
+            Supply USDC
+          </CardTitle>
           <Badge className="gap-1 bg-blue-50 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:ring-blue-900/50">
             <TrendingUp className="h-3 w-3" />
             {apr}
@@ -128,10 +148,26 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
 
       <CardContent className="p-6 pt-0">
         <div className="grid grid-cols-2 rounded-lg ring-1 ring-neutral-200 dark:ring-neutral-700 overflow-hidden mb-4">
-          <Button onClick={() => setTab("supply")} variant={tab === "supply" ? "default" : "ghost"} className={cn("h-8 rounded-none", tab !== "supply" && "bg-transparent")}>
+          <Button
+            onClick={() => setTab("supply")}
+            variant={tab === "supply" ? "default" : "ghost"}
+            className={cn(
+              "h-8 rounded-none",
+              tab !== "supply" &&
+                "bg-transparent text-gray-700 dark:text-gray-300"
+            )}
+          >
             Supply
           </Button>
-          <Button onClick={() => setTab("withdraw")} variant={tab === "withdraw" ? "default" : "ghost"} className={cn("h-8 rounded-none", tab !== "withdraw" && "bg-transparent")}>
+          <Button
+            onClick={() => setTab("withdraw")}
+            variant={tab === "withdraw" ? "default" : "ghost"}
+            className={cn(
+              "h-8 rounded-none",
+              tab !== "withdraw" &&
+                "bg-transparent text-gray-700 dark:text-gray-300"
+            )}
+          >
             Withdraw
           </Button>
         </div>
@@ -142,17 +178,45 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
               <div className="flex justify-between text-[12px] text-neutral-500 dark:text-neutral-400 mb-1">
                 <span>Amount</span>
                 <span className="inline-flex items-center gap-1">
-                  Bal: {formatUSDC(typeof usdcBalance === "bigint" ? usdcBalance : BigInt(0))}
-                  <Image src="/images/LogoCoin/usd-coin-usdc-logo.png" alt="USDC" width={12} height={12} />
+                  Bal:{" "}
+                  {formatUSDC(
+                    typeof usdcBalance === "bigint" ? usdcBalance : BigInt(0)
+                  )}
+                  <Image
+                    src="/images/LogoCoin/usd-coin-usdc-logo.png"
+                    alt="USDC"
+                    width={12}
+                    height={12}
+                  />
                 </span>
               </div>
               <div className="relative">
-                <Input type="number" inputMode="decimal" placeholder="0.00" value={supplyAmount} onChange={(e) => setSupplyAmount(e.target.value)} className="pr-20 h-10" />
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={supplyAmount}
+                  onChange={(e) => setSupplyAmount(e.target.value)}
+                  className="pr-20 h-10 bg-white border-gray-200 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-900/50 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-blue-400 dark:focus:ring-blue-400"
+                />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => typeof usdcBalance === "bigint" && setSupplyAmount(formatUSDC(usdcBalance))}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 dark:text-white"
+                    onClick={() =>
+                      typeof usdcBalance === "bigint" &&
+                      setSupplyAmount(formatUSDC(usdcBalance))
+                    }
+                  >
                     MAX
                   </Button>
-                  <Image src="/images/LogoCoin/usd-coin-usdc-logo.png" alt="USDC" width={16} height={16} />
+                  <Image
+                    src="/images/LogoCoin/usd-coin-usdc-logo.png"
+                    alt="USDC"
+                    width={16}
+                    height={16}
+                  />
                 </div>
               </div>
             </div>
@@ -166,9 +230,18 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
                   setAct("approve");
                   await approveUSDC(parseUSDC(supplyAmount));
                 }}
-                disabled={!supplyAmount || (isPending && act === "approve") || (isConfirming && act === "approve")}
+                disabled={
+                  !supplyAmount ||
+                  (isPending && act === "approve") ||
+                  (isConfirming && act === "approve")
+                }
               >
-                {(isPending && act === "approve") || (isConfirming && act === "approve") ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                {(isPending && act === "approve") ||
+                (isConfirming && act === "approve") ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4" />
+                )}
                 <span className="ml-2">Approve USDC</span>
               </Button>
             )}
@@ -180,10 +253,23 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
                 setAct("supply");
                 await depositLiquidity(parseUSDC(supplyAmount));
               }}
-              disabled={!supplyAmount || needsApproval || (isPending && act === "supply") || (isConfirming && act === "supply")}
+              disabled={
+                !supplyAmount ||
+                needsApproval ||
+                (isPending && act === "supply") ||
+                (isConfirming && act === "supply")
+              }
             >
-              {(isPending && act === "supply") || (isConfirming && act === "supply") ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              <span className="ml-2">{(isPending && act === "supply") || (isConfirming && act === "supply") ? "Supplying…" : "Supply"}</span>
+              {(isPending && act === "supply") ||
+              (isConfirming && act === "supply") ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : null}
+              <span className="ml-2">
+                {(isPending && act === "supply") ||
+                (isConfirming && act === "supply")
+                  ? "Supplying…"
+                  : "Supply"}
+              </span>
             </Button>
           </div>
         ) : (
@@ -191,15 +277,34 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
             <div>
               <div className="flex justify-between text-[12px] text-neutral-500 dark:text-neutral-400 mb-1">
                 <span>Amount</span>
-                <span className="inline-flex items-center gap-1">Supplied: {userSupplied}</span>
+                <span className="inline-flex items-center gap-1">
+                  Supplied: {userSupplied}
+                </span>
               </div>
               <div className="relative">
-                <Input type="number" inputMode="decimal" placeholder="0.00" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} className="pr-20 h-10" />
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  className="pr-20 h-10 bg-white border-gray-200 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-900/50 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-blue-400 dark:focus:ring-blue-400"
+                />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setWithdrawAmount(maxWithdraw())}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 dark:text-white"
+                    onClick={() => setWithdrawAmount(maxWithdraw())}
+                  >
                     MAX
                   </Button>
-                  <Image src="/images/LogoCoin/usd-coin-usdc-logo.png" alt="USDC" width={16} height={16} />
+                  <Image
+                    src="/images/LogoCoin/usd-coin-usdc-logo.png"
+                    alt="USDC"
+                    width={16}
+                    height={16}
+                  />
                 </div>
               </div>
             </div>
@@ -211,10 +316,22 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
                 setAct("withdraw");
                 await withdrawLiquidity(parseUSDC(withdrawAmount));
               }}
-              disabled={!withdrawAmount || (isPending && act === "withdraw") || (isConfirming && act === "withdraw")}
+              disabled={
+                !withdrawAmount ||
+                (isPending && act === "withdraw") ||
+                (isConfirming && act === "withdraw")
+              }
             >
-              {(isPending && act === "withdraw") || (isConfirming && act === "withdraw") ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              <span className="ml-2">{(isPending && act === "withdraw") || (isConfirming && act === "withdraw") ? "Withdrawing…" : "Withdraw"}</span>
+              {(isPending && act === "withdraw") ||
+              (isConfirming && act === "withdraw") ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : null}
+              <span className="ml-2">
+                {(isPending && act === "withdraw") ||
+                (isConfirming && act === "withdraw")
+                  ? "Withdrawing…"
+                  : "Withdraw"}
+              </span>
             </Button>
           </div>
         )}
@@ -223,25 +340,43 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
 
         <div className="grid grid-cols-2 gap-4 text-center">
           <div>
-            <div className="text-[12px] text-neutral-500 dark:text-neutral-400">Total Supplied</div>
+            <div className="text-[12px] text-neutral-500 dark:text-neutral-400">
+              Total Supplied
+            </div>
             <div className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100 inline-flex items-center gap-1">
               {formatUSDC(poolData.totalAssets)}
-              <Image src="/images/LogoCoin/usd-coin-usdc-logo.png" alt="USDC" width={14} height={14} />
+              <Image
+                src="/images/LogoCoin/usd-coin-usdc-logo.png"
+                alt="USDC"
+                width={14}
+                height={14}
+              />
             </div>
           </div>
           <div>
-            <div className="text-[12px] text-neutral-500 dark:text-neutral-400">Utilization</div>
-            <div className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">{((Number(poolData.utilization1e18) / 1e18) * 100).toFixed(1)}%</div>
+            <div className="text-[12px] text-neutral-500 dark:text-neutral-400">
+              Utilization
+            </div>
+            <div className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">
+              {((Number(poolData.utilization1e18) / 1e18) * 100).toFixed(1)}%
+            </div>
           </div>
         </div>
 
         {userPosition.shares > BigInt(0) && (
           <div className="mt-5 rounded-lg ring-1 ring-neutral-200 dark:ring-neutral-700 p-3">
             <div className="flex items-center justify-between text-[13px]">
-              <span className="text-neutral-600 dark:text-neutral-300">Your Supply</span>
-              <span className="font-medium inline-flex items-center gap-1">
+              <span className="text-neutral-600 dark:text-white">
+                Your Supply
+              </span>
+              <span className="font-medium inline-flex items-center gap-1 text-neutral-600 dark:text-white">
                 {userSupplied}
-                <Image src="/images/LogoCoin/usd-coin-usdc-logo.png" alt="USDC" width={12} height={12} />
+                <Image
+                  src="/images/LogoCoin/usd-coin-usdc-logo.png"
+                  alt="USDC"
+                  width={12}
+                  height={12}
+                />
               </span>
             </div>
           </div>

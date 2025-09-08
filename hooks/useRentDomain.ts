@@ -91,18 +91,18 @@ export function useRentDomain() {
 
   // Format USDC amounts for display
   const formatUSDC = useCallback((amount: bigint) => {
-    return `$${formatUnits(amount, 6)}`
+    return `${formatUnits(amount, 6)}`
   }, [])
 
   // Check if user has sufficient balance
   const hasSufficientBalance = useCallback((totalAmount: bigint) => {
-    if (!usdcBalance) return false
+    if (!usdcBalance || typeof usdcBalance !== 'bigint') return false
     return usdcBalance >= totalAmount
   }, [usdcBalance])
 
   // Check if user has sufficient allowance
   const hasSufficientAllowance = useCallback((totalAmount: bigint) => {
-    if (!usdcAllowance) return false
+    if (!usdcAllowance || typeof usdcAllowance !== 'bigint') return false
     return usdcAllowance >= totalAmount
   }, [usdcAllowance])
 
@@ -220,19 +220,19 @@ export function useRentDomain() {
   // Get rental status for a listing
   const getRentalStatus = useCallback(async (listingId: number) => {
     try {
-      const listingResult = await useReadContract({
-        address: CONTRACTS.DomainRentalVault,
-        abi: DOMAIN_RENTAL_VAULT_ABI,
-        functionName: 'getListing',
-        args: [BigInt(listingId)],
-      })
+      // const listingResult = await useReadContract({
+      //   address: CONTRACTS.DomainRentalVault,
+      //   abi: DOMAIN_RENTAL_VAULT_ABI,
+      //   functionName: 'getListing',
+      //   args: [BigInt(listingId)],
+      // })
 
-      const rentalResult = await useReadContract({
-        address: CONTRACTS.DomainRentalVault,
-        abi: DOMAIN_RENTAL_VAULT_ABI,
-        functionName: 'getRental',
-        args: [BigInt(listingId)],
-      })
+      // const rentalResult = await useReadContract({
+      //   address: CONTRACTS.DomainRentalVault,
+      //   abi: DOMAIN_RENTAL_VAULT_ABI,
+      //   functionName: 'getRental',
+      //   args: [BigInt(listingId)],
+      // })
 
       // This would need to be handled differently in the component
       // For now, return a helper function

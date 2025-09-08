@@ -201,7 +201,7 @@ export default function SupplyBorrowPage() {
               <div className="text-sm text-gray-600 dark:text-gray-400">Liquidation Threshold</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-white-600 dark:text-white-400">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {(poolData.aprBps / 100).toFixed(1)}%
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Base Borrow APR</div>

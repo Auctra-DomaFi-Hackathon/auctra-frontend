@@ -115,12 +115,6 @@ export function useAuctionDetails(listingId: string): AuctionDetailsData {
     fetchMetadata();
   }, [data]);
 
-  console.log('useAuctionDetails - listingId:', listingId)
-  console.log('useAuctionDetails - data:', data)
-  console.log('useAuctionDetails - auctionWithMetadata:', auctionWithMetadata)
-  console.log('useAuctionDetails - loading:', loading || metadataLoading)
-  console.log('useAuctionDetails - error:', error)
-
   return {
     listing: auctionWithMetadata,
     highestBid: data?.highestBid?.items?.[0] || null,

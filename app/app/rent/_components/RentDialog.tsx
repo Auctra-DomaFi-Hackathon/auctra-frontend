@@ -53,12 +53,12 @@ export default function RentDialog({ listing, open, onOpenChange }: RentDialogPr
         description: `Successfully rented ${listing.domain} for ${days} days!`,
       });
       onOpenChange(false);
-      // Trigger a refetch in the parent component would be done via context/state management
-      window.location.reload(); // Simple refresh for now
+      window.location.reload();
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to rent domain",
+        description:
+          error instanceof Error ? error.message : "Failed to rent domain",
         variant: "destructive",
       });
     }
@@ -66,19 +66,50 @@ export default function RentDialog({ listing, open, onOpenChange }: RentDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md dark:bg-gray-800 dark:border-gray-700">
+      {/* Dark-first surface with subtle border + shadow for glassy card feel */}
+      <DialogContent
+        className="
+          sm:max-w-md 
+          bg-white dark:bg-[#0b1220] 
+          border border-gray-200 dark:border-white/10 
+          shadow-xl dark:shadow-[0_10px_30px_rgba(0,0,0,0.35)]
+          text-gray-900 dark:text-slate-200
+          backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-white/[0.03]
+        "
+      >
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white">
-            Rent {listing.domain}
+          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-slate-100">
+            Rent <span className="text-sky-500">{listing.domain}</span>
           </DialogTitle>
+
+          {/* Stepper */}
+          <div className="mt-2 flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-600 text-white">
+                1
+              </span>
+              <span className="text-slate-400">Approve</span>
+            </div>
+            <div className="h-px w-8 bg-slate-300 dark:bg-white/10" />
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-500/50 text-white">
+                2
+              </span>
+              <span className="text-slate-500">Rent</span>
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Days Selection */}
           <div>
-            <Label htmlFor="days" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <Label
+              htmlFor="days"
+              className="text-sm font-medium text-gray-700 dark:text-slate-300"
+            >
               Rental Period (days)
             </Label>
+
             <div className="mt-2">
               <Input
                 id="days"
@@ -87,46 +118,77 @@ export default function RentDialog({ listing, open, onOpenChange }: RentDialogPr
                 onChange={(e) => handleDaysChange(e.target.value)}
                 min={listing.listing.minDays}
                 max={listing.listing.maxDays}
-                className="w-full"
+                className="
+                  w-full
+                  bg-white dark:bg-white/[0.04]
+                  border-gray-300 dark:border-white/10
+                  text-gray-900 dark:text-slate-100
+                  placeholder-gray-500 dark:placeholder-slate-400
+                  focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:border-sky-500
+                "
+                placeholder={`${listing.listing.minDays} - ${listing.listing.maxDays}`}
               />
-              <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">
-                Min: {listing.listing.minDays} days, Max: {listing.listing.maxDays} days
+              <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                <span className="font-medium text-slate-300">Period</span>{" "}
+                <span className="mx-1">•</span>
+                Min {listing.listing.minDays} <span className="mx-1">•</span> Max{" "}
+                {listing.listing.maxDays} days
               </p>
             </div>
           </div>
 
           {/* Cost Breakdown */}
-          <div className="bg-gray-50 rounded-lg p-4 dark:bg-gray-700">
-            <h4 className="font-medium text-gray-900 mb-3 dark:text-white">Cost Breakdown</h4>
-            
+          <div
+            className="
+              rounded-xl p-4 
+              bg-gray-50 dark:bg-white/[0.04]
+              border border-gray-200 dark:border-white/10
+            "
+          >
+            <h4 className="mb-3 font-medium text-gray-900 dark:text-slate-100">
+              Cost Breakdown
+            </h4>
+
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">
+                <span className="text-gray-600 dark:text-slate-400">
                   Base price ({days} × {formatUSD(listing.listing.pricePerDay)}/day)
                 </span>
-                <span className="font-medium dark:text-white">{formatUSD(costBreakdown.basePrice)}</span>
+                <span className="font-medium text-gray-900 dark:text-slate-100">
+                  {formatUSD(costBreakdown.basePrice)}
+                </span>
               </div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Protocol fee (2%)</span>
-                <span className="font-medium dark:text-white">{formatUSD(costBreakdown.protocolFee)}</span>
+                <span className="text-gray-600 dark:text-slate-400">
+                  Protocol fee (2%)
+                </span>
+                <span className="font-medium text-gray-900 dark:text-slate-100">
+                  {formatUSD(costBreakdown.protocolFee)}
+                </span>
               </div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Security deposit (refundable)</span>
-                <span className="font-medium dark:text-white">{formatUSD(costBreakdown.securityDeposit)}</span>
+                <span className="text-gray-600 dark:text-slate-400">
+                  Security deposit (refundable)
+                </span>
+                <span className="font-medium text-gray-900 dark:text-slate-100">
+                  {formatUSD(costBreakdown.securityDeposit)}
+                </span>
               </div>
 
-              <Separator className="my-2" />
+              <Separator className="my-2 bg-gray-300 dark:bg-white/10" />
 
               <div className="flex justify-between font-semibold">
-                <span className="dark:text-white">Total Cost</span>
-                <span className="text-lg dark:text-white">{formatUSD(costBreakdown.total)}</span>
+                <span className="text-gray-900 dark:text-slate-100">Total</span>
+                <span className="text-lg text-gray-900 dark:text-slate-100">
+                  {formatUSD(costBreakdown.total)}
+                </span>
               </div>
             </div>
 
-            <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
-              <p className="text-xs text-blue-700 dark:text-blue-400">
+            <div className="mt-3 rounded-lg border border-sky-200/60 bg-sky-50 p-3 dark:border-sky-500/30 dark:bg-sky-500/10">
+              <p className="text-xs text-sky-700 dark:text-sky-300">
                 The security deposit will be returned after the rental period ends,
                 minus any damages or violations.
               </p>
@@ -138,15 +200,28 @@ export default function RentDialog({ listing, open, onOpenChange }: RentDialogPr
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="flex-1"
+              className="
+                flex-1
+                bg-white dark:bg-white/[0.03]
+                border-gray-300 dark:border-white/10
+                text-gray-700 dark:text-slate-300
+                hover:bg-gray-50 dark:hover:bg-white/[0.06]
+              "
               disabled={loading}
             >
               Cancel
             </Button>
+
             <Button
               onClick={handleRent}
               disabled={loading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              className="
+                flex-1 
+                bg-sky-600 hover:bg-sky-700
+                dark:bg-sky-600 dark:hover:bg-sky-500
+                text-white disabled:opacity-50
+                focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-sky-400
+              "
             >
               {loading ? "Processing..." : `Rent for ${formatUSD(costBreakdown.total)}`}
             </Button>

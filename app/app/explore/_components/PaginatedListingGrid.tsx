@@ -123,7 +123,7 @@ export default function PaginatedListingGrid({
             onClick={handleLoadMore}
             disabled={isLoading}
             variant="outline"
-            className="px-8 py-3 border-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 disabled:opacity-50 font-medium"
+            className="px-8 py-3 border-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 disabled:opacity-50 font-medium dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:border-blue-700 bg-white dark:bg-gray-800"
           >
             {isLoading ? (
               <div className="flex items-center gap-2">
@@ -131,7 +131,7 @@ export default function PaginatedListingGrid({
                 <span>Loading...</span>
               </div>
             ) : (
-              <span className="text-blue-600">Load More ({currentListings.length} of {totalItems})</span>
+              <span className="text-blue-600 dark:text-blue-400">Load More ({currentListings.length} of {totalItems})</span>
             )}
           </Button>
         </div>

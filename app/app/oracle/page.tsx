@@ -457,7 +457,7 @@ export default function OraclePage() {
                   <div className="mb-2 font-medium text-blue-900 dark:text-blue-100">
                     Activity
                   </div>
-                  <ol className="space-y-2">
+                  <ol className="space-y-2 dark:text-white text-blue-900">
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-300" />
                       Selected domain & validated metadata
@@ -508,7 +508,7 @@ export default function OraclePage() {
                   placeholder="1000"
                   value={valueUsd}
                   onChange={(e) => setValueUsd(e.target.value)}
-                  className="pr-16 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                  className="pr-16 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield] bg-white border-gray-200 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-900/50 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-blue-400 dark:focus:ring-blue-400"
                   min="1"
                   step="1"
                 />
@@ -538,7 +538,7 @@ export default function OraclePage() {
                   placeholder="2"
                   value={expiryYears}
                   onChange={(e) => setExpiryYears(e.target.value)}
-                  className="pr-20 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                  className="pr-20 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield] bg-white border-gray-200 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-900/50 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-blue-400 dark:focus:ring-blue-400"
                   min="1"
                   max="10"
                   step="1"

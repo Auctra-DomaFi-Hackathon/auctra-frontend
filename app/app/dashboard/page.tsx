@@ -54,22 +54,22 @@ export default function DashboardPage() {
 
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between mb-3">
         <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-          <TabsList className="bg-blue-50/40">
+          <TabsList className="bg-blue-50/40 dark:bg-gray-800/60">
             <TabsTrigger
               value="auctions"
-              className="data-[state=active]:bg-white data-[state=active]:text-blue-700"
+              className="data-[state=active]:bg-white data-[state=active]:text-blue-700 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-blue-400 dark:text-gray-300"
             >
               My Auctions
             </TabsTrigger>
             <TabsTrigger
               value="bids"
-              className="data-[state=active]:bg-white data-[state=active]:text-blue-700"
+              className="data-[state=active]:bg-white data-[state=active]:text-blue-700 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-blue-400 dark:text-gray-300"
             >
               My Bids
             </TabsTrigger>
             <TabsTrigger
               value="domains"
-              className="data-[state=active]:bg-white data-[state=active]:text-blue-700"
+              className="data-[state=active]:bg-white data-[state=active]:text-blue-700 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-blue-400 dark:text-gray-300"
             >
               My Domains
             </TabsTrigger>
@@ -84,7 +84,7 @@ export default function DashboardPage() {
           <TabsContent value="auctions">
             <Suspense
               fallback={
-                <div className="h-32 bg-gray-50 animate-pulse rounded-lg"></div>
+                <div className="h-32 bg-gray-50 dark:bg-gray-800 animate-pulse rounded-lg"></div>
               }
             >
               <AuctionsTable rows={auctions || []} />
@@ -93,7 +93,7 @@ export default function DashboardPage() {
           <TabsContent value="bids">
             <Suspense
               fallback={
-                <div className="h-32 bg-gray-50 animate-pulse rounded-lg"></div>
+                <div className="h-32 bg-gray-50 dark:bg-gray-800 animate-pulse rounded-lg"></div>
               }
             >
               <BidsTable rows={bids || []} />
@@ -102,7 +102,7 @@ export default function DashboardPage() {
           <TabsContent value="domains">
             <Suspense
               fallback={
-                <div className="h-32 bg-gray-50 animate-pulse rounded-lg"></div>
+                <div className="h-32 bg-gray-50 dark:bg-gray-800 animate-pulse rounded-lg"></div>
               }
             >
               <DomainsTable rows={domains || []} />

@@ -225,7 +225,7 @@ const LazyListingCard = memo(function LazyListingCard({
               !listing.strategy ||
               listing.strategy === "0x0000000000000000000000000000000000000000"
             }
-            className="h-9 w-full rounded-lg bg-blue-600 text-[13px] hover:bg-blue-700 transition-colors"
+            className="h-9 w-full rounded-lg bg-blue-600 text-[13px] hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
             size="sm"
           >
             {isDutch ? "Buy Now" : strategy === "Sealed Bid Auction" ? "Commit Bid" : "Place Bid"}
@@ -233,7 +233,7 @@ const LazyListingCard = memo(function LazyListingCard({
           <Button
             onClick={handleViewDetails}
             variant="outline"
-            className="h-9 w-full rounded-lg border-blue-200 text-[13px] text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+            className="h-9 w-full rounded-lg border-blue-200 text-[13px] text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-300 transition-colors"
             size="sm"
           >
             View Details

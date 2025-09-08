@@ -3,6 +3,12 @@ import { usePublicClient } from 'wagmi';
 import { CONTRACTS } from './contracts/constants';
 import { DOMAIN_RENTAL_VAULT_ABI } from './contracts/abis';
 
+// Type for the rental data returned from contract
+interface RentalData {
+  user: `0x${string}`;
+  expires: bigint;
+}
+
 export interface RentalStatus {
   status: 'AVAILABLE' | 'RENTED' | 'EXPIRED' | 'ERROR';
   renter: string | null;
@@ -37,7 +43,7 @@ export function useRentalStatus(listingId: number | null) {
           abi: DOMAIN_RENTAL_VAULT_ABI,
           functionName: 'getRental',
           args: [BigInt(listingId)]
-        });
+        }) as RentalData;
 
         const currentTime = Math.floor(Date.now() / 1000);
         const isZeroAddress = rental.user === '0x0000000000000000000000000000000000000000';

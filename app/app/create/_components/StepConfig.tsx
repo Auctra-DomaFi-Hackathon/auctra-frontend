@@ -2,6 +2,7 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { AlertTriangle } from 'lucide-react'
 import Field from './primitives/Field'
 import TwoCols from './primitives/TwoCols'
 
@@ -42,18 +43,29 @@ export default function StepConfig({
         {formData.auctionType === 'dutch' && (
           <>
             <TwoCols>
-              <Field
-                id="start-price"
-                label="Start Price (ETH)"
-                type="number"
-                value={String(formData.startPrice ?? '')}
-                onChange={(e) => setField('startPrice', e.target.value)}
-                error={errors.startPrice}
-                step="0.00001"
-                min="0.00001"
-                placeholder="0.001"
-                showDomaLogo={true}
-              />
+              <div className="space-y-2">
+                <Field
+                  id="start-price"
+                  label="Start Price (ETH)"
+                  type="number"
+                  value={String(formData.startPrice ?? '')}
+                  onChange={(e) => setField('startPrice', e.target.value)}
+                  error={errors.startPrice}
+                  step="0.00001"
+                  min="0.00001"
+                  placeholder="0.001"
+                  showEthlogo={true}
+                />
+                {/* Real-time validation warning for Dutch auction */}
+                {formData.startPrice && 
+                 formData.reservePrice && 
+                 parseFloat(formData.startPrice) <= parseFloat(formData.reservePrice) && (
+                  <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-2">
+                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                    <span>Start price must be greater than reserve price ({formData.reservePrice} ETH)</span>
+                  </div>
+                )}
+              </div>
               <Field
                 id="end-price"
                 label="End Price (ETH)"
@@ -64,7 +76,7 @@ export default function StepConfig({
                 step="0.00001"
                 min="0.00001"
                 placeholder="0.0001"
-                showDomaLogo={true}
+                showEthlogo={true}
               />
             </TwoCols>
             <Field
@@ -91,7 +103,7 @@ export default function StepConfig({
               step="0.00001"
               min="0.00001"
               placeholder="0.0001"
-              showDomaLogo={true}
+              showEthlogo={true}
             />
             <TwoCols>
               <Field
@@ -175,7 +187,7 @@ export default function StepConfig({
         </TwoCols>
 
         <div className="flex justify-between">
-          <Button variant="outline" onClick={back}>
+          <Button variant="outline" onClick={back} className="hover:text-black border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-800">
             Back
           </Button>
           <Button 

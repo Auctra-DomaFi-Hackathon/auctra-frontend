@@ -46,7 +46,7 @@ export default function ExtendDialog({
   const newExpiryDate = new Date((listing.rental.expires + (extraDays * 24 * 60 * 60)) * 1000);
   
   // Calculate extend cost (just the extra days, no deposit since it's already locked)
-  const extendCost = calculateRentCost(listing.listing.pricePerDay, extraDays, 0n);
+  const extendCost = calculateRentCost(listing.listing.pricePerDay, extraDays, BigInt(0));
 
   const handleExtend = async () => {
     if (extraDays < 1) {

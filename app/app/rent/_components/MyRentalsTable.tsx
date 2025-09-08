@@ -298,6 +298,7 @@ export default function MyRentalsTable() {
                       </TableCell>
                       <TableCell>
                         <Button
+                        className="dark:text-white text-black"
                           variant="ghost"
                           size="sm"
                           onClick={() => {

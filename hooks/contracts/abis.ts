@@ -389,6 +389,16 @@ export const DOMAIN_AUCTION_HOUSE_ABI = [
     type: "function",
   },
   {
+    inputs: [
+      { internalType: "uint256", name: "", type: "uint256" },
+      { internalType: "address", name: "", type: "address" },
+    ],
+    name: "bidderNonces",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [{ internalType: "uint256", name: "listingId", type: "uint256" }],
     name: "cancel",
     outputs: [],
@@ -588,6 +598,30 @@ export const DOMAIN_AUCTION_HOUSE_ABI = [
     type: "function",
   },
   {
+    inputs: [
+      { internalType: "uint256", name: "listingId", type: "uint256" },
+      { internalType: "uint256", name: "hiddenBidAmount", type: "uint256" },
+      { internalType: "uint256", name: "nonce", type: "uint256" },
+      { internalType: "uint256", name: "depositAmount", type: "uint256" },
+      { internalType: "bytes", name: "eligibilityProof", type: "bytes" },
+    ],
+    name: "placeBidSealedAuction",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "listingId", type: "uint256" },
+      { internalType: "uint256", name: "hiddenBidAmount", type: "uint256" },
+      { internalType: "uint256", name: "depositAmount", type: "uint256" },
+    ],
+    name: "placeBidSealedAuction",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
     inputs: [{ internalType: "uint256", name: "listingId", type: "uint256" }],
     name: "previewCurrentPrice",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
@@ -609,6 +643,16 @@ export const DOMAIN_AUCTION_HOUSE_ABI = [
       { internalType: "address", name: "callerConfirmation", type: "address" },
     ],
     name: "renounceRole",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "listingId", type: "uint256" },
+      { internalType: "uint256", name: "hiddenBidAmount", type: "uint256" },
+    ],
+    name: "revealBidSealedAuction",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -1746,10 +1790,7 @@ export const DUTCH_AUCTION_ABI = [
 
 export const SEALED_BID_AUCTION_ABI = [
   {
-    inputs: [
-      { internalType: "address", name: "admin", type: "address" },
-      { internalType: "address", name: "_auctionHouse", type: "address" },
-    ],
+    inputs: [{ internalType: "address", name: "admin", type: "address" }],
     stateMutability: "nonpayable",
     type: "constructor",
   },
@@ -1942,19 +1983,47 @@ export const SEALED_BID_AUCTION_ABI = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "auctionHouse",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [
       { internalType: "uint256", name: "listingId", type: "uint256" },
       { internalType: "bytes", name: "", type: "bytes" },
     ],
     name: "canEnd",
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "bidAmount", type: "uint256" },
+      { internalType: "uint256", name: "nonce", type: "uint256" },
+      { internalType: "address", name: "bidder", type: "address" },
+    ],
+    name: "createCommitmentHash",
+    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    stateMutability: "pure",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "listingId", type: "uint256" },
+      { internalType: "address", name: "bidder", type: "address" },
+    ],
+    name: "getCommitment",
+    outputs: [
+      { internalType: "bytes32", name: "commitmentHash", type: "bytes32" },
+      { internalType: "uint256", name: "deposit", type: "uint256" },
+      { internalType: "bool", name: "revealed", type: "bool" },
+      { internalType: "uint256", name: "bidAmount", type: "uint256" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "listingId", type: "uint256" }],
+    name: "getCurrentPhase",
+    outputs: [
+      { internalType: "enum SealedBidAuction.Phase", name: "", type: "uint8" },
+    ],
     stateMutability: "view",
     type: "function",
   },
@@ -1986,6 +2055,15 @@ export const SEALED_BID_AUCTION_ABI = [
     name: "getRoleAdmin",
     outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "auctionHouse", type: "address" },
+    ],
+    name: "grantAuctionHouseRole",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
@@ -2035,7 +2113,7 @@ export const SEALED_BID_AUCTION_ABI = [
   },
   {
     inputs: [
-      { internalType: "uint256", name: "", type: "uint256" },
+      { internalType: "uint256", name: "listingId", type: "uint256" },
       { internalType: "bytes", name: "", type: "bytes" },
     ],
     name: "onRefundNonWinners",
@@ -2051,13 +2129,6 @@ export const SEALED_BID_AUCTION_ABI = [
     name: "onStart",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "uint256", name: "listingId", type: "uint256" }],
-    name: "phase",
-    outputs: [{ internalType: "uint8", name: "", type: "uint8" }],
-    stateMutability: "view",
     type: "function",
   },
   {

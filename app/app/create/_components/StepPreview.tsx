@@ -273,7 +273,7 @@ export default function StepPreview({
             <Button
               variant="outline"
               onClick={back}
-              className="h-9 rounded-lg border-neutral-300 text-[13px] dark:border-neutral-700"
+              className="text-black h-9 rounded-lg border-neutral-300 text-[13px] dark:border-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-800"
             >
               Back
             </Button>

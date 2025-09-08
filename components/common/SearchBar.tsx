@@ -29,7 +29,7 @@ export function SearchBar({ placeholder = "Search domains...", onSearch, classNa
           placeholder={placeholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus-ring"
+          className="w-full pl-10 pr-4 py-2 border border-border bg-background text-foreground rounded-lg focus-ring dark:bg-neutral-900 dark:border-neutral-800 dark:text-neutral-100"
         />
       </div>
       <Button type="submit" className="focus-ring">

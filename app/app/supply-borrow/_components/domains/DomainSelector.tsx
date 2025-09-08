@@ -152,12 +152,12 @@ export default function DomainSelector({ onDomainSelect, selectedDomain, disable
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Card className="border-dashed border-2 border-gray-300 hover:border-blue-400 hover:bg-white/30 transition-colors cursor-pointer dark:border-gray-600 dark:hover:border-blue-500 dark:hover:bg-blue-900/20">
+        <Card className="border-dashed border-2 border-gray-300 hover:border-blue-400 hover:bg-white/30 transition-colors cursor-pointer dark:border-gray-600 dark:hover:border-blue-500 dark:hover:bg-blue-900/20 dark:bg-gray-800">
           <CardContent className="p-6">
             <div className="flex items-center justify-center gap-3 text-gray-600 dark:text-gray-400">
               <Globe className="h-8 w-8" />
               <div className="text-center">
-                <p className="font-medium dark:text-gray-500">Select Domain NFT</p>
+                <p className="font-medium dark:text-gray-200">Select Domain NFT</p>
                 <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">
                   Choose a domain to use as collateral
                 </p>

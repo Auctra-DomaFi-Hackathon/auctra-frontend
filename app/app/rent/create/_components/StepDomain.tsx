@@ -72,7 +72,10 @@ export default function StepDomain({
                 <h4 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                   Your Domains
                 </h4>
-                <Badge variant="outline" className="h-6 rounded-full px-2 text-[11px]">
+                <Badge
+                  variant="outline"
+                  className="h-6 rounded-full px-2 text-[11px] dark:text-blue-600 text-black"
+                >
                   {domains.length} item{domains.length > 1 ? "s" : ""}
                 </Badge>
               </div>
@@ -126,7 +129,7 @@ export default function StepDomain({
                           className="shrink-0 gap-1 rounded-full px-2 text-[11px] dark:border-neutral-700"
                         >
                           <BadgeCheck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                          Owned
+                          <span className="dark:text-blue-400 text-blue-600">Owned</span>
                         </Badge>
                       </div>
                     </button>

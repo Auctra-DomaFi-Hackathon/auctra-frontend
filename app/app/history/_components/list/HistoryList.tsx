@@ -15,7 +15,7 @@ export default function HistoryList({
 }) {
   return (
     <>
-      <Separator className="mb-3 sm:mb-4" />
+      <Separator className="mb-3 sm:mb-4 bg-gray-200 dark:bg-gray-700" />
 
       {/* Di mobile: auto height (ikut konten). Di md+: tinggi tetap agar list scroll sendiri */}
       <div className="md:hidden">

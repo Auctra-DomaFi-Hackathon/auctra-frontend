@@ -11,8 +11,22 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Pause, Play, Edit, Trash2, Plus, Calendar, DollarSign } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  MoreVertical,
+  Pause,
+  Play,
+  Edit,
+  Trash2,
+  Plus,
+  Calendar,
+  DollarSign,
+} from "lucide-react";
 import { useRentalListingsByOwner } from "@/lib/graphql/hooks";
 import { RentalListingWithMetadata } from "@/lib/graphql/types";
 import { ListingWithMeta } from "@/lib/rental/types";
@@ -24,11 +38,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useAccount } from "wagmi";
 
 // Adapter function to convert GraphQL rental listing to expected format
-const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMetadata): ListingWithMeta => {
+const adaptRentalListingToListingWithMeta = (
+  rentalListing: RentalListingWithMetadata
+): ListingWithMeta => {
   return {
     id: parseInt(rentalListing.id),
-    domain: rentalListing.metadata?.name || `Domain-${rentalListing.tokenId.slice(-8)}`,
-    tld: rentalListing.metadata?.tld || '.eth',
+    domain:
+      rentalListing.metadata?.name ||
+      `Domain-${rentalListing.tokenId.slice(-8)}`,
+    tld: rentalListing.metadata?.tld || ".eth",
     verified: false,
     expiresAt: rentalListing.metadata?.expiresAt || 0, // Get domain expiry from tokenId metadata
     listing: {
@@ -49,7 +67,7 @@ const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMet
 export default function ListingsTable() {
   const { address } = useAccount();
   const { rentalListings, loading } = useRentalListingsByOwner(address, 50);
-  
+
   // Convert GraphQL rental listings to the expected format
   const myListings = rentalListings.map(adaptRentalListingToListingWithMeta);
   const { toast } = useToast();
@@ -60,7 +78,8 @@ export default function ListingsTable() {
   const handlePauseToggle = async (id: number, currentPaused: boolean) => {
     toast({
       title: "Coming Soon!",
-      description: "Pause/unpause functionality will be available with smart contract integration",
+      description:
+        "Pause/unpause functionality will be available with smart contract integration",
       variant: "default",
     });
   };
@@ -68,7 +87,8 @@ export default function ListingsTable() {
   const handleUnlist = async (id: number) => {
     toast({
       title: "Coming Soon!",
-      description: "Unlist functionality will be available with smart contract integration",
+      description:
+        "Unlist functionality will be available with smart contract integration",
       variant: "default",
     });
   };
@@ -76,7 +96,8 @@ export default function ListingsTable() {
   const handleEndRent = async (id: number) => {
     toast({
       title: "Coming Soon!",
-      description: "End rental functionality will be available with smart contract integration",
+      description:
+        "End rental functionality will be available with smart contract integration",
       variant: "default",
     });
   };
@@ -84,7 +105,8 @@ export default function ListingsTable() {
   const handleClaimDeposit = async (id: number) => {
     toast({
       title: "Coming Soon!",
-      description: "Claim deposit functionality will be available with smart contract integration",
+      description:
+        "Claim deposit functionality will be available with smart contract integration",
       variant: "default",
     });
   };
@@ -94,11 +116,15 @@ export default function ListingsTable() {
       const now = Math.floor(Date.now() / 1000);
       const daysLeft = getDaysLeft(listing.rental.expires);
       const isExpired = now >= listing.rental.expires;
-      
+
       return (
-        <Badge 
-          variant="default" 
-          className={isExpired ? "bg-red-100 text-red-800 border-red-200" : "bg-amber-100 text-amber-800 border-amber-200"}
+        <Badge
+          variant="default"
+          className={
+            isExpired
+              ? "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+              : "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+          }
         >
           {isExpired ? "Expired" : `Rented (${daysLeft}d)`}
         </Badge>
@@ -107,14 +133,20 @@ export default function ListingsTable() {
 
     if (listing.listing.paused) {
       return (
-        <Badge variant="outline" className="text-gray-600 border-gray-300">
+        <Badge
+          variant="outline"
+          className="text-gray-600 border-gray-300 dark:text-gray-400 dark:border-gray-600"
+        >
           Paused
         </Badge>
       );
     }
 
     return (
-      <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
+      <Badge
+        variant="secondary"
+        className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
+      >
         Active
       </Badge>
     );
@@ -129,7 +161,10 @@ export default function ListingsTable() {
         <CardContent>
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              <div
+                key={i}
+                className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+              ></div>
             ))}
           </div>
         </CardContent>
@@ -159,7 +194,9 @@ export default function ListingsTable() {
     <>
       <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-blue-100 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="dark:text-white">My Listings ({myListings.length})</CardTitle>
+          <CardTitle className="dark:text-white">
+            My Listings ({myListings.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -169,11 +206,15 @@ export default function ListingsTable() {
                   <TableHead className="dark:text-gray-300">Domain</TableHead>
                   <TableHead className="dark:text-gray-300">TLD</TableHead>
                   <TableHead className="dark:text-gray-300">Token</TableHead>
-                  <TableHead className="dark:text-gray-300">Price/Day</TableHead>
+                  <TableHead className="dark:text-gray-300">
+                    Price/Day
+                  </TableHead>
                   <TableHead className="dark:text-gray-300">Deposit</TableHead>
                   <TableHead className="dark:text-gray-300">Period</TableHead>
                   <TableHead className="dark:text-gray-300">Status</TableHead>
-                  <TableHead className="w-[100px] dark:text-gray-300">Actions</TableHead>
+                  <TableHead className="w-[100px] dark:text-gray-300">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -194,8 +235,12 @@ export default function ListingsTable() {
                         {listing.tld}
                       </TableCell>
                       <TableCell className="font-mono text-xs dark:text-gray-300">
-                        {listing.listing.tokenId.toString().length > 16 
-                          ? `${listing.listing.tokenId.toString().slice(0, 8)}...${listing.listing.tokenId.toString().slice(-8)}`
+                        {listing.listing.tokenId.toString().length > 16
+                          ? `${listing.listing.tokenId
+                              .toString()
+                              .slice(0, 8)}...${listing.listing.tokenId
+                              .toString()
+                              .slice(-8)}`
                           : listing.listing.tokenId.toString()}
                       </TableCell>
                       <TableCell className="dark:text-gray-300">
@@ -207,18 +252,27 @@ export default function ListingsTable() {
                       <TableCell className="dark:text-gray-300">
                         {listing.listing.minDays}-{listing.listing.maxDays} days
                       </TableCell>
-                      <TableCell>
-                        {getStatusBadge(listing)}
-                      </TableCell>
+                      <TableCell>{getStatusBadge(listing)}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
-                              <MoreVertical className="w-4 h-4" />
+                              <MoreVertical className="w-4 h-4 dark:text-white" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handlePauseToggle(listing.id, listing.listing.paused)}>
+                          <DropdownMenuContent
+                            align="end"
+                            className="dark:bg-gray-800"
+                          >
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handlePauseToggle(
+                                  listing.id,
+                                  listing.listing.paused
+                                )
+                              }
+                              className="dark:text-white"
+                            >
                               {listing.listing.paused ? (
                                 <>
                                   <Play className="w-4 h-4 mr-2" />
@@ -231,20 +285,25 @@ export default function ListingsTable() {
                                 </>
                               )}
                             </DropdownMenuItem>
-                            
-                            <DropdownMenuItem onClick={() => {
-                              toast({
-                                title: "Coming Soon!",
-                                description: "Edit terms functionality will be available soon",
-                                variant: "default",
-                              });
-                            }}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit Terms
+
+                            <DropdownMenuItem
+                              onClick={() => {
+                                toast({
+                                  title: "Coming Soon!",
+                                  description:
+                                    "Edit terms functionality will be available soon",
+                                  variant: "default",
+                                });
+                              }}
+                            >
+                              <Edit className="w-4 h-4 mr-2 dark:text-white" />
+                              <span className="dark:text-white">
+                                Edit Terms
+                              </span>
                             </DropdownMenuItem>
 
                             {canUnlist && (
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => handleUnlist(listing.id)}
                                 className="text-red-600 hover:text-red-700"
                               >
@@ -254,14 +313,16 @@ export default function ListingsTable() {
                             )}
 
                             {canExtend && (
-                              <DropdownMenuItem onClick={() => setExtendingListing(listing.id)}>
+                              <DropdownMenuItem
+                                onClick={() => setExtendingListing(listing.id)}
+                              >
                                 <Plus className="w-4 h-4 mr-2" />
                                 Extend
                               </DropdownMenuItem>
                             )}
 
                             {canEndRent && (
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => handleEndRent(listing.id)}
                                 className="text-red-600 hover:text-red-700"
                               >
@@ -271,9 +332,13 @@ export default function ListingsTable() {
                             )}
 
                             {!isRented && (
-                              <DropdownMenuItem onClick={() => handleClaimDeposit(listing.id)}>
-                                <DollarSign className="w-4 h-4 mr-2" />
-                                Claim Deposit
+                              <DropdownMenuItem
+                                onClick={() => handleClaimDeposit(listing.id)}
+                              >
+                                <DollarSign className="w-4 h-4 mr-2 dark:text-white" />
+                                <span className="dark:text-white">
+                                  Claim Deposit
+                                </span>
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
@@ -291,7 +356,7 @@ export default function ListingsTable() {
       {editingListing && (
         <EditTermsDialog
           listingId={editingListing}
-          listing={myListings.find(l => l.id === editingListing)!}
+          listing={myListings.find((l) => l.id === editingListing)!}
           open={!!editingListing}
           onOpenChange={(open) => !open && setEditingListing(null)}
           onSuccess={() => setEditingListing(null)}
@@ -301,7 +366,7 @@ export default function ListingsTable() {
       {extendingListing && (
         <ExtendDialog
           listingId={extendingListing}
-          listing={myListings.find(l => l.id === extendingListing)!}
+          listing={myListings.find((l) => l.id === extendingListing)!}
           open={!!extendingListing}
           onOpenChange={(open) => !open && setExtendingListing(null)}
           onSuccess={() => setExtendingListing(null)}

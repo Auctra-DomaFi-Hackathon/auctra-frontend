@@ -181,7 +181,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
             disabled={!isAvailable}
             className={`h-9 w-full rounded-lg text-[13px] ${
               isAvailable
-                ? "bg-blue-600 hover:bg-blue-700"
+                ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
                 : "cursor-not-allowed bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
             }`}
             variant={isAvailable ? "default" : "secondary"}

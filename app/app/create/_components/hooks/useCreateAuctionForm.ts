@@ -104,15 +104,26 @@ export function useCreateAuctionForm() {
 
   // Auto-set start time with WIB timezone for all auction types
   useEffect(() => {
-    // Set start time to current WIB time when switching auction types
+    // Get current time in WIB (UTC+7)
     const now = new Date()
-    // Convert to WIB timezone (UTC+7)
-    const wibTime = new Date(now.getTime() + (7 * 60 * 60 * 1000))
+    const wibOffset = 7 * 60 * 60 * 1000 // WIB is UTC+7
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60 * 1000) // Convert to UTC
+    const wibTime = new Date(utcTime + wibOffset) // Convert to WIB
+    
     // Add 5 minutes buffer to allow for form completion and transaction processing
-    wibTime.setMinutes(wibTime.getMinutes() + 5)
-    const startTimeISO = wibTime.toISOString().slice(0, 16)
+    const startTime = new Date(wibTime.getTime() + (5 * 60 * 1000))
+    
+    // Format for datetime-local input (YYYY-MM-DDTHH:mm)
+    // We need to format this as if it's in the user's local timezone for the input
+    const year = startTime.getFullYear()
+    const month = String(startTime.getMonth() + 1).padStart(2, '0')
+    const day = String(startTime.getDate()).padStart(2, '0')
+    const hours = String(startTime.getHours()).padStart(2, '0')
+    const minutes = String(startTime.getMinutes()).padStart(2, '0')
+    const startTimeISO = `${year}-${month}-${day}T${hours}:${minutes}`
+    
     setField('startTime', startTimeISO)
-    console.log(`🕒 Auto-set start time for ${formData.auctionType} auction (WIB):`, startTimeISO, 'WIB time:', wibTime.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }))
+    console.log(`🕒 Auto-set start time for ${formData.auctionType} auction (WIB):`, startTimeISO, 'WIB time:', startTime.toLocaleString())
     
     // Auction-specific defaults
     if (formData.auctionType === 'sealed') {
@@ -159,14 +170,23 @@ export function useCreateAuctionForm() {
       const revealHours = parseNumericValue(formData.revealWindow || '')
       
       if (commitHours > 0 && revealHours > 0) {
+        // Parse the start time as if it's in WIB timezone
         const startTime = new Date(formData.startTime)
         const totalHours = commitHours + revealHours
         const calculatedEndTime = new Date(startTime.getTime() + (totalHours * 60 * 60 * 1000))
-        const endTimeISO = calculatedEndTime.toISOString().slice(0, 16)
+        
+        // Format end time for datetime-local input (same format as start time)
+        const year = calculatedEndTime.getFullYear()
+        const month = String(calculatedEndTime.getMonth() + 1).padStart(2, '0')
+        const day = String(calculatedEndTime.getDate()).padStart(2, '0')
+        const hours = String(calculatedEndTime.getHours()).padStart(2, '0')
+        const minutes = String(calculatedEndTime.getMinutes()).padStart(2, '0')
+        const endTimeISO = `${year}-${month}-${day}T${hours}:${minutes}`
         
         if (formData.endTime !== endTimeISO) {
           setField('endTime', endTimeISO)
-          console.log('🧮 Auto-calculated end time:', endTimeISO, `(+${totalHours.toFixed(1)}h)`)
+          console.log('🧮 Auto-calculated end time (WIB):', endTimeISO, `(+${totalHours.toFixed(1)}h)`)
+          console.log('Debug - Start time:', startTime.toLocaleString(), 'End time:', calculatedEndTime.toLocaleString())
         }
       }
     }
@@ -466,9 +486,17 @@ export function useCreateAuctionForm() {
       if (formData.auctionType === 'dutch') {
         const startPrice = parseNumericValue(formData.startPrice || '')
         const endPrice = parseNumericValue(formData.endPrice || '')
+        const reservePrice = parseNumericValue(formData.reservePrice || '')
+        
         if (!formData.startPrice || startPrice <= 0) e.startPrice = 'Start price must be > 0.'
         if (!formData.endPrice || endPrice <= 0) e.endPrice = 'End price must be > 0.'
         if (endPrice >= startPrice) e.endPrice = 'End price should be lower than start price.'
+        
+        // Validate that startPrice > reservePrice if reserve price is set
+        if (reservePrice > 0 && startPrice > 0 && startPrice <= reservePrice) {
+          e.startPrice = 'Start price must be greater than reserve price.'
+        }
+        
         if (!formData.decayInterval || formData.decayInterval <= 0) e.decayInterval = 'Decay interval must be > 0.'
       }
 
@@ -508,6 +536,14 @@ export function useCreateAuctionForm() {
     if (step === 'reserve') {
       const reservePrice = parseNumericValue(formData.reservePrice)
       if (reservePrice < 0) e.reservePrice = 'Reserve price cannot be negative.'
+      
+      // For Dutch auctions, validate that startPrice > reservePrice
+      if (formData.auctionType === 'dutch') {
+        const startPrice = parseNumericValue(formData.startPrice || '')
+        if (startPrice > 0 && reservePrice > 0 && startPrice <= reservePrice) {
+          e.reservePrice = 'Reserve price must be lower than start price for Dutch auctions.'
+        }
+      }
     }
 
     setErrors(e)

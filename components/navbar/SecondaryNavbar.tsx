@@ -425,7 +425,7 @@ export default function SecondaryNavbar() {
                     )}
                   </div>
                 ) : chain ? (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800">
                     <Image
                       src="/images/logo/domaLogo.svg"
                       alt="Doma Testnet"
@@ -435,9 +435,9 @@ export default function SecondaryNavbar() {
                     />
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
                     <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm font-medium text-gray-600">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
                       Unknown Network
                     </span>
                   </div>
@@ -454,7 +454,7 @@ export default function SecondaryNavbar() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-red-200 hover:text-red-500 bg-red-50 text-red-700 hover:bg-red-100 flex items-center gap-2 min-w-fit"
+                    className="border-red-200 hover:text-red-500 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/30 dark:hover:text-red-200 flex items-center gap-2 min-w-fit"
                     onClick={(e) => {
                       e.stopPropagation();
                       switchChain({ chainId: domaTestnet.id });
@@ -465,7 +465,7 @@ export default function SecondaryNavbar() {
                       <span className="font-medium hover:text-red-500">
                         Wrong Network
                       </span>
-                      <span className="text-red-600 text-[10px]">
+                      <span className="text-red-600 dark:text-red-400 text-[10px]">
                         Click to switch
                       </span>
                     </div>
@@ -475,7 +475,7 @@ export default function SecondaryNavbar() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-green-200 hover:text-green-500 bg-green-50 text-green-700 hover:bg-green-100 flex items-center gap-2 min-w-fit"
+                    className="border-green-200 hover:text-green-500 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300 dark:hover:bg-green-900/30 dark:hover:text-green-200 flex items-center gap-2 min-w-fit"
                     onClick={handleWalletClick}
                   >
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -483,7 +483,7 @@ export default function SecondaryNavbar() {
                       <span className="font-medium hover:text-green-500">
                         {formatAddress(address!)}
                       </span>
-                      <span className="text-green-600">
+                      <span className="text-green-600 dark:text-green-400">
                         {formatBalance(balance)} ETH
                       </span>
                     </div>

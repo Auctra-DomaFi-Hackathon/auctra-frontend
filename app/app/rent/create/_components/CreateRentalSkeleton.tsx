@@ -11,8 +11,8 @@ export default function CreateRentalSkeleton({ step = 'domain' }: CreateRentalSk
     <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-10 pt-20 sm:pt-30 max-w-4xl">
       {/* Header Section */}
       <header className="mb-6 sm:mb-8">
-        <div className="h-8 sm:h-10 lg:h-12 bg-gray-200 rounded-lg animate-pulse mb-2 w-72 sm:w-80 lg:w-96"></div>
-        <div className="h-4 sm:h-5 lg:h-6 bg-gray-200 rounded-lg animate-pulse w-80 sm:w-96 lg:w-[28rem]"></div>
+        <div className="h-8 sm:h-10 lg:h-12 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse mb-2 w-72 sm:w-80 lg:w-96"></div>
+        <div className="h-4 sm:h-5 lg:h-6 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse w-80 sm:w-96 lg:w-[28rem]"></div>
       </header>
 
       {/* Stepper Section */}
@@ -21,13 +21,13 @@ export default function CreateRentalSkeleton({ step = 'domain' }: CreateRentalSk
           {/* Step 1 - Domain */}
           <div className="flex items-center gap-3 flex-1">
             <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full animate-pulse flex-shrink-0 ${
-              step === 'domain' ? 'bg-blue-200' : 'bg-gray-200'
+              step === 'domain' ? 'bg-blue-200 dark:bg-blue-800' : 'bg-gray-200 dark:bg-gray-700'
             }`}></div>
             <div className="flex flex-col gap-1">
-              <div className="h-3 sm:h-4 bg-gray-200 rounded animate-pulse w-16 sm:w-20"></div>
-              <div className="h-2 sm:h-3 bg-gray-200 rounded animate-pulse w-12 sm:w-16"></div>
+              <div className="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16 sm:w-20"></div>
+              <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-12 sm:w-16"></div>
             </div>
-            <div className="hidden sm:block flex-1 h-px bg-gray-200 animate-pulse ml-4"></div>
+            <div className="hidden sm:block flex-1 h-px bg-gray-200 dark:bg-gray-700 animate-pulse ml-4"></div>
           </div>
           
           {/* Step 2 - Terms */}
@@ -39,7 +39,7 @@ export default function CreateRentalSkeleton({ step = 'domain' }: CreateRentalSk
               <div className="h-3 sm:h-4 bg-gray-200 rounded animate-pulse w-12 sm:w-16"></div>
               <div className="h-2 sm:h-3 bg-gray-200 rounded animate-pulse w-16 sm:w-20"></div>
             </div>
-            <div className="hidden sm:block flex-1 h-px bg-gray-200 animate-pulse ml-4"></div>
+            <div className="hidden sm:block flex-1 h-px bg-gray-200 dark:bg-gray-700 animate-pulse ml-4"></div>
           </div>
           
           {/* Step 3 - Preview */}
@@ -56,7 +56,7 @@ export default function CreateRentalSkeleton({ step = 'domain' }: CreateRentalSk
       </div>
 
       {/* Main Content Card */}
-      <Card className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-blue-100">
+      <Card className="bg-white dark:bg-neutral-900 rounded-xl sm:rounded-2xl shadow-sm border border-blue-100 dark:border-neutral-800">
         {step === 'domain' && <DomainStepSkeleton />}
         {step === 'terms' && <TermsStepSkeleton />}
         {step === 'preview' && <PreviewStepSkeleton />}
@@ -64,8 +64,8 @@ export default function CreateRentalSkeleton({ step = 'domain' }: CreateRentalSk
 
       {/* Progress Indicator */}
       <div className="mt-6 sm:mt-8 text-center">
-        <div className="h-3 sm:h-4 bg-gray-200 rounded animate-pulse w-48 sm:w-64 mx-auto mb-2"></div>
-        <div className="h-2 sm:h-3 bg-gray-200 rounded animate-pulse w-32 sm:w-40 mx-auto"></div>
+        <div className="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48 sm:w-64 mx-auto mb-2"></div>
+        <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32 sm:w-40 mx-auto"></div>
       </div>
     </div>
   )
@@ -78,30 +78,30 @@ function DomainStepSkeleton() {
       <div className="space-y-6 sm:space-y-8">
         {/* Step Title */}
         <div className="text-center space-y-2">
-          <div className="h-6 sm:h-7 bg-gray-200 rounded animate-pulse w-48 sm:w-64 mx-auto"></div>
-          <div className="h-4 bg-gray-200 rounded animate-pulse w-64 sm:w-80 mx-auto"></div>
+          <div className="h-6 sm:h-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48 sm:w-64 mx-auto"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-64 sm:w-80 mx-auto"></div>
         </div>
         
         {/* Domain Input Section */}
         <div className="space-y-4">
-          <div className="h-4 sm:h-5 bg-gray-200 rounded animate-pulse w-32 sm:w-40"></div>
+          <div className="h-4 sm:h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32 sm:w-40"></div>
           <div className="relative">
-            <div className="h-12 sm:h-14 bg-gray-200 rounded-lg animate-pulse"></div>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 w-16 sm:w-20 h-6 sm:h-8 bg-gray-300 rounded animate-pulse"></div>
+            <div className="h-12 sm:h-14 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 w-16 sm:w-20 h-6 sm:h-8 bg-gray-300 dark:bg-gray-600 rounded animate-pulse"></div>
           </div>
-          <div className="h-3 bg-gray-200 rounded animate-pulse w-72 sm:w-96"></div>
+          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-72 sm:w-96"></div>
         </div>
 
         {/* Domain Selection Grid */}
         <div className="space-y-4">
-          <div className="h-4 sm:h-5 bg-gray-200 rounded animate-pulse w-40 sm:w-48"></div>
+          <div className="h-4 sm:h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-40 sm:w-48"></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="p-4 border-2 rounded-lg space-y-3 border-gray-200">
+              <div key={i} className="p-4 border-2 rounded-lg space-y-3 border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full animate-pulse flex-shrink-0"></div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse flex-shrink-0"></div>
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-24 sm:w-32"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24 sm:w-32"></div>
                     <div className="h-3 bg-gray-200 rounded animate-pulse w-16 sm:w-20"></div>
                   </div>
                   <div className="w-4 h-4 bg-gray-200 rounded-full animate-pulse"></div>
@@ -190,7 +190,7 @@ function PreviewStepSkeleton() {
       <div className="space-y-6 sm:space-y-8">
         {/* Step Title */}
         <div className="text-center space-y-2">
-          <div className="h-6 sm:h-7 bg-gray-200 rounded animate-pulse w-48 sm:w-64 mx-auto"></div>
+          <div className="h-6 sm:h-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48 sm:w-64 mx-auto"></div>
           <div className="h-4 bg-gray-200 rounded animate-pulse w-80 sm:w-96 mx-auto"></div>
         </div>
 

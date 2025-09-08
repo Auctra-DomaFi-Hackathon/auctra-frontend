@@ -212,7 +212,7 @@ export default function AuctionsTable({ rows }: { rows: AuctionRow[] }) {
                           size="sm"
                           onClick={() => handleEndAuctionClick(r)}
                           disabled={getAuctionState(r.listingId).isLoading}
-                          className="h-8 px-3"
+                          className="h-8 px-3 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-800"
                         >
                           {getAuctionState(r.listingId).isLoading ? (
                             <Loader2 className="w-3 h-3 animate-spin" />

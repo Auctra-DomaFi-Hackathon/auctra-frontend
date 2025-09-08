@@ -152,7 +152,7 @@ export default function StepDomain({
                         Exp: {d.expiresAt ? new Date(d.expiresAt).toLocaleDateString() : 'N/A'}
                       </div>
                     </div>
-                    <Badge variant="outline" className="h-6 rounded-full px-2 text-[11px]">
+                    <Badge variant="outline" className="h-6 rounded-full px-2 text-[11px] dark:text-white text-black">
                       <BadgeCheck className="mr-1 h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                       Verified
                     </Badge>

@@ -94,7 +94,7 @@ export default function FilterBar() {
               placeholder="Search domains..."
               value={filters.search || ""}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-white border-gray-200 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-900/50 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-blue-400 dark:focus:ring-blue-400"
             />
           </div>
         </div>
@@ -102,13 +102,13 @@ export default function FilterBar() {
         {/* TLD Filter */}
         <div>
           <Select value={filters.tld || "all"} onValueChange={handleTldChange}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-white border-gray-200 text-gray-900 hover:bg-gray-50 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-900/50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800/50 dark:focus:border-blue-400 dark:focus:ring-blue-400">
               <SelectValue placeholder="TLD" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All TLDs</SelectItem>
+            <SelectContent className="bg-white border-gray-200 dark:bg-gray-900 dark:border-gray-600">
+              <SelectItem value="all" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 dark:focus:bg-gray-800">All TLDs</SelectItem>
               {availableTLDs.map(tld => (
-                <SelectItem key={tld} value={tld}>{tld}</SelectItem>
+                <SelectItem key={tld} value={tld} className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 dark:focus:bg-gray-800">{tld}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -121,7 +121,7 @@ export default function FilterBar() {
             placeholder="Min USDC"
             value={filters.minPrice !== undefined ? filters.minPrice.toString() : ""}
             onChange={(e) => handleMinPriceChange(e.target.value)}
-            className="text-sm"
+            className="text-sm bg-white border-gray-200 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-900/50 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-blue-400 dark:focus:ring-blue-400"
             min="0"
             step="0.01"
           />
@@ -130,7 +130,7 @@ export default function FilterBar() {
             placeholder="Max USDC"
             value={filters.maxPrice !== undefined ? filters.maxPrice.toString() : ""}
             onChange={(e) => handleMaxPriceChange(e.target.value)}
-            className="text-sm"
+            className="text-sm bg-white border-gray-200 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-900/50 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-blue-400 dark:focus:ring-blue-400"
             min="0"
             step="0.01"
           />
@@ -142,16 +142,16 @@ export default function FilterBar() {
             value={`${filters.sort}-${filters.sortOrder}`} 
             onValueChange={handleSortChange}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-white border-gray-200 text-gray-900 hover:bg-gray-50 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-900/50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800/50 dark:focus:border-blue-400 dark:focus:ring-blue-400">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="domain-asc">Domain A-Z</SelectItem>
-              <SelectItem value="domain-desc">Domain Z-A</SelectItem>
-              <SelectItem value="price-asc">Price Low-High</SelectItem>
-              <SelectItem value="price-desc">Price High-Low</SelectItem>
-              <SelectItem value="expiry-asc">Expiry Soon</SelectItem>
-              <SelectItem value="expiry-desc">Expiry Later</SelectItem>
+            <SelectContent className="bg-white border-gray-200 dark:bg-gray-900 dark:border-gray-600">
+              <SelectItem value="domain-asc" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 dark:focus:bg-gray-800">Domain A-Z</SelectItem>
+              <SelectItem value="domain-desc" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 dark:focus:bg-gray-800">Domain Z-A</SelectItem>
+              <SelectItem value="price-asc" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 dark:focus:bg-gray-800">Price Low-High</SelectItem>
+              <SelectItem value="price-desc" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 dark:focus:bg-gray-800">Price High-Low</SelectItem>
+              <SelectItem value="expiry-asc" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 dark:focus:bg-gray-800">Expiry Soon</SelectItem>
+              <SelectItem value="expiry-desc" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800 dark:focus:bg-gray-800">Expiry Later</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -163,7 +163,7 @@ export default function FilterBar() {
               variant="outline"
               size="sm"
               onClick={clearFilters}
-              className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+              className="text-gray-600 hover:text-gray-800 border-gray-300 bg-white hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:border-gray-600 dark:bg-gray-900/50 dark:hover:bg-gray-800/50"
             >
               <X className="h-4 w-4 mr-1" />
               Clear

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { AlertTriangle } from 'lucide-react'
 import Field from './primitives/Field'
 
 export default function StepReserve({
@@ -45,9 +46,26 @@ export default function StepReserve({
           showEthlogo={true}
         />
 
+        {/* Dutch auction validation warning */}
+        {formData.auctionType === 'dutch' && 
+         formData.startPrice && 
+         formData.reservePrice && 
+         parseFloat(formData.startPrice) <= parseFloat(formData.reservePrice) && (
+          <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Invalid Price Configuration</p>
+              <p className="text-xs mt-1">
+                For Dutch auctions, reserve price ({formData.reservePrice} ETH) must be lower than start price ({formData.startPrice} ETH).
+                Please adjust your prices in the Configuration step.
+              </p>
+            </div>
+          </div>
+        )}
+
 
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={handleSuggestReserve}>
+          <Button variant="outline" onClick={handleSuggestReserve} className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-800">
             Suggest via Oracle
           </Button>
           {suggestedReserve && (
@@ -80,7 +98,7 @@ export default function StepReserve({
         </div>
 
         <div className="flex justify-between">
-          <Button variant="outline" onClick={back}>
+          <Button variant="outline" onClick={back} className="hover:text-black border-gray-300 dark:border-gray-600  dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-800">
             Back
           </Button>
           <Button onClick={() => next('preview')}>Next: Preview</Button>
