@@ -111,9 +111,9 @@ export function Features() {
                 </div>
                 <div className="bg-white border border-border rounded-xl p-4 shadow-sm">
                   <div className="text-success font-semibold text-sm">
-                    Marketplace
+                    Auction
                   </div>
-                  <div className="text-textPrimary font-bold">Trade</div>
+                  <div className="text-textPrimary font-bold">Create & Win the auction</div>
                 </div>
               </div>
             </div>
