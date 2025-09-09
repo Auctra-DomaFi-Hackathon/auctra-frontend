@@ -24,7 +24,7 @@ export function Features() {
           <h2 className="text-4xl md:text-5xl font-bold text-textPrimary mb-4 leading-tight">
             Built for the Future of{" "}
             <span className="text-gradient bg-gradient-to-r from-primary to-primaryDark bg-clip-text text-transparent">
-              Domain Trading
+              Domain Auction
             </span>
           </h2>
           <p className="text-xl text-textSecondary max-w-3xl mx-auto leading-relaxed">

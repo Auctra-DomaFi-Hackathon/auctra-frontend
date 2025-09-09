@@ -234,7 +234,7 @@ export default function AuctionDetailsDialog({
     }
     
     // For Dutch auctions, if there's a highest bid, show as ENDED
-    if (strategyName === "Dutch Auction" && highestBid && highestBid.amount > 0) {
+    if (strategyName === "Dutch Auction" && highestBid && BigInt(highestBid.amount) > BigInt(0)) {
       return {
         text: "ENDED",
         className: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700",
@@ -280,7 +280,7 @@ export default function AuctionDetailsDialog({
     }
     
     // For Dutch auctions, if there's a highest bid, the auction is ended (first buyer wins)
-    if (strategyName === "Dutch Auction" && highestBid && highestBid.amount > 0) {
+    if (strategyName === "Dutch Auction" && highestBid && BigInt(highestBid.amount) > BigInt(0)) {
       return true;
     }
     
@@ -400,7 +400,7 @@ export default function AuctionDetailsDialog({
               )}
 
               {/* Winner - Show for Dutch auctions with a highest bid */}
-              {(strategyName === "Dutch Auction" && highestBid && highestBid.amount > 0) && (
+              {(strategyName === "Dutch Auction" && highestBid && BigInt(highestBid.amount) > BigInt(0)) && (
                 <div className="mb-4">
                   <div className="text-sm text-gray-600 mb-1 dark:text-gray-400">Winner</div>
                   <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800">
@@ -473,7 +473,7 @@ export default function AuctionDetailsDialog({
                     setIsBidDialogOpen(true);
                   }}
                   className="text-xs w-full bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-600"
-                  disabled={isAuctionEnded() || (strategyName === "Sealed Bid Auction" && sealedBidPhase && sealedBidPhase.phase !== 1)}
+                  disabled={isAuctionEnded() || (strategyName === "Sealed Bid Auction" && sealedBidPhase !== null && sealedBidPhase.phase !== 1)}
                 >
                   {strategyName === "Dutch Auction"
                     ? "Purchase Now"
