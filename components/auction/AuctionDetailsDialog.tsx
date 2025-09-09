@@ -20,6 +20,7 @@ import { usePublicClient } from "wagmi";
 import { CONTRACTS } from "@/hooks/contracts/constants";
 import { DOMAIN_AUCTION_HOUSE_ABI } from "@/hooks/contracts/abis";
 import { useGetSealedBidPhase, getSealedBidParams, type SealedBidParams } from "@/hooks/useAuction";
+import { fetchNftImage, type NftImageResult } from "@/lib/utils/nftImage";
 
 interface AuctionDetailsDialogProps {
   isOpen: boolean;
@@ -45,6 +46,8 @@ export default function AuctionDetailsDialog({
     error?: string;
   } | null>(null);
   const [sealedBidParams, setSealedBidParams] = useState<SealedBidParams | null>(null);
+  const [nftImage, setNftImage] = useState<NftImageResult | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
   const { listing, highestBid, allBids, loading, error } =
     useAuctionDetails(listingId);
   const publicClient = usePublicClient();
@@ -140,6 +143,35 @@ export default function AuctionDetailsDialog({
 
     fetchSealedBidData();
   }, [listingId, publicClient, listing, isOpen, getSealedBidPhase]);
+
+  // Fetch NFT image from metadata
+  useEffect(() => {
+    const fetchImage = async () => {
+      if (!publicClient || !listing || !isOpen) return;
+      
+      setImageLoading(true);
+      try {
+        console.log(`🖼️ Fetching NFT image for token ${listing.tokenId}`);
+        
+        const imageResult = await fetchNftImage({
+          client: publicClient,
+          nft: CONTRACTS.DomainNFT,
+          tokenId: BigInt(listing.tokenId),
+          ipfsGateway: "https://cloudflare-ipfs.com/ipfs/",
+        });
+        
+        console.log(`✅ NFT image fetched:`, imageResult);
+        setNftImage(imageResult);
+      } catch (error) {
+        console.error("Failed to fetch NFT image:", error);
+        setNftImage(null);
+      } finally {
+        setImageLoading(false);
+      }
+    };
+
+    fetchImage();
+  }, [listing, publicClient, isOpen]);
 
   if (loading) {
     return (
@@ -497,17 +529,36 @@ export default function AuctionDetailsDialog({
               </div>
             </div>
 
-            {/* Middle Column - NFT Preview (placeholder) */}
+            {/* Middle Column - NFT Preview */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100 dark:bg-gray-800 dark:border-gray-700">
               <div className="text-center">
-                <div className="w-48 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mb-4 mx-auto dark:from-blue-900/30 dark:to-blue-800/30">
-                  <Image
-                    src="/images/logo/doma-logo-2.jpg"
-                    alt="NFT Preview"
-                    width={150}
-                    height={100}
-                    className="rounded-full"
-                  />
+                <div className="w-48 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mb-4 mx-auto dark:from-blue-900/30 dark:to-blue-800/30 overflow-hidden">
+                  {imageLoading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin dark:border-blue-400 dark:border-t-blue-300"></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-300">Loading image...</span>
+                    </div>
+                  ) : nftImage?.imageUrl ? (
+                    <Image
+                      src={nftImage.imageUrl}
+                      alt="NFT Preview"
+                      width={192}
+                      height={192}
+                      className="w-full h-full object-cover rounded-lg"
+                      onError={() => {
+                        console.error("Failed to load NFT image, falling back to default");
+                        setNftImage(null);
+                      }}
+                    />
+                  ) : (
+                    <Image
+                      src="/images/logo/doma-logo-2.jpg"
+                      alt="Default NFT Preview"
+                      width={150}
+                      height={100}
+                      className="rounded-full"
+                    />
+                  )}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">NFT Preview</div>
                 <div className="text-xs text-gray-500 mt-1 mb-4 dark:text-gray-500">
