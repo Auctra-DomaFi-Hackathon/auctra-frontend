@@ -9,24 +9,30 @@ import EmptyState from "./EmptyState";
 import { ExplorePagination } from "../../explore/_components/ExplorePagination";
 import { useRentalFilters } from "@/lib/rental/filterContext";
 import { useMemo } from "react";
-import { formatUSD } from "@/lib/rental/format";
+import Link from "next/link";
 
 // Adapter function to convert GraphQL rental listing to expected format
-const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMetadata): ListingWithMeta => {
+const adaptRentalListingToListingWithMeta = (
+  rentalListing: RentalListingWithMetadata
+): ListingWithMeta => {
   // Get domain expiration date from metadata (already fetched by useActiveRentalListings hook)
   const expiresAt = rentalListing.metadata?.expiresAt ?? 0;
-  console.log('🔄 Adapter processing listing:', {
+  console.log("🔄 Adapter processing listing:", {
     tokenId: rentalListing.tokenId,
     domain: rentalListing.metadata?.name,
     rawMetadata: rentalListing.metadata,
     expiresAt,
-    expiresDate: expiresAt ? new Date(expiresAt * 1000).toLocaleString() : 'Unknown'
+    expiresDate: expiresAt
+      ? new Date(expiresAt * 1000).toLocaleString()
+      : "Unknown",
   });
-  
+
   return {
     id: parseInt(rentalListing.id),
-    domain: rentalListing.metadata?.name || `Domain-${rentalListing.tokenId.slice(-8)}`,
-    tld: rentalListing.metadata?.tld || '.eth',
+    domain:
+      rentalListing.metadata?.name ||
+      `Domain-${rentalListing.tokenId.slice(-8)}`,
+    tld: rentalListing.metadata?.tld || ".eth",
     verified: false,
     expiresAt, // Get domain expiry from metadata
     listing: {
@@ -45,11 +51,20 @@ const adaptRentalListingToListingWithMeta = (rentalListing: RentalListingWithMet
 };
 
 export default function ListingsGrid() {
-  const { rentalListings, loading, error, currentPage, totalPages, onPageChange } = useActiveRentalListings(6);
+  const {
+    rentalListings,
+    loading,
+    error,
+    currentPage,
+    totalPages,
+    onPageChange,
+  } = useActiveRentalListings(6);
   const { filters } = useRentalFilters();
 
   // Convert GraphQL rental listings to the expected format
-  const adaptedListings = rentalListings.map(adaptRentalListingToListingWithMeta);
+  const adaptedListings = rentalListings.map(
+    adaptRentalListingToListingWithMeta
+  );
 
   // Apply filters to the adapted listings
   const filteredListings = useMemo(() => {
@@ -58,19 +73,19 @@ export default function ListingsGrid() {
     // Apply search filter
     if (filters.search) {
       const search = filters.search.toLowerCase();
-      filtered = filtered.filter(item =>
+      filtered = filtered.filter((item) =>
         item.domain.toLowerCase().includes(search)
       );
     }
 
     // Apply TLD filter
     if (filters.tld) {
-      filtered = filtered.filter(item => item.tld === filters.tld);
+      filtered = filtered.filter((item) => item.tld === filters.tld);
     }
 
     // Apply price filters (prices are in USDC with 6 decimals)
     if (filters.minPrice !== undefined) {
-      filtered = filtered.filter(item => {
+      filtered = filtered.filter((item) => {
         try {
           const priceUSDC = Number(item.listing.pricePerDay) / 1_000_000; // Convert from 6-decimal USDC to dollars
           return priceUSDC >= filters.minPrice!;
@@ -81,7 +96,7 @@ export default function ListingsGrid() {
     }
 
     if (filters.maxPrice !== undefined) {
-      filtered = filtered.filter(item => {
+      filtered = filtered.filter((item) => {
         try {
           const priceUSDC = Number(item.listing.pricePerDay) / 1_000_000; // Convert from 6-decimal USDC to dollars
           return priceUSDC <= filters.maxPrice!;
@@ -138,8 +153,24 @@ export default function ListingsGrid() {
   if (error) {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-8 text-center dark:bg-gray-800 dark:border-red-800">
-        <div className="text-red-600 mb-2 dark:text-red-400">⚠️ Error</div>
-        <p className="text-gray-600 dark:text-gray-400">{typeof error === 'string' ? error : error instanceof Error ? error.message : 'An unknown error occurred'}</p>
+        <p className="text-red-600 dark:text-red-400 mb-4 font-bold">
+          *Must run in Localhost. Please check this repository to run locally
+          with frontend and indexer.
+        </p>
+        <Link
+          href="https://github.com/Auctra-DomaFi-Hackathon"
+          target="_blank"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Visit Repository
+        </Link>
+        {/* <p className="text-gray-600 dark:text-gray-400">
+          {typeof error === "string"
+            ? error
+            : error instanceof Error
+            ? error.message
+            : "An unknown error occurred"}
+        </p> */}
       </div>
     );
   }
@@ -155,7 +186,7 @@ export default function ListingsGrid() {
           <ListingCard key={listing.id} listing={listing} />
         ))}
       </div>
-      
+
       {/* Pagination */}
       {totalPages && totalPages > 1 && currentPage && onPageChange && (
         <ExplorePagination
