@@ -30,7 +30,7 @@ export function createCommitmentHash(
   // Important: Use the same encoding as the smart contract
   // keccak256(abi.encodePacked(bidAmount, nonce, bidder))
   const encoded = encodeAbiParameters(
-    ['uint256', 'uint256', 'address'],
+    [{ type: 'uint256' }, { type: 'uint256' }, { type: 'address' }],
     [bidAmount, nonce, bidderAddress]
   );
   

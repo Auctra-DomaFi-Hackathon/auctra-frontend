@@ -56,6 +56,8 @@ export const graphqlService = {
           expiresAt: n.expiresAt,
           registrar: n.registrar,
           tokens: n.tokens,
+          createdAt: n.createdAt,
+          owner: n.owner,
           tokenAddress: preferred?.tokenAddress,
           tokenId: preferred?.tokenId,
           tokenChain, // sekarang terlihat "Doma Testnet"

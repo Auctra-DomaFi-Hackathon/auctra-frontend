@@ -75,7 +75,7 @@ export function useAuctionQuery(listingId: string): AuctionData {
     if (listingData && !listingLoading) {
       try {
         // Parse listing data from contract response
-        const [seller, nft, tokenId, paymentToken, reservePrice, startTime, endTime, strategy, strategyData, eligibilityData, status] = listingData as any[]
+        const [seller, nft, tokenId, paymentToken, reservePrice, startTime, endTime, strategy, strategyData, eligibilityData, status] = listingData as unknown as any[]
         
         const auction: BlockchainAuction = {
           listingId,
