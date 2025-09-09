@@ -18,6 +18,10 @@ cd auctra
 # Install dependencies
 pnpm install
 
+# Copy environment variables
+cp .env.example .env.local
+# Edit .env.local with your configuration
+
 # Start the development server with Turbopack
 pnpm dev
 ```
@@ -64,7 +68,7 @@ auctra/
 │   └── alerts/            # Notification components
 ├── lib/
 │   ├── services/          # API clients and data fetching
-│   ├── store/             # Zustand state management
+│   ├── store/             # Jotai state management
 │   └── utils/             # Utility functions
 ├── types/                 # TypeScript type definitions
 ├── mocks/                 # Mock data for development
@@ -76,7 +80,7 @@ auctra/
 - **Framework**: Next.js 14 with App Router and Turbopack
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS + shadcn/ui components
-- **State Management**: Zustand
+- **State Management**: Jotai
 - **Testing**: Vitest + React Testing Library
 - **Icons**: Lucide React
 - **Utilities**: clsx, tailwind-merge, js-sha3
@@ -136,9 +140,16 @@ The application features a premium blue and white theme with modern DeFi aesthet
 - Countdown component with proper ARIA labels
 
 ### ✅ Pages
-- Home page with domain discovery and live auctions
-- Auction detail page with bidding interface
-- Basic routing structure for all planned pages
+- **Home page**: Domain discovery and live auctions with search and filtering
+- **Explore Auctions**: Browse all active Dutch and sealed-bid auctions with advanced filtering
+- **Create Auction**: Interface for domain owners to list domains for auction
+- **Auction Detail**: Comprehensive bidding interface with real-time price updates
+- **Supply Domain as Collateral**: Deposit domain NFTs to use as collateral for borrowing
+- **Borrow USDC**: Lending interface to borrow USDC against domain collateral
+- **Domain Renting**: Marketplace for renting domains with flexible terms
+- **Create Domain Rental**: List domains for rent with custom pricing and duration
+- **History**: Complete transaction history including auctions, loans, and rentals
+- **Alert Domains**: Notification center for domain alerts and watchlist management
 
 ### 🚧 Partially Implemented
 - Sealed-bid auction UI (skeleton views created)
@@ -176,6 +187,37 @@ Run tests with: `pnpm test`
 - Mobile responsive design
 - Keyboard navigation support
 
+## 🔧 Environment Variables
+
+Create a `.env.local` file in the root directory with the following variables:
+
+```bash
+# WalletConnect
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=
+
+# Doma API
+NEXT_PUBLIC_DOMA_API_KEY=
+NEXT_PUBLIC_LISTINGS_GRAPHQL_ENDPOINT=
+
+# Contract Addresses - Core
+NEXT_PUBLIC_FEE_MANAGER_CONTRACT_ADDRESS=
+NEXT_PUBLIC_REGISTRAR_BRIDGE_CONTRACT_ADDRESS=
+
+# Contract Addresses - Auctions
+NEXT_PUBLIC_ENGLISH_AUCTION_CONTRACT_ADDRESS=
+NEXT_PUBLIC_DUTCH_AUCTION_CONTRACT_ADDRESS=
+NEXT_PUBLIC_SEALED_BID_AUCTION_CONTRACT_ADDRESS=
+NEXT_PUBLIC_DOMAIN_AUCTION_HOUSE_CONTRACT_ADDRESS=
+
+# Contract Addresses - Tokens & Services
+NEXT_PUBLIC_DOMAIN_NFT_CONTRACT_ADDRESS=
+NEXT_PUBLIC_USDC=
+NEXT_PUBLIC_DOMAIN_LENDING_POOL=
+NEXT_PUBLIC_MOCK_DOMAIN_ORACLE=
+NEXT_PUBLIC_DOMAIN_RENTAL_VAULT=
+NEXT_PUBLIC_TREASURY=
+```
+
 ## 🤝 Development
 
 ### Adding New Features
@@ -192,9 +234,12 @@ The project uses ESLint and Prettier for code formatting. Run `pnpm lint` to che
 
 ### State Management
 
+Using Jotai for atomic state management:
 - User state: authentication, watchlist, preferences
 - Alerts state: notifications, read status
 - Bids state: pending bids before blockchain submission
+- Domain state: rental information, collateral data
+- Auction state: bid history, sealed bid commitments
 
 ## 📝 License
 
