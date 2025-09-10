@@ -129,27 +129,6 @@ auctra/
 - Admin panel for auction management
 - Enhanced analytics and domain metrics
 
-## 🧪 Testing
-
-The project includes unit tests for key components:
-
-- **AuctionCard**: Tests rendering of auction data and pricing
-- **Countdown**: Tests timer functionality with mocked timers
-
-Run tests with: `pnpm test`
-
-## 🔒 Security & Accessibility
-
-- All form inputs include focus management
-- ARIA labels on interactive elements
-- Semantic HTML structure
-
-## 📱 Browser Support
-
-- Modern browsers supporting ES2020+
-- Mobile responsive design
-- Keyboard navigation support
-
 ## 🔧 Environment Variables
 
 Create a `.env.local` file in the root directory with the following variables:
