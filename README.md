@@ -85,41 +85,6 @@ auctra/
 - **Icons**: Lucide React
 - **Utilities**: clsx, tailwind-merge, js-sha3
 
-## 🎨 Modern DeFi Design System
-
-The application features a premium blue and white theme with modern DeFi aesthetics:
-
-### Design Language
-- **Large bold headlines** with tight leading and oversized typography
-- **Minimalist backgrounds** with subtle gradients and animated patterns
-- **Rounded containers** (2xl) with soft shadows and modern spacing
-- **Contrast sections** alternating between light and dark themes
-
-### Colors
-- **Primary**: `#2F6DF6` (Blue)
-- **Primary Dark**: `#1E4FD1`
-- **Accent**: `#6BA7FF`
-- **Background Light**: `#FFFFFF`
-- **Background Alt**: `#F8FAFF`
-- **Text Primary**: `#0B1221`
-- **Text Secondary**: `#51607A`
-
-### Components
-- **WarpBackground**: Animated 3D grid background with floating beams
-- **WobbleCard**: Interactive cards with subtle motion effects
-- **Rounded buttons** (xl) with bold typography
-- **Feature cards** with icon + title + description layout
-
-### Typography
-- **Display**: `text-5xl md:text-7xl font-semibold tracking-tight`
-- **H1**: `text-4xl md:text-5xl font-semibold`
-- **H2**: `text-3xl font-semibold`
-- **Body**: `text-base leading-relaxed`
-
-### Layout
-- **Cards**: `rounded-2xl` with soft shadows
-- **Radius**: `lg: 1.25rem`, `xl: 1.5rem`, `2xl: 2rem`
-
 ## 🏁 Features Implemented
 
 ### ✅ Core Features
@@ -164,29 +129,6 @@ The application features a premium blue and white theme with modern DeFi aesthet
 - Admin panel for auction management
 - Enhanced analytics and domain metrics
 
-## 🧪 Testing
-
-The project includes unit tests for key components:
-
-- **AuctionCard**: Tests rendering of auction data and pricing
-- **Countdown**: Tests timer functionality with mocked timers
-
-Run tests with: `pnpm test`
-
-## 🔒 Security & Accessibility
-
-- All form inputs include focus management
-- ARIA labels on interactive elements
-- Semantic HTML structure
-- Mock commitment hashing for sealed bids (using keccak256)
-- No real cryptocurrency integrations (mock only)
-
-## 📱 Browser Support
-
-- Modern browsers supporting ES2020+
-- Mobile responsive design
-- Keyboard navigation support
-
 ## 🔧 Environment Variables
 
 Create a `.env.local` file in the root directory with the following variables:
@@ -211,22 +153,14 @@ NEXT_PUBLIC_DOMAIN_AUCTION_HOUSE_CONTRACT_ADDRESS=
 
 # Contract Addresses - Tokens & Services
 NEXT_PUBLIC_DOMAIN_NFT_CONTRACT_ADDRESS=
-NEXT_PUBLIC_USDC=
+NEXT_PUBLIC_USDC_CONTRACT_ADDRESS=
 NEXT_PUBLIC_DOMAIN_LENDING_POOL=
 NEXT_PUBLIC_MOCK_DOMAIN_ORACLE=
 NEXT_PUBLIC_DOMAIN_RENTAL_VAULT=
-NEXT_PUBLIC_TREASURY=
+NEXT_PUBLIC_TREASURY_CONTRACT_ADDRESS=
 ```
 
 ## 🤝 Development
-
-### Adding New Features
-
-1. Create components in the appropriate `features/` directory
-2. Add API endpoints in `app/api/` if needed
-3. Update mock data in `mocks/data.ts`
-4. Add types in `types/` directory
-5. Write tests in `tests/` directory
 
 ### Code Style
 
@@ -243,4 +177,4 @@ Using Jotai for atomic state management:
 
 ## 📝 License
 
-This project is part of a development exercise and is not intended for production use with real cryptocurrency or domain transactions.
+This project is part of a development exercise for Hackathon purpose.
