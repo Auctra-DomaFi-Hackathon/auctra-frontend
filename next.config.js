@@ -22,6 +22,26 @@ const nextConfig = {
       },
     ],
   },
+  // webpack: (config, { isServer }) => {
+  //   if (!isServer) {
+  //     config.resolve.fallback = {
+  //       ...config.resolve.fallback,
+  //       fs: false,
+  //       net: false,
+  //       tls: false,
+  //       crypto: false,
+  //     };
+  //   }
+    
+  //   // Dedupe three.js to prevent multiple instances warning
+  //   config.resolve.alias = {
+  //     ...config.resolve.alias,
+  //     'three': require.resolve('three'),
+  //   };
+
+  //   return config;
+  // },
+  // transpilePackages: ['three', '@react-three/fiber', '@react-three/drei', 'three-globe'],
   experimental: {
     turbo: {
       rules: {

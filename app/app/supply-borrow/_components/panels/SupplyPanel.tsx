@@ -178,7 +178,7 @@ export default function SupplyPanel({ className }: SupplyPanelProps) {
               <div className="flex justify-between text-[12px] text-neutral-500 dark:text-neutral-400 mb-1">
                 <span>Amount</span>
                 <span className="inline-flex items-center gap-1">
-                  Bal:{" "}
+                  Balance:{" "}
                   {formatUSDC(
                     typeof usdcBalance === "bigint" ? usdcBalance : BigInt(0)
                   )}

@@ -222,6 +222,7 @@ export function useActiveRentalListings(limit: number = 6) {
       errorPolicy: 'all',
       onCompleted: (data) => {
         console.log('🔍 Rental listings query completed:', data);
+        console.log('🔍 First listing raw data:', data?.rentalListings?.items?.[0]);
         setTotalCount(data?.rentalListings?.items?.length || 0);
       },
       onError: (error) => {
@@ -311,8 +312,15 @@ export function useActiveRentalListings(limit: number = 6) {
             return { ...listing, metadata };
           })
         );
-        // Filter for active, non-paused listings
-        const activeListings = listingsWithMeta.filter(listing => listing.active && !listing.paused);
+        // Filter for active, non-paused listings with proper pricing terms
+        const activeListings = listingsWithMeta.filter(listing => 
+          listing.active && 
+          !listing.paused && 
+          listing.pricePerDay && 
+          listing.pricePerDay !== "0" && 
+          listing.minDays > 0 && 
+          listing.maxDays > 0
+        );
         
         // Paginate the results
         const startIndex = (currentPage - 1) * limit;

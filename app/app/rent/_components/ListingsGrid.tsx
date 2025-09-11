@@ -17,14 +17,42 @@ const adaptRentalListingToListingWithMeta = (
 ): ListingWithMeta => {
   // Get domain expiration date from metadata (already fetched by useActiveRentalListings hook)
   const expiresAt = rentalListing.metadata?.expiresAt ?? 0;
+  // Safe BigInt conversion with fallback
+  const safeBigInt = (value: string | number | undefined, fallback = "0") => {
+    try {
+      if (!value) return BigInt(fallback);
+      return BigInt(value);
+    } catch (error) {
+      console.error("Failed to convert to BigInt:", value, error);
+      return BigInt(fallback);
+    }
+  };
+
   console.log("🔄 Adapter processing listing:", {
     tokenId: rentalListing.tokenId,
     domain: rentalListing.metadata?.name,
     rawMetadata: rentalListing.metadata,
+    pricePerDay: rentalListing.pricePerDay,
+    securityDeposit: rentalListing.securityDeposit,
+    minDays: rentalListing.minDays,
+    maxDays: rentalListing.maxDays,
     expiresAt,
     expiresDate: expiresAt
       ? new Date(expiresAt * 1000).toLocaleString()
       : "Unknown",
+  });
+  
+  // Log the converted BigInt values
+  const convertedPricePerDay = safeBigInt(rentalListing.pricePerDay);
+  const convertedSecurityDeposit = safeBigInt(rentalListing.securityDeposit);
+  
+  console.log("💰 Price conversion check:", {
+    rawPricePerDay: rentalListing.pricePerDay,
+    convertedPricePerDay: convertedPricePerDay.toString(),
+    rawSecurityDeposit: rentalListing.securityDeposit,
+    convertedSecurityDeposit: convertedSecurityDeposit.toString(),
+    priceInUSDC: Number(convertedPricePerDay) / 1_000_000,
+    depositInUSDC: Number(convertedSecurityDeposit) / 1_000_000,
   });
 
   return {
@@ -37,14 +65,14 @@ const adaptRentalListingToListingWithMeta = (
     expiresAt, // Get domain expiry from metadata
     listing: {
       nft: rentalListing.nft as `0x${string}`,
-      tokenId: BigInt(rentalListing.tokenId),
+      tokenId: safeBigInt(rentalListing.tokenId),
       owner: rentalListing.owner as `0x${string}`,
       paymentToken: rentalListing.paymentToken as `0x${string}`,
-      pricePerDay: BigInt(rentalListing.pricePerDay),
-      securityDeposit: BigInt(rentalListing.securityDeposit),
-      minDays: rentalListing.minDays,
-      maxDays: rentalListing.maxDays,
-      paused: rentalListing.paused,
+      pricePerDay: convertedPricePerDay,
+      securityDeposit: convertedSecurityDeposit,
+      minDays: rentalListing.minDays || 0,
+      maxDays: rentalListing.maxDays || 0,
+      paused: rentalListing.paused || false,
     },
     rental: null, // We don't have current rental info in this query
   };
@@ -68,7 +96,12 @@ export default function ListingsGrid() {
 
   // Apply filters to the adapted listings
   const filteredListings = useMemo(() => {
-    let filtered = adaptedListings;
+    // First filter out listings with 0 pricing (failsafe)
+    let filtered = adaptedListings.filter((item) => 
+      Number(item.listing.pricePerDay) > 0 && 
+      item.listing.minDays > 0 && 
+      item.listing.maxDays > 0
+    );
 
     // Apply search filter
     if (filters.search) {
